@@ -1,0 +1,1321 @@
+[in#0/rtsp @ 0x7f9feb704b40] Error during demuxing: Operation timed out
+[tcp @ 0x7fd46c704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd46d004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8beff04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8bf0804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb0e4704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb0e5104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe650704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe651004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7ff47c804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7ff47bf05540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fadfc004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fadfc104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa943804440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa943904d00] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa526704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa527104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7e67704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7e68004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fbeb2704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fbeb3104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa072004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa072104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f85cef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f85cf904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fcd47804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fcd47904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8829004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8829104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7ee3105540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7ee3104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc95e804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc95e904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fab7b704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fab7c004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe13cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe13d904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fcee9704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fceea104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc26ff04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc270904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8338704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8339004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb7aaf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb7ab904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fcd09704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fcd0a004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f966ef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f966f904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fcb59f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fcb5a904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f786c704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f786d104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9870704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9871104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fce3b004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fce3a705500] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9cbd704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9cbe004340] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb673804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb672f05540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa267704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa268104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc169004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc168705540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe2e3804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe2e2f05540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa3d0704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa3d1104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9d08905540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9d08904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb66f704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb670104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7ff2f3f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7ff2f4804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa9e0004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa9df705500] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa4b7f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa4b8804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe72c004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe72c104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe333f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe334904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa850704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa851004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7a87704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7a88004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8271004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8271104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9198704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9199104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd6dcf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd6dd904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd797704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd798104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe377704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe378104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd3f3004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd3f3104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb507f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb508904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa0fef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa0ff804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb9c7704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb9c8004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe473f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe474904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc3bd804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc3bd904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc906704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc907104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fcce6004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fcce6104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe17a804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe17a904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7faa65004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7faa65104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fca5c205540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fca5c204f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7ff03d905540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7ff03d904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe5c6f042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe5c8005300] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f836e704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f836f004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f93daf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f93db904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe98e804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe98df05500] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa2e3f047c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa2e4804740] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa1b8004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa1b8104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa081f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa082904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fea6bf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fea6c904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9658f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9659904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd3927042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd393904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe68b004440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe689f05180] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f91adf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f91ae804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe595804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe595a04f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7bf6704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7bf7104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe4a1704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe4a2004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fda55004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fda54705500] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa32cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa32d904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb42d004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb42d204340] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd4d6704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd4d7204f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb0f9f05280] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb0fa804380] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fc4d9704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fc4da104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f864b804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f864af05540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8f3f7042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8f40904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fdf65105500] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fdf65104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7d02f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7d03904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8dc5004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8dc4705540] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7c73704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7c74004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9fe2f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9fe3904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7efff04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7f00904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7faa20f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7faa21804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe97af04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe97b904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fd2dc704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fd2dd104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9d57804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9d57904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8acdf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8ace904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7faa3af04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7faa3b904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fee47704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fee48004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8e837042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8e84805300] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe049f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe04a904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f86f3004440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f86f1f05180] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8a7d704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8a7e104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7fbe004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7fbe104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9d69004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9d69104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f9815704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f9816104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fed05704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fed06104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f8950804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f8950904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7f7fc5f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7f7fc6804f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe21cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fe21d904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fdcbef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fdcbf904f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fab1a004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fab1a104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fbe92704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fbe93104f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fa344004440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fa344104740] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fb9cf005500] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Network is unreachable
+[in#0 @ 0x7fb9cf004f40] Error opening input: Network is unreachable
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Network is unreachable
+[tcp @ 0x7fe69af04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe69b904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fca5e704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fca5f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff741704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff742004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa30f004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa30f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9fae704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9faf104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8138004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8138104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff5e0104340] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff5def04940] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc2fe804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc2fdf05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9fe6004ac0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9fe6204340] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fecc1004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fecc1104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc144704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc145004bc0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb32c804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb32bf05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7e97004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7e97204f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa873f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa874804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc0eb704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc0ec104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fafbb804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fafbb904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8240704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8241004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f902ef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f902f904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8b84004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8b84104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb3a3104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb3a3004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd901004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd901104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc93b004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc93a705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fab3d804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fab3cf05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa43ff04700] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa440804cc0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fac53704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fac54104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd8a1f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd8a2804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa62d804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa62da04f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd3a4704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd3a5004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fee1f004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fee1f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcf12004440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcf12104340] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f960cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f960d904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7faaa7f042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7faaa9104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fedce804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fedce904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff5fe104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff5fe004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9087704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9088004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff23f704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff240104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fca63f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fca64904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc02b704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc02c004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd02d004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd02d104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbd34004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbd34104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8b89804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8b88f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe8cb804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe8caf05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7e73f042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7e75005300] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9ed3704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9ed4004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb93ef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb93f904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe589804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe588705340] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdea3705b00] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdea3705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7ea9f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7eaa804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff089804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff089904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f81e9004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f81e9104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb005704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb006104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f90df904080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f90df804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa795004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa794705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7bca904080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7bca804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff6cbf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff6cc904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9180f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9181804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7faa50f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7faa51804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb40f804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb40ef05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fca70804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fca70904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcc0b004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcc0b104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa0d3004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa0d2705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9a7f004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9a7f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdbb8704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdbb9104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7de6004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7de6104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f935a804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9359f05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb9a9004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb9a7f05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa75b804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa75af05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbf26704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbf27004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd3cc805540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd3cc804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7faf1c004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7faf1b705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb65b704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb65c204080] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7fd0f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7fd1904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fba27f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fba28804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fec8c804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fec8c904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fca05f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fca06904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe05c904080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe05c804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbcac704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbcad104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f985d704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f985e104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8d04f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8d05804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe9c8f04840] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe9c9804740] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f78d3804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f78d3904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb47f004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb47f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc874804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc873f04680] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7b6d804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7b6d904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd58f804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd58ef05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb93a704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb93b004380] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7faa32f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7faa33904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fea73704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fea74104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc403804440] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc402705140] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbb20704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbb21004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fee5b004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fee5b104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fab0cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fab0d904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fab10f05b00] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fab10f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbaf8905540] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbaf8904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9fa6f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9fa7904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd8fb104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd8fb004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa68f804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa68ef05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9f8cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9f8d9048c0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc994704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc995104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa387f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa388804380] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc7ee804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc7ee904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f86ea704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f86eb104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f78f8104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f78f8004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb723804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb723904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8381004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8381104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc72ef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc72f904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fac92704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fac93104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fddf4f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fddf59043c0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8707f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8708904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8c85004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8c84705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fec3f804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fec3ef05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7a25004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7a24705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f844d804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f844cf05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcb5af04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcb5b804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff5fd704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff5fe104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc181704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc182004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa7ecf05b00] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa7ecf05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe1ee704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe1ef104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc1e5704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc1e6004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbba2f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbba3904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcd33f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcd34804380] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7feb5cf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7feb5d804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9c34f042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9c36005180] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd3cf704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd3d0104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7e6a704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7e6b104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcff4704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcff5004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbad6f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbad8004380] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9baaf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9bab804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcaf6804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcaf5f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7cc7104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7cc6705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7e85f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7e86804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc51ff04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc520904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe798704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe799004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd29a004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd29a104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd398804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd398904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdbd4704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdbd5104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f78b0704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f78b1104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcccaf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcccb804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff605704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff606104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb488904080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb487f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fded6f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fded7804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7eac004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7eab705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fac3a004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fac3a104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fce02704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fce03004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb143f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb144804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f91f5804d40] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f91f5804740] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb3ca804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb3c9f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff12c804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff12bf05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff57d704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff57e004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f91cb804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f91caf05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd1f2004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd1f2104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7f09f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7f0a904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbf89104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbf87f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb411f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb412904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbaa3704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbaa4104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb8a0f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb8a1804380] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc3c4804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc3c3f047c0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc0f8004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc0f8104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcd48a04080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcd47f05540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff10e704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff10f004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9417f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9418804740] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe8aef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe8af804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f880c704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f880d104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb192f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb193804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe78b704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe78c104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcb0ca04080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcb0c904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdf6bf058c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdf6bf05300] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb952f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb953904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe285f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe286904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb88b804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb88b904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7facba804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7facb9f04980] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff4b9804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff4b9904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fafe0f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fafe1904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbbb0804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbbaff04980] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9ec1004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9ec0705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f833df04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f833e804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8debf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8dec804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f9379704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f937a104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7faee0104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7faedf705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdd2f104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdd2f004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdafff042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdb01005300] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff294804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff294904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb36ef04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb36f904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7b97104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7b97004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8050704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8051104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb54f004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb54f104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f94ac004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f94ac104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f78fd104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f78fc705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fafadf04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fafae904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f96f6804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f96f6904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f86c7804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f86c7904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fac06104080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fac06004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fca66804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fca65f05500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd955704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd956004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb73ff04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb740904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fbc92704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fbc93104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fec52004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fec51705540] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd91d704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd91e104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7cf1804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7cf1904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f8cc6004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f8cc6104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa01a804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa01a904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f92807042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f9281104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f802c704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f802d004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fe630004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fe630104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb766704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb767104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb726004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb726104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb662704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb663004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdddd804080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdddd904f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f90f7004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f90f6705500] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fb8cd005500] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fb8cd004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fcd2d704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fcd2e104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fc1ad004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fc1ad104f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7f7da6704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7f7da7004f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7ff0bcf04500] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7ff0be004cc0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fdaf5004080] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fdaf47047c0] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa3a81042c0] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa3a8004940] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fa832f04680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fa833804f40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused
+[tcp @ 0x7fd9a4704680] Connection to tcp://192.168.1.2:554?timeout=15000000 failed: Connection refused
+[in#0 @ 0x7fd9a5004d40] Error opening input: Connection refused
+Error opening input file rtsp://192.168.1.2/live/ch00_0.
+Error opening input files: Connection refused

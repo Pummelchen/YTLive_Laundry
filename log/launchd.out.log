@@ -1,0 +1,9 @@
+2026-08-30 22:23:09 starting streamer: MODE=copy CAM=rtsp://192.168.1.2/live/ch00_0 -> youtube (key hidden)
+2026-08-30 22:27:12 starting streamer: MODE=crop CAM=rtsp://192.168.1.2/live/ch00_0 -> youtube (key hidden)
+2026-08-30 22:39:45 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:39:45 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:50:35 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:50:35 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:53:17 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:53:17 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:53:17 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30

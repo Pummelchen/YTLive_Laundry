@@ -1,18 +1,4 @@
-# Secrets - stream.env holds the live YouTube stream key (chmod 600). Never commit it.
-conf/stream.env
-
-# Runtime logs
-log/
-
-# Generated: holds absolute paths from whichever machine built it
-conf/playlist.txt
-
-# Generated CCTV still of the premises, refreshed at every publisher start
-conf/golden.jpg
-
-# The music itself: 328MB of audio, not source
-MP3/
-
-# Local editing debris
+# Private repo: everything else is tracked, including MP3/, log/ and conf/stream.env.
+# conf/stream.env holds the live YouTube stream key - anyone with access to this repo can
+# push to the channel. Rotate the key in YouTube Studio if repo access ever changes.
 .DS_Store
-*.bak-*

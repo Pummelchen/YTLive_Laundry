@@ -1,0 +1,1703 @@
+2026-08-30 22:23:09 starting streamer: MODE=copy CAM=rtsp://192.168.1.2/live/ch00_0 -> youtube (key hidden)
+2026-08-30 22:27:12 starting streamer: MODE=crop CAM=rtsp://192.168.1.2/live/ch00_0 -> youtube (key hidden)
+2026-08-30 22:35:13 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:35:14 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:37:41 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:37:41 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:39:45 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:39:45 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:50:35 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:50:35 starting: MODE=crop cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:53:17 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:53:17 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:53:17 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 22:59:48 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 22:59:48 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 22:59:48 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 23:16:35 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 23:16:36 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 23:16:36 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 23:17:09 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 23:17:11 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 23:17:11 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 23:18:18 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 23:18:19 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 23:18:19 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 23:19:47 WATCHDOG: no new video frames for 30s (frame=709) - restarting ffmpeg
+2026-08-30 23:19:47 ffmpeg exited rc=137 after 88s
+2026-08-30 23:19:47 reconnecting in 2s...
+2026-08-30 23:21:17 WATCHDOG: no new video frames for 30s (frame=885) - restarting ffmpeg
+2026-08-30 23:21:17 ffmpeg exited rc=137 after 88s
+2026-08-30 23:21:17 reconnecting in 2s...
+2026-08-30 23:23:05 audio: MP3 playlist (25 tracks, looping)
+2026-08-30 23:23:05 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-30 23:23:05 filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05,fps=30
+2026-08-30 23:27:13 WATCHDOG: no new video frames for 30s (frame=5678) - restarting ffmpeg
+2026-08-30 23:27:13 ffmpeg exited rc=137 after 248s
+2026-08-30 23:27:13 reconnecting in 2s...
+2026-08-30 23:30:55 WATCHDOG: no new video frames for 30s (frame=5072) - restarting ffmpeg
+2026-08-30 23:30:55 ffmpeg exited rc=137 after 220s
+2026-08-30 23:30:55 reconnecting in 2s...
+2026-08-31 00:33:53 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 00:33:53 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@320k (cctv mic NOT streamed)
+2026-08-31 00:33:53 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 00:39:21 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 00:39:21 ffmpeg exited rc=137 after 328s
+2026-08-31 00:39:21 reconnecting in 2s...
+2026-08-31 00:41:08 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 00:41:08 ffmpeg exited rc=137 after 105s
+2026-08-31 00:41:08 reconnecting in 2s...
+2026-08-31 00:42:48 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 00:42:48 ffmpeg exited rc=137 after 98s
+2026-08-31 00:42:48 reconnecting in 2s...
+2026-08-31 00:54:12 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 00:54:12 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac_at@384k (cctv mic NOT streamed)
+2026-08-31 00:54:12 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 00:58:47 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 00:58:47 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 00:58:47 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:01:12 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:01:12 ffmpeg exited rc=137 after 145s
+2026-08-31 01:01:12 reconnecting in 2s...
+2026-08-31 01:03:25 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:03:25 ffmpeg exited rc=137 after 131s
+2026-08-31 01:03:25 reconnecting in 2s...
+2026-08-31 01:04:34 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:04:34 ffmpeg exited rc=137 after 67s
+2026-08-31 01:04:34 reconnecting in 2s...
+2026-08-31 01:06:37 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:06:37 ffmpeg exited rc=137 after 120s
+2026-08-31 01:06:37 reconnecting in 2s...
+2026-08-31 01:07:57 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:07:57 ffmpeg exited rc=137 after 78s
+2026-08-31 01:07:57 reconnecting in 2s...
+2026-08-31 01:08:13 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:08:13 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:08:13 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:08:37 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:08:37 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:08:37 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:11:14 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:11:14 ffmpeg exited rc=137 after 157s
+2026-08-31 01:11:14 reconnecting in 2s...
+2026-08-31 01:12:18 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:12:18 ffmpeg exited rc=137 after 61s
+2026-08-31 01:12:18 reconnecting in 2s...
+2026-08-31 01:14:04 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:14:04 ffmpeg exited rc=137 after 103s
+2026-08-31 01:14:04 reconnecting in 2s...
+2026-08-31 01:15:14 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:15:14 ffmpeg exited rc=137 after 68s
+2026-08-31 01:15:14 reconnecting in 2s...
+2026-08-31 01:16:17 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:16:17 ffmpeg exited rc=137 after 61s
+2026-08-31 01:16:17 reconnecting in 2s...
+2026-08-31 01:18:14 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:18:14 ffmpeg exited rc=137 after 114s
+2026-08-31 01:18:14 reconnecting in 2s...
+2026-08-31 01:19:18 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:19:18 ffmpeg exited rc=137 after 62s
+2026-08-31 01:19:18 reconnecting in 2s...
+2026-08-31 01:20:21 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:20:21 ffmpeg exited rc=137 after 61s
+2026-08-31 01:20:21 reconnecting in 2s...
+2026-08-31 01:21:25 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:21:25 ffmpeg exited rc=137 after 62s
+2026-08-31 01:21:25 reconnecting in 2s...
+2026-08-31 01:23:24 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:23:24 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:23:24 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:23:24 filler base: black (no snapshot yet)
+2026-08-31 01:24:25 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:24:25 ffmpeg exited rc=137 after 61s
+2026-08-31 01:24:25 reconnecting in 2s...
+2026-08-31 01:24:31 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:24:31 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:24:31 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:24:31 filler base: last good frame (12460 bytes)
+2026-08-31 01:24:32 ffmpeg exited rc=0 after 1s
+2026-08-31 01:24:32 reconnecting in 4s...
+2026-08-31 01:24:36 filler base: last good frame (12460 bytes)
+2026-08-31 01:24:38 ffmpeg exited rc=0 after 2s
+2026-08-31 01:24:38 reconnecting in 8s...
+2026-08-31 01:24:46 filler base: last good frame (12460 bytes)
+2026-08-31 01:24:47 ffmpeg exited rc=0 after 1s
+2026-08-31 01:24:47 reconnecting in 16s...
+2026-08-31 01:25:03 filler base: last good frame (12460 bytes)
+2026-08-31 01:25:04 ffmpeg exited rc=0 after 1s
+2026-08-31 01:25:04 reconnecting in 32s...
+2026-08-31 01:25:38 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:25:38 starting: MODE=crop 30fps cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:25:38 filler=yes  filters: hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05 @ 30fps
+2026-08-31 01:25:38 filler base: last good frame (12460 bytes)
+2026-08-31 01:26:40 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:26:40 ffmpeg exited rc=137 after 62s
+2026-08-31 01:26:40 reconnecting in 2s...
+2026-08-31 01:26:42 filler base: last good frame (12460 bytes)
+2026-08-31 01:27:43 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:27:43 ffmpeg exited rc=137 after 61s
+2026-08-31 01:27:43 reconnecting in 2s...
+2026-08-31 01:27:46 filler base: last good frame (12460 bytes)
+2026-08-31 01:29:04 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:29:04 ffmpeg exited rc=137 after 78s
+2026-08-31 01:29:04 reconnecting in 2s...
+2026-08-31 01:29:06 filler base: last good frame (12460 bytes)
+2026-08-31 01:30:07 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:30:07 ffmpeg exited rc=137 after 61s
+2026-08-31 01:30:07 reconnecting in 2s...
+2026-08-31 01:30:09 filler base: last good frame (12460 bytes)
+2026-08-31 01:31:11 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:31:11 ffmpeg exited rc=137 after 62s
+2026-08-31 01:31:11 reconnecting in 2s...
+2026-08-31 01:31:13 filler base: last good frame (12460 bytes)
+2026-08-31 01:32:14 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:32:14 ffmpeg exited rc=137 after 61s
+2026-08-31 01:32:15 reconnecting in 2s...
+2026-08-31 01:32:17 filler base: last good frame (12460 bytes)
+2026-08-31 01:33:18 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:33:18 ffmpeg exited rc=137 after 61s
+2026-08-31 01:33:18 reconnecting in 2s...
+2026-08-31 01:33:20 filler base: last good frame (12460 bytes)
+2026-08-31 01:34:24 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:34:24 ffmpeg exited rc=137 after 64s
+2026-08-31 01:34:24 reconnecting in 2s...
+2026-08-31 01:34:26 filler base: last good frame (12460 bytes)
+2026-08-31 01:35:28 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:35:28 ffmpeg exited rc=137 after 62s
+2026-08-31 01:35:28 reconnecting in 2s...
+2026-08-31 01:35:30 filler base: last good frame (12460 bytes)
+2026-08-31 01:36:36 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:36:37 ffmpeg exited rc=137 after 67s
+2026-08-31 01:36:37 reconnecting in 2s...
+2026-08-31 01:36:39 filler base: last good frame (12460 bytes)
+2026-08-31 01:37:24 ffmpeg exited rc=224 after 45s
+2026-08-31 01:37:24 reconnecting in 2s...
+2026-08-31 01:37:26 filler base: last good frame (352658 bytes)
+2026-08-31 01:38:29 WATCHDOG: no ESTABLISHED camera session for 45s - restarting ffmpeg
+2026-08-31 01:38:29 ffmpeg exited rc=137 after 63s
+2026-08-31 01:38:29 reconnecting in 2s...
+2026-08-31 01:38:31 filler base: last good frame (352421 bytes)
+2026-08-31 01:38:37 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:38:37 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:38:37 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 01:38:37 publisher up (pid 23831)
+2026-08-31 01:40:32 READER: camera feed ended after 115s, retrying in 2s (YouTube unaffected)
+2026-08-31 01:43:02 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:43:02 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:43:02 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 01:43:02 publisher up (pid 24299)
+2026-08-31 01:46:12 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:46:12 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:46:12 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 01:46:12 publisher up (pid 24577)
+2026-08-31 01:56:12 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 01:56:14 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 01:56:14 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 01:56:15 publisher up (pid 721)
+2026-08-31 01:57:54 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 01:57:54 publisher back up (pid 1031)
+2026-08-31 02:00:12 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:00:12 publisher back up (pid 1264)
+2026-08-31 02:02:25 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:02:25 publisher back up (pid 1508)
+2026-08-31 02:04:45 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:04:45 publisher back up (pid 1845)
+2026-08-31 02:07:09 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:07:09 publisher back up (pid 2150)
+2026-08-31 02:10:11 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:10:11 publisher back up (pid 2462)
+2026-08-31 02:13:54 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:13:54 publisher back up (pid 2780)
+2026-08-31 02:15:59 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:15:59 publisher back up (pid 2986)
+2026-08-31 02:16:57 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 02:16:57 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 02:16:57 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 02:17:00 publisher up (pid 3130)
+2026-08-31 02:17:38 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:17:42 publisher back up (pid 3202)
+2026-08-31 02:25:05 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 02:25:05 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 02:25:05 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 02:25:08 publisher up (pid 3756)
+2026-08-31 02:25:34 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:25:42 publisher back up (pid 3821)
+2026-08-31 02:28:09 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:28:16 publisher back up (pid 4106)
+2026-08-31 02:29:28 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 02:29:28 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 02:29:28 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 02:29:30 publisher up (pid 4268)
+2026-08-31 02:30:27 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:30:31 publisher back up (pid 4399)
+2026-08-31 02:34:21 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 02:34:21 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 02:34:21 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 02:34:22 publisher up (pid 4686)
+2026-08-31 02:35:07 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:35:14 publisher back up (pid 4791)
+2026-08-31 02:37:29 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:37:36 publisher back up (pid 5055)
+2026-08-31 02:40:01 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:40:07 publisher back up (pid 5408)
+2026-08-31 02:42:38 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:42:42 publisher back up (pid 5689)
+2026-08-31 02:45:17 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:45:21 publisher back up (pid 5935)
+2026-08-31 02:48:02 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:48:05 publisher back up (pid 6199)
+2026-08-31 02:50:46 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:50:50 publisher back up (pid 6456)
+2026-08-31 02:53:31 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:53:34 publisher back up (pid 6711)
+2026-08-31 02:56:10 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:56:13 publisher back up (pid 6989)
+2026-08-31 02:58:54 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 02:58:57 publisher back up (pid 7247)
+2026-08-31 03:01:33 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 03:01:36 publisher back up (pid 7507)
+2026-08-31 03:04:22 PUBLISHER died - restarting (this does drop the YouTube session briefly)
+2026-08-31 03:04:27 publisher back up (pid 7777)
+2026-08-31 03:04:56 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 03:04:56 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.2/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 03:04:56 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 03:04:57 publisher up (pid 7874)
+2026-08-31 05:28:39 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 05:28:45 publisher back up (pid 22304)
+2026-08-31 07:52:28 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 07:52:34 publisher back up (pid 36544)
+2026-08-31 10:16:16 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 10:16:23 publisher back up (pid 50451)
+2026-08-31 11:22:49 PUBLISHER died rc=224 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:22:49 publisher back up (pid 56967)
+2026-08-31 11:22:57 READER: camera feed ended after 29881s, retrying in 2s (YouTube unaffected)
+2026-08-31 11:22:59 READER: camera feed ended after 0s, retrying in 4s (YouTube unaffected)
+2026-08-31 11:23:03 READER: camera feed ended after 0s, retrying in 8s (YouTube unaffected)
+2026-08-31 11:23:11 READER: camera feed ended after 0s, retrying in 16s (YouTube unaffected)
+2026-08-31 11:23:19 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:23:19 publisher back up (pid 57060)
+2026-08-31 11:23:27 READER: camera feed ended after 0s, retrying in 32s (YouTube unaffected)
+2026-08-31 11:23:49 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:23:49 publisher back up (pid 57143)
+2026-08-31 11:23:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:24:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:24:19 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:24:19 publisher back up (pid 57196)
+2026-08-31 11:24:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:24:50 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:24:50 publisher back up (pid 57246)
+2026-08-31 11:24:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:25:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:25:20 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:25:20 publisher back up (pid 57335)
+2026-08-31 11:25:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:25:50 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:25:50 publisher back up (pid 57407)
+2026-08-31 11:25:55 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:25:55 publisher back up (pid 57433)
+2026-08-31 11:26:00 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:26:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:26:25 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:26:25 publisher back up (pid 57487)
+2026-08-31 11:26:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:26:56 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:26:56 publisher back up (pid 57538)
+2026-08-31 11:27:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:27:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:27:26 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:27:26 publisher back up (pid 57616)
+2026-08-31 11:27:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:27:56 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:27:56 publisher back up (pid 57699)
+2026-08-31 11:28:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:28:01 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:28:01 publisher back up (pid 57732)
+2026-08-31 11:28:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:28:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:28:31 publisher back up (pid 57779)
+2026-08-31 11:28:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:29:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:29:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:29:01 publisher back up (pid 57835)
+2026-08-31 11:29:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:29:32 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:29:32 publisher back up (pid 57907)
+2026-08-31 11:29:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:30:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:30:02 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:30:02 publisher back up (pid 57997)
+2026-08-31 11:30:12 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:30:12 publisher back up (pid 58028)
+2026-08-31 11:30:21 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:30:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:30:42 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:30:42 publisher back up (pid 58083)
+2026-08-31 11:31:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:31:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:31:12 publisher back up (pid 58130)
+2026-08-31 11:31:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:31:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:31:43 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:31:43 publisher back up (pid 58214)
+2026-08-31 11:32:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:32:13 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:32:13 publisher back up (pid 58292)
+2026-08-31 11:32:18 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:32:18 publisher back up (pid 58318)
+2026-08-31 11:32:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:32:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:32:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:32:48 publisher back up (pid 58374)
+2026-08-31 11:33:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:33:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:33:18 publisher back up (pid 58421)
+2026-08-31 11:33:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:33:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:33:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:33:48 publisher back up (pid 58501)
+2026-08-31 11:34:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:34:19 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:34:19 publisher back up (pid 58585)
+2026-08-31 11:34:22 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:34:29 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:34:29 publisher back up (pid 58623)
+2026-08-31 11:34:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:34:59 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:34:59 publisher back up (pid 58671)
+2026-08-31 11:35:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:35:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:35:29 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:35:29 publisher back up (pid 58725)
+2026-08-31 11:35:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:35:59 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:35:59 publisher back up (pid 58801)
+2026-08-31 11:36:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:36:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:36:29 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:36:29 publisher back up (pid 58888)
+2026-08-31 11:36:35 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:36:35 publisher back up (pid 58914)
+2026-08-31 11:36:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:37:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:37:05 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:37:05 publisher back up (pid 58969)
+2026-08-31 11:37:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:37:35 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:37:35 publisher back up (pid 59016)
+2026-08-31 11:37:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:38:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:38:05 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:38:05 publisher back up (pid 59096)
+2026-08-31 11:38:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:38:35 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:38:35 publisher back up (pid 59178)
+2026-08-31 11:38:43 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:38:45 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:38:45 publisher back up (pid 59218)
+2026-08-31 11:39:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:39:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:39:16 publisher back up (pid 59264)
+2026-08-31 11:39:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:39:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:39:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:39:46 publisher back up (pid 59321)
+2026-08-31 11:40:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:40:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:40:16 publisher back up (pid 59404)
+2026-08-31 11:40:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:40:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:40:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:40:46 publisher back up (pid 59483)
+2026-08-31 11:40:51 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:40:51 publisher back up (pid 59509)
+2026-08-31 11:41:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:41:21 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:41:21 publisher back up (pid 59555)
+2026-08-31 11:41:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:41:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:41:52 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:41:52 publisher back up (pid 59611)
+2026-08-31 11:42:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:42:22 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:42:22 publisher back up (pid 59681)
+2026-08-31 11:42:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:42:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:42:52 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:42:52 publisher back up (pid 59772)
+2026-08-31 11:43:02 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:43:02 publisher back up (pid 59803)
+2026-08-31 11:43:04 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:43:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:43:32 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:43:32 publisher back up (pid 59856)
+2026-08-31 11:43:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:44:02 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:44:03 publisher back up (pid 59905)
+2026-08-31 11:44:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:44:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:44:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:44:33 publisher back up (pid 59995)
+2026-08-31 11:44:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:45:03 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:45:03 publisher back up (pid 60067)
+2026-08-31 11:45:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:45:08 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:45:08 publisher back up (pid 60100)
+2026-08-31 11:45:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:45:38 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:45:38 publisher back up (pid 60147)
+2026-08-31 11:45:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:46:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:46:08 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:46:08 publisher back up (pid 60203)
+2026-08-31 11:46:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:46:39 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:46:39 publisher back up (pid 60276)
+2026-08-31 11:46:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:47:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:47:09 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:47:09 publisher back up (pid 60365)
+2026-08-31 11:47:14 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:47:14 publisher back up (pid 60391)
+2026-08-31 11:47:25 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:47:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:47:44 publisher back up (pid 60437)
+2026-08-31 11:47:45 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:48:05 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:48:14 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:48:14 publisher back up (pid 60493)
+2026-08-31 11:48:25 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:48:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:48:44 publisher back up (pid 60563)
+2026-08-31 11:48:45 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:49:05 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:49:15 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:49:15 publisher back up (pid 60654)
+2026-08-31 11:49:25 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:49:25 publisher back up (pid 60685)
+2026-08-31 11:49:25 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:49:45 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:49:55 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:49:55 publisher back up (pid 60740)
+2026-08-31 11:50:05 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:50:25 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:50:25 publisher back up (pid 60789)
+2026-08-31 11:50:25 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:50:45 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:50:55 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:50:55 publisher back up (pid 60879)
+2026-08-31 11:51:05 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:51:25 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:51:26 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:51:26 publisher back up (pid 60956)
+2026-08-31 11:51:31 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:51:31 publisher back up (pid 60982)
+2026-08-31 11:51:46 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:52:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:52:01 publisher back up (pid 61030)
+2026-08-31 11:52:06 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:52:26 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:52:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:52:31 publisher back up (pid 61084)
+2026-08-31 11:52:46 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:53:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:53:01 publisher back up (pid 61157)
+2026-08-31 11:53:06 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:53:26 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:53:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:53:32 publisher back up (pid 61246)
+2026-08-31 11:53:42 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:53:42 publisher back up (pid 61279)
+2026-08-31 11:53:46 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:54:06 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:54:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:54:12 publisher back up (pid 61332)
+2026-08-31 11:54:26 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:54:42 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:54:42 publisher back up (pid 61381)
+2026-08-31 11:54:46 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:55:06 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:55:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:55:12 publisher back up (pid 61470)
+2026-08-31 11:55:26 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:55:42 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:55:42 publisher back up (pid 61544)
+2026-08-31 11:55:46 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:55:47 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:55:48 publisher back up (pid 61577)
+2026-08-31 11:56:07 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:56:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:56:18 publisher back up (pid 61624)
+2026-08-31 11:56:27 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:56:47 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:56:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:56:48 publisher back up (pid 61698)
+2026-08-31 11:57:07 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:57:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:57:18 publisher back up (pid 61768)
+2026-08-31 11:57:27 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:57:47 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:57:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:57:48 publisher back up (pid 61859)
+2026-08-31 11:57:53 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 11:57:53 publisher back up (pid 61885)
+2026-08-31 11:58:07 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:58:24 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:58:24 publisher back up (pid 61931)
+2026-08-31 11:58:27 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:58:47 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:58:54 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:58:54 publisher back up (pid 61987)
+2026-08-31 11:59:07 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:59:24 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:59:24 publisher back up (pid 62062)
+2026-08-31 11:59:27 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:59:47 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 11:59:54 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 11:59:54 publisher back up (pid 62160)
+2026-08-31 12:00:08 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:00:09 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:00:09 publisher back up (pid 62235)
+2026-08-31 12:00:28 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:00:39 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:00:39 publisher back up (pid 62364)
+2026-08-31 12:00:48 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:01:08 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:01:10 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:01:10 publisher back up (pid 62421)
+2026-08-31 12:01:28 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:01:40 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:01:40 publisher back up (pid 62526)
+2026-08-31 12:01:48 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:02:08 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:02:10 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:02:10 publisher back up (pid 62605)
+2026-08-31 12:02:15 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:02:15 publisher back up (pid 62645)
+2026-08-31 12:02:28 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:02:45 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:02:45 publisher back up (pid 62695)
+2026-08-31 12:02:48 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:03:08 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:03:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:03:16 publisher back up (pid 62774)
+2026-08-31 12:03:28 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:03:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:03:46 publisher back up (pid 62849)
+2026-08-31 12:03:48 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:04:08 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:04:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:04:16 publisher back up (pid 62938)
+2026-08-31 12:04:26 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:04:26 publisher back up (pid 62969)
+2026-08-31 12:04:29 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:04:49 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:04:56 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:04:56 publisher back up (pid 63024)
+2026-08-31 12:05:09 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:05:26 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:05:26 publisher back up (pid 63071)
+2026-08-31 12:05:29 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:05:49 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:05:57 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:05:57 publisher back up (pid 63151)
+2026-08-31 12:06:09 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:06:27 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:06:27 publisher back up (pid 63233)
+2026-08-31 12:06:29 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:06:37 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:06:37 publisher back up (pid 63271)
+2026-08-31 12:06:49 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:07:07 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:07:07 publisher back up (pid 63319)
+2026-08-31 12:07:09 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:07:29 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:07:37 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:07:37 publisher back up (pid 63376)
+2026-08-31 12:07:49 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:08:08 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:08:08 publisher back up (pid 63449)
+2026-08-31 12:08:09 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:08:30 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:08:38 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:08:38 publisher back up (pid 63539)
+2026-08-31 12:08:48 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:08:48 publisher back up (pid 63570)
+2026-08-31 12:08:50 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:09:10 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:09:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:09:18 publisher back up (pid 63623)
+2026-08-31 12:09:30 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:09:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:09:48 publisher back up (pid 63673)
+2026-08-31 12:09:50 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:10:10 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:10:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:10:18 publisher back up (pid 63762)
+2026-08-31 12:10:30 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:10:49 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:10:49 publisher back up (pid 63835)
+2026-08-31 12:10:50 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:10:54 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:10:54 publisher back up (pid 63868)
+2026-08-31 12:11:10 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:11:24 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:11:24 publisher back up (pid 63914)
+2026-08-31 12:11:30 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:11:50 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:11:54 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:11:54 publisher back up (pid 63971)
+2026-08-31 12:12:10 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:12:24 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:12:24 publisher back up (pid 64041)
+2026-08-31 12:12:30 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:12:51 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:12:54 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:12:55 publisher back up (pid 64133)
+2026-08-31 12:13:05 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:13:05 publisher back up (pid 64164)
+2026-08-31 12:13:11 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:13:31 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:13:35 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:13:35 publisher back up (pid 64220)
+2026-08-31 12:13:51 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:14:05 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:14:05 publisher back up (pid 64267)
+2026-08-31 12:14:11 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:14:31 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:14:35 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:14:35 publisher back up (pid 64346)
+2026-08-31 12:14:51 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:15:05 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:15:05 publisher back up (pid 64429)
+2026-08-31 12:15:11 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:15:15 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:15:16 publisher back up (pid 64469)
+2026-08-31 12:15:31 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:15:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:15:46 publisher back up (pid 64517)
+2026-08-31 12:15:51 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:16:11 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:16:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:16:16 publisher back up (pid 64573)
+2026-08-31 12:16:31 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:16:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:16:46 publisher back up (pid 64646)
+2026-08-31 12:16:51 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:17:12 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:17:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:17:16 publisher back up (pid 64734)
+2026-08-31 12:17:26 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:17:26 publisher back up (pid 64765)
+2026-08-31 12:17:32 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:17:52 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:17:57 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:17:57 publisher back up (pid 64820)
+2026-08-31 12:18:12 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:18:27 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:18:27 publisher back up (pid 64867)
+2026-08-31 12:18:32 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:18:52 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:18:57 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:18:57 publisher back up (pid 64960)
+2026-08-31 12:19:12 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:19:27 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:19:27 publisher back up (pid 65030)
+2026-08-31 12:19:32 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:19:32 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:19:32 publisher back up (pid 65063)
+2026-08-31 12:19:52 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:20:02 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:20:03 publisher back up (pid 65111)
+2026-08-31 12:20:12 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:20:32 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:20:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:20:33 publisher back up (pid 65166)
+2026-08-31 12:20:52 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:21:03 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:21:03 publisher back up (pid 65238)
+2026-08-31 12:21:12 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:21:33 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:21:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:21:33 publisher back up (pid 65327)
+2026-08-31 12:21:43 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:21:43 publisher back up (pid 65360)
+2026-08-31 12:21:53 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:22:13 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:22:13 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:22:13 publisher back up (pid 65415)
+2026-08-31 12:22:33 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:22:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:22:44 publisher back up (pid 65465)
+2026-08-31 12:22:53 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:23:13 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:23:14 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:23:14 publisher back up (pid 65542)
+2026-08-31 12:23:33 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:23:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:23:44 publisher back up (pid 65625)
+2026-08-31 12:23:53 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:23:54 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:23:54 publisher back up (pid 65665)
+2026-08-31 12:24:13 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:24:24 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:24:24 publisher back up (pid 65711)
+2026-08-31 12:24:33 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:24:53 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:24:54 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:24:55 publisher back up (pid 65768)
+2026-08-31 12:25:13 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:25:25 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:25:25 publisher back up (pid 65840)
+2026-08-31 12:25:33 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:25:54 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:25:55 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:25:55 publisher back up (pid 65929)
+2026-08-31 12:26:05 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:26:05 publisher back up (pid 65960)
+2026-08-31 12:26:14 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:26:34 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:26:35 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:26:35 publisher back up (pid 66013)
+2026-08-31 12:26:54 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:27:05 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:27:05 publisher back up (pid 66063)
+2026-08-31 12:27:14 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:27:34 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:27:36 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:27:36 publisher back up (pid 66152)
+2026-08-31 12:27:54 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:28:06 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:28:06 publisher back up (pid 66225)
+2026-08-31 12:28:11 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:28:11 publisher back up (pid 66251)
+2026-08-31 12:28:14 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:28:34 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:28:41 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:28:41 publisher back up (pid 66305)
+2026-08-31 12:28:54 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:29:11 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:29:11 publisher back up (pid 66354)
+2026-08-31 12:29:14 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:29:34 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:29:41 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:29:42 publisher back up (pid 66431)
+2026-08-31 12:29:54 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:30:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:30:12 publisher back up (pid 66516)
+2026-08-31 12:30:15 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:30:22 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:30:22 publisher back up (pid 66554)
+2026-08-31 12:30:35 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:30:52 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:30:52 publisher back up (pid 66600)
+2026-08-31 12:30:55 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:31:15 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:31:22 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:31:22 publisher back up (pid 66656)
+2026-08-31 12:31:35 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:31:52 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:31:52 publisher back up (pid 66726)
+2026-08-31 12:31:55 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:32:15 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:32:23 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:32:23 publisher back up (pid 66817)
+2026-08-31 12:32:33 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:32:33 publisher back up (pid 66850)
+2026-08-31 12:32:35 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:32:55 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:33:03 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:33:03 publisher back up (pid 66905)
+2026-08-31 12:33:15 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:33:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:33:33 publisher back up (pid 66953)
+2026-08-31 12:33:35 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:33:55 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:34:03 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:34:03 publisher back up (pid 67032)
+2026-08-31 12:34:15 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:34:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:34:34 publisher back up (pid 67114)
+2026-08-31 12:34:36 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:34:44 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:34:44 publisher back up (pid 67152)
+2026-08-31 12:34:56 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:35:14 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:35:14 publisher back up (pid 67200)
+2026-08-31 12:35:16 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:35:36 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:35:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:35:44 publisher back up (pid 67256)
+2026-08-31 12:35:56 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:36:14 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:36:14 publisher back up (pid 67329)
+2026-08-31 12:36:16 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:36:36 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:36:44 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:36:44 publisher back up (pid 67418)
+2026-08-31 12:36:54 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:36:55 publisher back up (pid 67449)
+2026-08-31 12:36:56 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:37:16 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:37:25 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:37:25 publisher back up (pid 67502)
+2026-08-31 12:37:36 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:37:55 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:37:55 publisher back up (pid 67552)
+2026-08-31 12:37:56 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:38:16 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:38:25 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:38:25 publisher back up (pid 67641)
+2026-08-31 12:38:36 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:38:55 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:38:55 publisher back up (pid 67713)
+2026-08-31 12:38:57 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:39:00 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:39:00 publisher back up (pid 67746)
+2026-08-31 12:39:17 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:39:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:39:31 publisher back up (pid 67792)
+2026-08-31 12:39:37 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:39:57 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:40:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:40:01 publisher back up (pid 67848)
+2026-08-31 12:40:17 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:40:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:40:31 publisher back up (pid 67918)
+2026-08-31 12:40:37 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:40:57 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:41:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:41:01 publisher back up (pid 68010)
+2026-08-31 12:41:11 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:41:11 publisher back up (pid 68041)
+2026-08-31 12:41:17 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:41:37 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:41:41 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:41:41 publisher back up (pid 68094)
+2026-08-31 12:41:57 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:42:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:42:12 publisher back up (pid 68143)
+2026-08-31 12:42:17 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:42:37 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:42:42 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:42:42 publisher back up (pid 68220)
+2026-08-31 12:42:57 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:43:12 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:43:12 publisher back up (pid 68305)
+2026-08-31 12:43:18 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:43:22 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:43:22 publisher back up (pid 68344)
+2026-08-31 12:43:38 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:43:52 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:43:52 publisher back up (pid 68390)
+2026-08-31 12:43:58 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:44:18 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:44:23 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:44:23 publisher back up (pid 68446)
+2026-08-31 12:44:38 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:44:53 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:44:53 publisher back up (pid 68526)
+2026-08-31 12:44:58 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:45:18 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:45:23 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:45:23 publisher back up (pid 68610)
+2026-08-31 12:45:33 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:45:33 publisher back up (pid 68641)
+2026-08-31 12:45:38 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:45:58 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:46:03 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:46:03 publisher back up (pid 68696)
+2026-08-31 12:46:18 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:46:33 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:46:34 publisher back up (pid 68743)
+2026-08-31 12:46:38 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:46:58 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:47:04 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:47:04 publisher back up (pid 68834)
+2026-08-31 12:47:18 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:47:34 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:47:34 publisher back up (pid 68904)
+2026-08-31 12:47:39 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:47:39 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:47:39 publisher back up (pid 68938)
+2026-08-31 12:47:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:48:09 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:48:09 publisher back up (pid 68986)
+2026-08-31 12:48:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:48:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:48:39 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:48:39 publisher back up (pid 69040)
+2026-08-31 12:48:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:49:10 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:49:10 publisher back up (pid 69113)
+2026-08-31 12:49:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:49:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:49:40 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:49:40 publisher back up (pid 69202)
+2026-08-31 12:49:50 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:49:50 publisher back up (pid 69233)
+2026-08-31 12:49:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:50:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:50:20 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:50:20 publisher back up (pid 69288)
+2026-08-31 12:50:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:50:50 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:50:50 publisher back up (pid 69336)
+2026-08-31 12:50:59 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:51:19 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:51:21 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:51:21 publisher back up (pid 69416)
+2026-08-31 12:51:39 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:51:51 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:51:51 publisher back up (pid 69498)
+2026-08-31 12:52:00 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:52:01 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:52:01 publisher back up (pid 69538)
+2026-08-31 12:52:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:52:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:52:31 publisher back up (pid 69585)
+2026-08-31 12:52:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:53:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:53:01 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:53:01 publisher back up (pid 69641)
+2026-08-31 12:53:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:53:31 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:53:32 publisher back up (pid 69717)
+2026-08-31 12:53:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:54:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:54:02 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:54:02 publisher back up (pid 69805)
+2026-08-31 12:54:07 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:54:07 publisher back up (pid 69831)
+2026-08-31 12:54:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:54:37 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:54:37 publisher back up (pid 69877)
+2026-08-31 12:54:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:55:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:55:07 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:55:07 publisher back up (pid 69933)
+2026-08-31 12:55:20 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:55:37 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:55:37 publisher back up (pid 70003)
+2026-08-31 12:55:40 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:56:00 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:56:08 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:56:08 publisher back up (pid 70096)
+2026-08-31 12:56:18 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:56:18 publisher back up (pid 70127)
+2026-08-31 12:56:21 READER: camera feed ended after 1s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:56:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:56:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:56:48 publisher back up (pid 70197)
+2026-08-31 12:57:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:57:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:57:18 publisher back up (pid 70246)
+2026-08-31 12:57:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:57:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:57:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:57:48 publisher back up (pid 70326)
+2026-08-31 12:58:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:58:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:58:19 publisher back up (pid 70408)
+2026-08-31 12:58:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:58:29 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 12:58:29 publisher back up (pid 70446)
+2026-08-31 12:58:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:58:59 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:58:59 publisher back up (pid 70495)
+2026-08-31 12:59:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:59:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:59:29 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:59:29 publisher back up (pid 70550)
+2026-08-31 12:59:41 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 12:59:59 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 12:59:59 publisher back up (pid 70628)
+2026-08-31 13:00:01 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:00:21 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:00:29 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:00:29 publisher back up (pid 70717)
+2026-08-31 13:00:39 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:00:40 publisher back up (pid 70748)
+2026-08-31 13:00:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:01:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:01:10 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:01:10 publisher back up (pid 70803)
+2026-08-31 13:01:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:01:40 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:01:40 publisher back up (pid 70850)
+2026-08-31 13:01:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:02:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:02:10 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:02:10 publisher back up (pid 70942)
+2026-08-31 13:02:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:02:40 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:02:40 publisher back up (pid 71012)
+2026-08-31 13:02:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:02:45 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:02:45 publisher back up (pid 71045)
+2026-08-31 13:03:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:03:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:03:16 publisher back up (pid 71093)
+2026-08-31 13:03:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:03:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:03:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:03:46 publisher back up (pid 71149)
+2026-08-31 13:04:02 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:04:16 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:04:16 publisher back up (pid 71222)
+2026-08-31 13:04:22 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:04:42 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:04:46 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:04:46 publisher back up (pid 71311)
+2026-08-31 13:04:56 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:04:56 publisher back up (pid 71344)
+2026-08-31 13:05:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:05:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:05:26 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:05:27 publisher back up (pid 71398)
+2026-08-31 13:05:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:05:57 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:05:57 publisher back up (pid 71445)
+2026-08-31 13:06:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:06:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:06:27 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:06:27 publisher back up (pid 71525)
+2026-08-31 13:06:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:06:57 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:06:57 publisher back up (pid 71607)
+2026-08-31 13:07:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:07:07 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:07:07 publisher back up (pid 71647)
+2026-08-31 13:07:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:07:37 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:07:37 publisher back up (pid 71693)
+2026-08-31 13:07:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:08:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:08:08 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:08:08 publisher back up (pid 71749)
+2026-08-31 13:08:23 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:08:38 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:08:38 publisher back up (pid 71820)
+2026-08-31 13:08:43 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:09:03 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:09:08 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:09:08 publisher back up (pid 71911)
+2026-08-31 13:09:18 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:09:18 publisher back up (pid 71942)
+2026-08-31 13:09:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:09:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:09:48 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:09:48 publisher back up (pid 71995)
+2026-08-31 13:10:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:10:18 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:10:19 publisher back up (pid 72044)
+2026-08-31 13:10:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:10:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:10:49 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:10:49 publisher back up (pid 72126)
+2026-08-31 13:11:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:11:19 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:11:19 publisher back up (pid 72206)
+2026-08-31 13:11:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:11:29 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-08-31 13:11:29 publisher back up (pid 72277)
+2026-08-31 13:11:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:11:59 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:11:59 publisher back up (pid 72329)
+2026-08-31 13:12:04 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:12:24 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:12:29 WATCHDOG: publisher output frozen 30s - restarting publisher
+2026-08-31 13:12:29 publisher back up (pid 72408)
+2026-08-31 13:12:44 READER: camera feed ended after 0s, retrying in 20s (YouTube unaffected)
+2026-08-31 13:12:59 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 13:12:59 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 13:12:59 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 13:13:00 publisher up (pid 72509)
+2026-08-31 13:14:34 audio: MP3 playlist (25 tracks, looping)
+2026-08-31 13:14:34 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-08-31 13:14:34 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-08-31 13:14:37 publisher up (pid 72756)
+2026-08-31 13:15:38 CAM-WATCH: 192.168.1.99 not answering on 554, running ONVIF discovery
+2026-08-31 13:15:42 CAM-WATCH: camera moved 192.168.1.99 -> 192.168.1.3 (reader will follow)
+2026-08-31 15:38:21 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 15:38:25 publisher back up (pid 87163)
+2026-08-31 18:02:07 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 18:02:14 publisher back up (pid 2054)
+2026-08-31 20:25:56 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 20:26:02 publisher back up (pid 16403)
+2026-08-31 22:49:44 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-08-31 22:49:50 publisher back up (pid 30678)
+2026-09-01 01:13:32 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 01:13:38 publisher back up (pid 45228)
+2026-09-01 03:37:17 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 03:37:22 publisher back up (pid 59859)
+2026-09-01 06:01:04 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 06:01:09 publisher back up (pid 74671)
+2026-09-01 08:24:51 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 08:24:56 publisher back up (pid 89241)
+2026-09-01 10:48:35 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 10:48:41 publisher back up (pid 4085)
+2026-09-01 13:12:22 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 13:12:26 publisher back up (pid 18437)
+2026-09-01 15:36:08 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 15:36:15 publisher back up (pid 32655)
+2026-09-01 17:59:56 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 18:00:02 publisher back up (pid 46452)
+2026-09-01 18:21:16 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-01 18:21:18 publisher back up (pid 48075)
+2026-09-01 18:33:22 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-01 18:33:28 publisher back up (pid 48977)
+2026-09-01 20:57:09 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 20:57:14 publisher back up (pid 61334)
+2026-09-01 23:20:54 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-01 23:20:59 publisher back up (pid 75589)
+2026-09-02 01:44:40 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 01:44:46 publisher back up (pid 90074)
+2026-09-02 04:08:26 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 04:08:29 publisher back up (pid 5454)
+2026-09-02 06:32:10 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 06:32:14 publisher back up (pid 20191)
+2026-09-02 08:55:54 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 08:56:00 publisher back up (pid 34804)
+2026-09-02 11:19:41 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 11:19:48 publisher back up (pid 49314)
+2026-09-02 13:43:28 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 13:43:34 publisher back up (pid 63869)
+2026-09-02 16:07:15 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 16:07:21 publisher back up (pid 78343)
+2026-09-02 18:31:02 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 18:31:06 publisher back up (pid 92725)
+2026-09-02 20:54:46 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 20:54:50 publisher back up (pid 7600)
+2026-09-02 23:18:30 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-02 23:18:34 publisher back up (pid 22078)
+2026-09-03 01:42:14 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 01:42:21 publisher back up (pid 36735)
+2026-09-03 04:06:01 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 04:06:07 publisher back up (pid 51231)
+2026-09-03 06:29:48 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 06:29:54 publisher back up (pid 65932)
+2026-09-03 08:53:33 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 08:53:37 publisher back up (pid 80433)
+2026-09-03 09:25:46 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 09:25:53 publisher back up (pid 83847)
+2026-09-03 09:30:39 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 09:30:44 publisher back up (pid 84353)
+2026-09-03 11:54:23 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 11:54:30 publisher back up (pid 98861)
+2026-09-03 14:18:14 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 14:18:20 publisher back up (pid 13916)
+2026-09-03 15:35:11 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 15:35:18 publisher back up (pid 21783)
+2026-09-03 15:38:49 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 15:38:53 publisher back up (pid 22151)
+2026-09-03 15:42:09 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 15:42:15 publisher back up (pid 22483)
+2026-09-03 15:45:41 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 15:45:48 publisher back up (pid 22839)
+2026-09-03 18:09:29 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 18:09:35 publisher back up (pid 37337)
+2026-09-03 20:33:17 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-03 20:33:20 publisher back up (pid 51566)
+2026-09-03 22:44:32 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-03 22:44:37 publisher back up (pid 64765)
+2026-09-04 01:08:19 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 01:08:26 publisher back up (pid 79044)
+2026-09-04 03:32:11 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 03:32:14 publisher back up (pid 93656)
+2026-09-04 05:55:55 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 05:56:01 publisher back up (pid 8647)
+2026-09-04 07:34:17 PUBLISHER died rc=224 - restarting (this does drop the YouTube session briefly)
+2026-09-04 07:34:23 publisher back up (pid 18583)
+2026-09-04 09:58:05 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 09:58:11 publisher back up (pid 33176)
+2026-09-04 10:01:17 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 10:01:21 publisher back up (pid 33536)
+2026-09-04 10:11:40 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 10:11:44 publisher back up (pid 34636)
+2026-09-04 12:35:26 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 12:35:30 publisher back up (pid 49222)
+2026-09-04 14:40:12 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 14:40:16 publisher back up (pid 61749)
+2026-09-04 14:43:37 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 14:43:43 publisher back up (pid 62091)
+2026-09-04 14:47:04 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 14:47:10 publisher back up (pid 62441)
+2026-09-04 17:10:51 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 17:10:57 publisher back up (pid 77001)
+2026-09-04 19:34:38 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-04 19:34:44 publisher back up (pid 90446)
+2026-09-04 20:33:50 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:33:57 publisher back up (pid 95471)
+2026-09-04 20:37:38 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:37:43 publisher back up (pid 95833)
+2026-09-04 20:41:14 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:41:21 publisher back up (pid 96182)
+2026-09-04 20:44:52 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:44:58 publisher back up (pid 96534)
+2026-09-04 20:48:29 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:48:32 publisher back up (pid 96885)
+2026-09-04 20:52:09 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:52:11 publisher back up (pid 97242)
+2026-09-04 20:55:48 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 20:55:54 publisher back up (pid 97597)
+2026-09-04 21:00:50 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:00:57 publisher back up (pid 98089)
+2026-09-04 21:04:33 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:04:36 publisher back up (pid 98453)
+2026-09-04 21:08:12 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:08:18 publisher back up (pid 98829)
+2026-09-04 21:11:44 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:11:51 publisher back up (pid 99173)
+2026-09-04 21:15:27 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:15:30 publisher back up (pid 99529)
+2026-09-04 21:21:16 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:21:23 publisher back up (pid 302)
+2026-09-04 21:30:46 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:30:48 publisher back up (pid 1506)
+2026-09-04 21:34:19 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:34:26 publisher back up (pid 1862)
+2026-09-04 21:37:47 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:37:53 publisher back up (pid 2205)
+2026-09-04 21:41:14 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:41:19 publisher back up (pid 2547)
+2026-09-04 21:44:40 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:44:44 publisher back up (pid 2891)
+2026-09-04 21:48:10 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:48:16 publisher back up (pid 3237)
+2026-09-04 21:51:32 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:51:36 publisher back up (pid 3573)
+2026-09-04 21:54:57 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:55:01 publisher back up (pid 3916)
+2026-09-04 21:58:22 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 21:58:27 publisher back up (pid 4265)
+2026-09-04 22:01:53 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:01:59 publisher back up (pid 4614)
+2026-09-04 22:05:35 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:05:41 publisher back up (pid 4980)
+2026-09-04 22:10:17 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:10:24 publisher back up (pid 5468)
+2026-09-04 22:13:39 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:13:44 publisher back up (pid 5807)
+2026-09-04 22:17:10 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:17:16 publisher back up (pid 6154)
+2026-09-04 22:20:37 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:20:43 publisher back up (pid 6497)
+2026-09-04 22:58:06 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-04 22:58:13 publisher back up (pid 10263)
+2026-09-05 00:51:27 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 00:51:34 publisher back up (pid 21762)
+2026-09-05 00:55:23 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 00:55:29 publisher back up (pid 22259)
+2026-09-05 00:58:50 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 00:58:57 publisher back up (pid 22652)
+2026-09-05 01:02:43 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 01:02:51 publisher back up (pid 23204)
+2026-09-05 01:03:40 audio: MP3 playlist (25 tracks, looping)
+2026-09-05 01:03:40 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-09-05 01:03:40 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-09-05 01:03:42 publisher up (pid 23372); broadcast rotation every 8h
+2026-09-05 01:04:06 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 01:04:07 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 01:05:13 ROTATE: publisher back up (pid 23475); next rotation in 8h
+2026-09-05 01:06:54 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 01:07:00 publisher back up (pid 23888)
+2026-09-05 01:08:06 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 01:10:39 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 01:10:39 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 01:11:46 ROTATE: publisher back up (pid 24853); next rotation in 8h
+2026-09-05 01:13:34 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 01:13:35 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 01:14:38 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 01:14:39 ROTATE: publisher back up (pid 25299); next rotation in 8h
+2026-09-05 01:16:16 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 01:16:17 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 01:17:24 ROTATE: publisher back up (pid 25754); next rotation in 8h
+2026-09-05 01:17:29 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 01:18:09 ROTATE: new broadcast is live: GarIybQyhn0 (old was <none>)
+2026-09-05 03:07:48 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 03:07:54 publisher back up (pid 39439)
+2026-09-05 03:25:28 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 03:25:34 publisher back up (pid 41700)
+2026-09-05 05:00:38 PUBLISHER died rc=137 - restarting (this does drop the YouTube session briefly)
+2026-09-05 05:00:43 publisher back up (pid 52664)
+2026-09-05 07:24:21 PUBLISHER died rc=255 - restarting (this does drop the YouTube session briefly)
+2026-09-05 07:24:24 publisher back up (pid 69220)
+2026-09-05 09:17:27 ROTATE (8h reached): stopping ingest so YouTube closes broadcast GarIybQyhn0 and saves it
+2026-09-05 09:17:47 ROTATE: YouTube reports not live after 15s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:18:53 ROTATE: publisher back up (pid 82046); next rotation in 8h
+2026-09-05 09:20:11 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:20:12 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:21:16 ROTATE: publisher back up (pid 82321); next rotation in 8h
+2026-09-05 09:21:43 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:22:23 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:22:24 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:23:27 ROTATE: publisher back up (pid 82669); next rotation in 8h
+2026-09-05 09:24:08 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:25:09 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:25:10 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:26:17 ROTATE: publisher back up (pid 82996); next rotation in 8h
+2026-09-05 09:26:19 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:27:34 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:27:35 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:28:39 ROTATE: publisher back up (pid 83261); next rotation in 8h
+2026-09-05 09:29:07 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:29:51 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:29:52 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:30:55 ROTATE: publisher back up (pid 83552); next rotation in 8h
+2026-09-05 09:31:29 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:32:07 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:32:08 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:33:10 ROTATE: publisher back up (pid 83820); next rotation in 8h
+2026-09-05 09:33:44 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:34:17 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:34:18 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:35:25 ROTATE: publisher back up (pid 84084); next rotation in 8h
+2026-09-05 09:36:00 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:36:32 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:36:32 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:37:36 ROTATE: publisher back up (pid 84344); next rotation in 8h
+2026-09-05 09:38:16 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:38:47 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:38:48 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:39:51 ROTATE: publisher back up (pid 84634); next rotation in 8h
+2026-09-05 09:40:24 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:41:03 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:41:04 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:42:07 ROTATE: publisher back up (pid 84902); next rotation in 8h
+2026-09-05 09:42:41 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:43:14 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:43:15 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:44:22 ROTATE: publisher back up (pid 85165); next rotation in 8h
+2026-09-05 09:44:57 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:45:28 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:45:29 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:46:34 ROTATE: publisher back up (pid 85426); next rotation in 8h
+2026-09-05 09:47:11 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:47:41 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:47:42 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:48:45 ROTATE: publisher back up (pid 85688); next rotation in 8h
+2026-09-05 09:49:25 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:49:57 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:49:58 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:51:02 ROTATE: publisher back up (pid 85959); next rotation in 8h
+2026-09-05 09:51:35 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:52:14 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:52:14 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:53:18 ROTATE: publisher back up (pid 86225); next rotation in 8h
+2026-09-05 09:53:51 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:54:30 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:54:30 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:55:35 ROTATE: publisher back up (pid 86498); next rotation in 8h
+2026-09-05 09:56:08 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:56:52 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:56:53 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 09:57:57 ROTATE: publisher back up (pid 86781); next rotation in 8h
+2026-09-05 09:58:25 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 09:59:09 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 09:59:10 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:00:14 ROTATE: publisher back up (pid 87051); next rotation in 8h
+2026-09-05 10:00:47 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:01:25 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:01:26 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:02:30 ROTATE: publisher back up (pid 87319); next rotation in 8h
+2026-09-05 10:03:03 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:03:51 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:03:52 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:04:58 ROTATE: publisher back up (pid 87609); next rotation in 8h
+2026-09-05 10:05:20 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:06:20 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:06:21 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:07:26 ROTATE: publisher back up (pid 87885); next rotation in 8h
+2026-09-05 10:07:48 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:08:37 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:08:38 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:09:42 ROTATE: publisher back up (pid 88172); next rotation in 8h
+2026-09-05 10:10:16 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:10:53 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:10:54 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:11:58 ROTATE: publisher back up (pid 88440); next rotation in 8h
+2026-09-05 10:12:32 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:13:10 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:13:11 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:14:15 ROTATE: publisher back up (pid 88709); next rotation in 8h
+2026-09-05 10:14:48 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:15:37 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:15:37 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:16:43 ROTATE: publisher back up (pid 89002); next rotation in 8h
+2026-09-05 10:17:04 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:18:00 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:18:01 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:19:06 ROTATE: publisher back up (pid 89270); next rotation in 8h
+2026-09-05 10:19:33 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:20:18 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:20:19 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:21:22 ROTATE: publisher back up (pid 89543); next rotation in 8h
+2026-09-05 10:21:55 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:22:34 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:22:35 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:23:39 ROTATE: publisher back up (pid 89815); next rotation in 8h
+2026-09-05 10:24:12 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:24:50 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:24:51 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:25:56 ROTATE: publisher back up (pid 90086); next rotation in 8h
+2026-09-05 10:26:28 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:27:18 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:27:19 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:28:25 ROTATE: publisher back up (pid 90376); next rotation in 8h
+2026-09-05 10:28:46 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:29:42 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:29:43 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:30:49 ROTATE: publisher back up (pid 90643); next rotation in 8h
+2026-09-05 10:31:15 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:32:01 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:32:02 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:33:06 ROTATE: publisher back up (pid 90914); next rotation in 8h
+2026-09-05 10:33:38 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:34:23 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:34:23 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:35:29 ROTATE: publisher back up (pid 91193); next rotation in 8h
+2026-09-05 10:35:56 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:36:41 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:36:41 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:37:45 ROTATE: publisher back up (pid 91461); next rotation in 8h
+2026-09-05 10:38:18 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:38:57 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:38:58 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:40:01 ROTATE: publisher back up (pid 91729); next rotation in 8h
+2026-09-05 10:40:35 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:41:08 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:41:09 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:42:12 ROTATE: publisher back up (pid 91989); next rotation in 8h
+2026-09-05 10:42:52 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:43:29 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:43:30 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:44:34 ROTATE: publisher back up (pid 92267); next rotation in 8h
+2026-09-05 10:45:01 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:45:51 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:45:52 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:46:56 ROTATE: publisher back up (pid 92543); next rotation in 8h
+2026-09-05 10:47:24 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:48:08 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:48:09 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:49:12 ROTATE: publisher back up (pid 92811); next rotation in 8h
+2026-09-05 10:49:46 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:50:29 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:50:30 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:51:35 ROTATE: publisher back up (pid 93090); next rotation in 8h
+2026-09-05 10:52:02 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:52:52 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:52:53 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:53:57 ROTATE: publisher back up (pid 93363); next rotation in 8h
+2026-09-05 10:54:25 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:55:14 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:55:15 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:56:19 ROTATE: publisher back up (pid 93639); next rotation in 8h
+2026-09-05 10:56:47 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 10:57:41 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 10:57:42 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 10:58:46 ROTATE: publisher back up (pid 93923); next rotation in 8h
+2026-09-05 10:59:09 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:00:03 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:00:04 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:01:08 ROTATE: publisher back up (pid 94199); next rotation in 8h
+2026-09-05 11:01:36 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:02:31 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:02:31 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:03:37 ROTATE: publisher back up (pid 94488); next rotation in 8h
+2026-09-05 11:03:59 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:04:49 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:04:50 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:05:53 ROTATE: publisher back up (pid 94754); next rotation in 8h
+2026-09-05 11:06:27 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:07:05 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:07:06 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:08:11 ROTATE: publisher back up (pid 95020); next rotation in 8h
+2026-09-05 11:08:44 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:09:23 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:09:24 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:10:28 ROTATE: publisher back up (pid 95305); next rotation in 8h
+2026-09-05 11:11:00 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:11:40 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:11:41 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:12:44 ROTATE: publisher back up (pid 95573); next rotation in 8h
+2026-09-05 11:13:17 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:14:01 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:14:02 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:15:06 ROTATE: publisher back up (pid 95857); next rotation in 8h
+2026-09-05 11:15:34 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:16:28 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:16:29 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:17:34 ROTATE: publisher back up (pid 96143); next rotation in 8h
+2026-09-05 11:17:56 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:18:46 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:18:47 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:19:50 ROTATE: publisher back up (pid 96411); next rotation in 8h
+2026-09-05 11:20:24 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:21:02 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:21:03 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:22:06 ROTATE: publisher back up (pid 96679); next rotation in 8h
+2026-09-05 11:22:39 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:23:23 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:23:24 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:24:28 ROTATE: publisher back up (pid 96955); next rotation in 8h
+2026-09-05 11:24:56 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:25:51 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:25:51 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:26:56 ROTATE: publisher back up (pid 97241); next rotation in 8h
+2026-09-05 11:27:19 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:28:08 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:28:09 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:29:12 ROTATE: publisher back up (pid 97507); next rotation in 8h
+2026-09-05 11:29:46 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:30:29 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:30:30 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:31:34 ROTATE: publisher back up (pid 97785); next rotation in 8h
+2026-09-05 11:32:04 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:32:45 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:32:46 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:33:49 ROTATE: publisher back up (pid 98055); next rotation in 8h
+2026-09-05 11:34:23 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:35:02 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:35:03 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:36:09 ROTATE: publisher back up (pid 98327); next rotation in 8h
+2026-09-05 11:36:39 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:37:31 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:37:32 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:38:38 ROTATE: publisher back up (pid 98624); next rotation in 8h
+2026-09-05 11:39:00 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:40:01 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:40:01 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:41:06 ROTATE: publisher back up (pid 98905); next rotation in 8h
+2026-09-05 11:41:29 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:42:28 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:42:29 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:43:34 ROTATE: publisher back up (pid 99185); next rotation in 8h
+2026-09-05 11:43:56 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:44:56 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:44:57 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:46:01 ROTATE: publisher back up (pid 99470); next rotation in 8h
+2026-09-05 11:46:24 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:47:13 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:47:14 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:48:17 ROTATE: publisher back up (pid 99737); next rotation in 8h
+2026-09-05 11:48:52 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:49:29 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:49:30 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:50:33 ROTATE: publisher back up (pid 112); next rotation in 8h
+2026-09-05 11:51:08 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:51:45 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:51:46 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:52:49 ROTATE: publisher back up (pid 653); next rotation in 8h
+2026-09-05 11:53:24 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:54:01 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:54:01 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:55:04 ROTATE: publisher back up (pid 945); next rotation in 8h
+2026-09-05 11:55:39 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:56:16 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:56:17 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:57:20 ROTATE: publisher back up (pid 1222); next rotation in 8h
+2026-09-05 11:57:54 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 11:58:32 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 11:58:33 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 11:59:35 ROTATE: publisher back up (pid 1500); next rotation in 8h
+2026-09-05 12:00:09 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:00:42 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:00:43 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:01:50 ROTATE: publisher back up (pid 1763); next rotation in 8h
+2026-09-05 12:02:25 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:03:02 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:03:03 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:04:07 ROTATE: publisher back up (pid 2034); next rotation in 8h
+2026-09-05 12:04:40 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:05:24 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:05:25 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:06:28 ROTATE: publisher back up (pid 2311); next rotation in 8h
+2026-09-05 12:06:57 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:07:40 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:07:41 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:08:44 ROTATE: publisher back up (pid 2580); next rotation in 8h
+2026-09-05 12:09:19 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:09:51 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:09:52 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:10:58 ROTATE: publisher back up (pid 2863); next rotation in 8h
+2026-09-05 12:11:34 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:12:10 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:12:11 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:13:15 ROTATE: publisher back up (pid 3131); next rotation in 8h
+2026-09-05 12:13:49 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:14:32 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:14:33 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:15:37 ROTATE: publisher back up (pid 3410); next rotation in 8h
+2026-09-05 12:16:07 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:16:54 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:16:55 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:17:58 ROTATE: publisher back up (pid 3687); next rotation in 8h
+2026-09-05 12:18:27 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:19:10 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:19:11 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:20:14 ROTATE: publisher back up (pid 3960); next rotation in 8h
+2026-09-05 12:20:49 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:21:26 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:21:27 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:22:30 ROTATE: publisher back up (pid 4235); next rotation in 8h
+2026-09-05 12:23:04 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:23:42 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:23:42 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:24:45 ROTATE: publisher back up (pid 4505); next rotation in 8h
+2026-09-05 12:25:20 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:25:58 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:25:59 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:27:05 ROTATE: publisher back up (pid 4776); next rotation in 8h
+2026-09-05 12:27:35 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:28:22 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:28:23 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:29:29 ROTATE: publisher back up (pid 5070); next rotation in 8h
+2026-09-05 12:29:55 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:31:06 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:31:07 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:32:14 ROTATE: publisher back up (pid 5405); next rotation in 8h
+2026-09-05 12:32:21 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:33:36 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:33:37 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:34:42 ROTATE: publisher back up (pid 5712); next rotation in 8h
+2026-09-05 12:35:07 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:36:11 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:36:12 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:37:16 ROTATE: publisher back up (pid 6045); next rotation in 8h
+2026-09-05 12:37:38 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:38:53 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:38:54 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:40:01 ROTATE: publisher back up (pid 6381); next rotation in 8h
+2026-09-05 12:40:09 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:41:33 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:41:34 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:42:40 ROTATE: publisher back up (pid 6684); next rotation in 8h
+2026-09-05 12:42:52 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:44:07 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:44:09 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:45:14 ROTATE: publisher back up (pid 7016); next rotation in 8h
+2026-09-05 12:45:30 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:46:36 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:46:37 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:47:42 ROTATE: publisher back up (pid 7407); next rotation in 8h
+2026-09-05 12:48:05 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:48:59 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:49:00 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:50:04 ROTATE: publisher back up (pid 7734); next rotation in 8h
+2026-09-05 12:50:33 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:51:21 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 12:51:22 ROTATE: YouTube reports not live after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 12:52:25 ROTATE: publisher back up (pid 8128); next rotation in 8h
+2026-09-05 12:52:54 ROTATE: WARNING - no live broadcast seen within 160s of restart
+2026-09-05 12:52:56 audio: MP3 playlist (25 tracks, looping)
+2026-09-05 12:52:56 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-09-05 12:52:56 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-09-05 12:52:57 publisher up (pid 8278); broadcast rotation every 8h; monitor holds off 420s
+2026-09-05 13:08:45 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 13:08:46 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 13:09:50 ROTATE: publisher back up (pid 10403); monitor holds off 420s while YouTube spins up; next rotation in 8h
+2026-09-05 13:17:04 ROTATE: WARNING - YouTube still shows no live broadcast 420s after ingest resumed. Not rotating again for 900s. If this persists the channel needs Go Live pressed in YouTube Studio - restarting ingest cannot create a broadcast.
+2026-09-05 13:32:22 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 13:32:23 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 13:33:30 ROTATE: publisher back up (pid 13372); monitor holds off 420s while YouTube spins up; next rotation in 8h
