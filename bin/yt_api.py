@@ -543,8 +543,17 @@ def _diff_video(sn, st, loc, t):
     for k, want in vid_t.items():
         got = sn.get(k)
         if k == "tags":
-            if sorted(got or []) != sorted(want or []):
-                diffs.append(f"tags({len(got or [])} vs {len(want)})")
+            g, w = set(got or []), set(want or [])
+            if g != w:
+                # Name them. Reporting only counts meant a tag added in Studio was removed
+                # by enforcement with no record of WHICH one, which makes the change
+                # unrecoverable from the log.
+                parts = []
+                if w - g:
+                    parts.append("adding " + ",".join(sorted(w - g)))
+                if g - w:
+                    parts.append("REMOVING " + ",".join(sorted(g - w)))
+                diffs.append("tags[" + "; ".join(parts) + "]")
         elif got != want:
             diffs.append(k)
     for k, want in st_t.items():
