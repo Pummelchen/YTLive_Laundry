@@ -1701,3 +1701,4 @@
 2026-09-05 13:32:22 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
 2026-09-05 13:32:23 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
 2026-09-05 13:33:30 ROTATE: publisher back up (pid 13372); monitor holds off 420s while YouTube spins up; next rotation in 8h
+2026-09-05 13:40:45 ROTATE: WARNING - YouTube still shows no live broadcast 420s after ingest resumed. Not rotating again for 900s. If this persists the channel needs Go Live pressed in YouTube Studio - restarting ingest cannot create a broadcast.
