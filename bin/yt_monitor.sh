@@ -42,6 +42,20 @@ yt_api_call() {
 # monitor died" - this file tells them apart.
 beat() { print -r -- "$(date +%s) ${1} ${2:-}" > "$HEARTBEAT" 2>/dev/null; }
 
+# A long backoff is a DELIBERATE silence, and it has to stay distinguishable from a hang.
+# ROTATE_REQUEST_BACKOFF is 900s while stream.sh treats a heartbeat older than
+# MONITOR_STALE (600s) as hung - so a plain sleep here got a healthy monitor killed and
+# relaunched every time it backed off. Keep beating through it.
+beat_sleep() {
+  local left="$1" label="${2:-BACKOFF}" chunk
+  while (( left > 0 )); do
+    chunk=$(( left > 30 ? 30 : left ))
+    beat "$label" "deliberately quiet, ${left}s left"
+    sleep "$chunk"
+    left=$(( left - chunk ))
+  done
+}
+
 # stream.sh records every rotation and whether it needed the API. If native rotation has
 # been carrying the stream on its own, an expiring token costs the spare wheel, not the
 # stream - and is not worth interrupting anyone about.
@@ -156,12 +170,12 @@ while true; do
         elif print -r -- "$api" | grep -q '"status": *"OFFLINE"'; then
           mlog "BLIND for $(( now - blind_since ))s and the API says the channel is OFFLINE - acting on the API's word."
           if [[ "$MONITOR_ACTION" == "restart" ]]; then
-            bring_live "blind+api-offline" || sleep "$ROTATE_REQUEST_BACKOFF"
+            bring_live "blind+api-offline" || beat_sleep "$ROTATE_REQUEST_BACKOFF" BACKOFF
           else
             mlog "ACTION: log-only mode, not acting"
           fi
           blind_since=0; off_since=0; bad_since=0
-          sleep 60; continue
+          beat_sleep 60 SETTLING; continue
         else
           mlog "BLIND for $(( now - blind_since ))s and the API cannot answer either: $api"
           blind_since=$now
@@ -177,12 +191,12 @@ while true; do
     (( off_since == 0 )) && { off_since=$now; mlog "channel reads OFFLINE, watching it: $out"; }
     if (( now - off_since >= OFFLINE_SECONDS )); then
       if [[ "$MONITOR_ACTION" == "restart" ]]; then
-        bring_live "offline ${OFFLINE_SECONDS}s" || sleep "$ROTATE_REQUEST_BACKOFF"
+        bring_live "offline ${OFFLINE_SECONDS}s" || beat_sleep "$ROTATE_REQUEST_BACKOFF" BACKOFF
       else
         mlog "ACTION: log-only mode, channel OFFLINE for $(( now - off_since ))s and not acting"
       fi
       off_since=0; bad_since=0; blind_since=0
-      sleep 60; continue
+      beat_sleep 60 SETTLING; continue
     fi
     ;;
 
@@ -196,7 +210,7 @@ while true; do
         mlog "ACTION: log-only mode, not restarting"
       fi
       bad_since=0
-      sleep 60; continue    # give it time to come back before judging again
+      beat_sleep 60 SETTLING; continue    # give it time to come back before judging again
     fi
     ;;
   esac
