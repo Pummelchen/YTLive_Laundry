@@ -236,16 +236,23 @@ LAST_ROTATE=0
 # thing this rotation exists to prevent. Verified on 2026-09-05: restarts had pushed a
 # broadcast that went live at 15:03 to a 03:12 rotation, i.e. 12h08m old.
 refresh_broadcast_clock() {
-  local id stored_id stored_at epoch
+  local id stored_id="" stored_at="" epoch
+  [[ -s "$BSTATE" ]] && read -r stored_id stored_at < "$BSTATE"
   id=$(yt_live_id)
-  [[ -n "$id" ]] || return 0        # cannot identify one - leave the clock alone rather
-                                    # than reset it on a failed lookup
-  if [[ -s "$BSTATE" ]]; then
-    read -r stored_id stored_at < "$BSTATE"
-    if [[ "$stored_id" == "$id" && "$stored_at" == <-> ]]; then
-      BROADCAST_STARTED=$stored_at
-      return 0
-    fi
+  # THE BIAS THAT MATTERS: rotating EARLY costs a shorter VOD, which is still reviewable.
+  # Rotating LATE costs the recording outright - past 12h YouTube answers "this live stream
+  # recording is not available", as it does for the 26.1h and 81.5h streams on this channel.
+  # So whenever the age is uncertain, assume the broadcast is OLDER, never younger.
+  if [[ -z "$id" ]]; then
+    # The lookup failed. Trusting the stored clock beats leaving BROADCAST_STARTED at
+    # whatever this process happened to start with - that path could hand a 9h-old
+    # broadcast another 8 hours and lose the recording.
+    [[ "$stored_at" == <-> ]] && BROADCAST_STARTED=$stored_at
+    return 0
+  fi
+  if [[ "$stored_id" == "$id" && "$stored_at" == <-> ]]; then
+    BROADCAST_STARTED=$stored_at
+    return 0
   fi
   # First time we have seen this broadcast. Prefer YouTube's own actualStartTime, so a
   # restart that finds an already-running broadcast still gets the true age.
