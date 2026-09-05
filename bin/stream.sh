@@ -47,14 +47,8 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
-: ${NOTIFY:=yes}                  # macOS notification for things that need a HUMAN
-
-# Logs are for the project's own bookkeeping, not for reading. Anything that actually
-# requires a person has to arrive somewhere a person will see it.
-notify() {
-  [[ "$NOTIFY" == yes ]] || return 0
-  /usr/bin/osascript -e "display notification \"${2//\"/}\" with title \"YTLive\" subtitle \"${1//\"/}\"" 2>/dev/null
-}
+# No notifications and no log-reading: this Mac is unattended. Nothing here may depend on a
+# human noticing anything, so every failure path must keep retrying rather than report.
 
 # Trim in place rather than rotating: ffmpeg holds an O_APPEND fd on publisher.log, so
 # renaming the file would leave it writing to an unlinked inode forever. Rewriting the same
@@ -96,7 +90,6 @@ check_monitor() {
     pkill -9 -f "zsh.*yt_monitor.sh" 2>/dev/null
   else
     log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED."
-    notify "Watchdog is not running" "launchctl load -w ~/Library/LaunchAgents/com.user.cctv-monitor.plist"
   fi
 }
 
@@ -233,7 +226,36 @@ ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 ))
 : ${ROTATE_NATIVE_WAIT:=360}   # how long to let YouTube produce the next broadcast on its own
 : ${ROTATE_END_PATIENCE:=60}   # if YouTube has not closed the old broadcast by now, end it via API
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
+BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
 LAST_ROTATE=0
+
+# The rotation clock has to track the BROADCAST, not this script. It was set to "now" at
+# every stream.sh start, so any restart - launchd reviving a crash, a reboot, a power cut,
+# a config change - silently handed the currently running broadcast another full 8 hours.
+# A broadcast that drifts past 12h is never archived by YouTube, which is precisely the
+# thing this rotation exists to prevent. Verified on 2026-09-05: restarts had pushed a
+# broadcast that went live at 15:03 to a 03:12 rotation, i.e. 12h08m old.
+refresh_broadcast_clock() {
+  local id stored_id stored_at epoch
+  id=$(yt_live_id)
+  [[ -n "$id" ]] || return 0        # cannot identify one - leave the clock alone rather
+                                    # than reset it on a failed lookup
+  if [[ -s "$BSTATE" ]]; then
+    read -r stored_id stored_at < "$BSTATE"
+    if [[ "$stored_id" == "$id" && "$stored_at" == <-> ]]; then
+      BROADCAST_STARTED=$stored_at
+      return 0
+    fi
+  fi
+  # First time we have seen this broadcast. Prefer YouTube's own actualStartTime, so a
+  # restart that finds an already-running broadcast still gets the true age.
+  epoch=""
+  yt_api_ready && epoch=$(yt_api_call status | sed -n 's/.*"started_epoch": *\([0-9]*\).*/\1/p')
+  [[ "$epoch" == <-> ]] || epoch=$(date +%s)
+  print -r -- "$id $epoch" > "$BSTATE"
+  BROADCAST_STARTED=$epoch
+  log "CLOCK: broadcast $id went live $(date -r $epoch '+%H:%M:%S'); rotating at $(date -r $(( epoch + ROTATE_SECONDS )) '+%a %H:%M:%S')"
+}
 
 # One line per rotation. This is STATE, not a report: native_is_proven() reads it back to
 # decide whether the API is still load-bearing, which in turn decides whether an expiring
@@ -332,11 +354,9 @@ await_broadcast() {
       fi
       log "YT-API: the fallback could not bring the channel live either: $out"
       [[ "$ctx" == rotation ]] && record_rotation failed "$took" ""
-      notify "Channel is DARK" "Neither YouTube nor the API started a broadcast after a rotation. Open Studio and press Go Live."
     else
       log "WARNING: no live broadcast ${took}s after ingest resumed, and no API credentials to fall back on."
       [[ "$ctx" == rotation ]] && record_rotation failed-no-api "$took" ""
-      notify "Channel is DARK" "YouTube did not start a broadcast and there are no API credentials. Open Studio and press Go Live."
     fi ) &
 }
 
@@ -371,7 +391,6 @@ rotate_broadcast() {
       if native_is_proven; then
         log "        Not alerting: the last $NATIVE_PROOF rotations were native, so the API is only a spare."
       else
-        notify "OAuth token expiring" "Native rotation is not proven yet, so the API fallback still matters. Run: bin/yt_api.py auth"
       fi
     fi
     if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
@@ -399,6 +418,7 @@ rotate_broadcast() {
   done
   log "ROTATE: YouTube state=${state} after ${waited}s, waiting ${ROTATE_GAP}s more, then resuming ingest"
   sleep "$ROTATE_GAP"
+  rm -f "$BSTATE"          # the old broadcast's clock is done; the next one re-establishes it
   start_publisher
   BROADCAST_STARTED=$(date +%s)
   LAST_ROTATE=$BROADCAST_STARTED
@@ -418,6 +438,7 @@ trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID $PUBPID 2>/dev/null; exit
 start_publisher
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
+refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_HOURS:-8}h; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 
@@ -431,6 +452,7 @@ while true; do
     housekeep_in=0
     housekeep
     check_monitor
+    refresh_broadcast_clock
   fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue

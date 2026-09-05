@@ -28,7 +28,7 @@ CREDENTIALS
                          chmod 600, never committed - see .gitignore
 Scope needed: https://www.googleapis.com/auth/youtube
 """
-import json, os, re, sys, time, pathlib, urllib.request, urllib.parse, urllib.error
+import calendar, json, os, re, sys, time, pathlib, urllib.request, urllib.parse, urllib.error
 
 BASE  = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
 CREDS = BASE / "conf/yt_oauth.json"
@@ -257,6 +257,14 @@ def cmd_status(token=None, key=None):
         "stream_id": s["id"] if s else None,
         "ingest": (s or {}).get("status", {}).get("streamStatus"),
     }
+    # The streamer uses this to age the CURRENT broadcast correctly after a restart: its
+    # 8h rotation clock has to follow the broadcast, not the process.
+    if b and b.get("snippet", {}).get("actualStartTime"):
+        try:
+            out["started_epoch"] = int(calendar.timegm(time.strptime(
+                b["snippet"]["actualStartTime"][:19], "%Y-%m-%dT%H:%M:%S")))
+        except Exception:
+            pass
     age, left = token_age()
     if age is not None:
         out["token_age_days"] = round(age, 2)

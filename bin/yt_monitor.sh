@@ -42,14 +42,6 @@ yt_api_call() {
 # monitor died" - this file tells them apart.
 beat() { print -r -- "$(date +%s) ${1} ${2:-}" > "$HEARTBEAT" 2>/dev/null; }
 
-# Logs are the project's own bookkeeping and nobody reads them, so anything that genuinely
-# needs a person has to arrive where a person will see it.
-: ${NOTIFY:=yes}
-notify() {
-  [[ "$NOTIFY" == yes ]] || return 0
-  /usr/bin/osascript -e "display notification \"${2//\"/}\" with title \"YTLive\" subtitle \"${1//\"/}\"" 2>/dev/null
-}
-
 # stream.sh records every rotation and whether it needed the API. If native rotation has
 # been carrying the stream on its own, an expiring token costs the spare wheel, not the
 # stream - and is not worth interrupting anyone about.
@@ -90,7 +82,6 @@ bring_live() {
   mlog "ACTION ($why): the API could not bring the channel live: $out"
   mlog "        falling back to a rotation request; backing off ${ROTATE_REQUEST_BACKOFF}s"
   touch "$BASE/log/rotate_now"
-  notify "Channel is DARK" "The stream is offline and the API could not restart it. Open YouTube Studio and press Go Live."
   return 1
 }
 
@@ -104,7 +95,6 @@ check_token() {
     mlog "        Not alerting: the last $NATIVE_PROOF rotations were native, so the API is only a spare."
     return
   fi
-  notify "OAuth token expiring" "Native rotation is not proven yet, so the API fallback still matters. Run: bin/yt_api.py auth"
 }
 
 if [[ -z "${YT_CHANNEL:-}" && -z "${YT_WATCH_URL:-}" ]]; then
