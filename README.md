@@ -156,6 +156,11 @@ One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Dat
 auth` and paste the id and secret. It prints a short code to enter at google.com/device.
 No browser is needed on the streaming Mac, so this works fine over SSH.
 
+**Publish the OAuth consent screen ("In production").** While it sits in "Testing", Google
+expires the refresh token after 7 days - the stream would keep running but silently lose
+the ability to rotate, and the channel would go dark at the next 8h mark with no obvious
+cause. Publishing shows an "unverified app" warning you click past; the token then persists.
+
 Everything switches on automatically once `conf/yt_oauth.json` exists:
 - **stream.sh** calls `ensure-live` after every publisher start (cold start, watchdog
   restart, rotation), and `end` when rotating, so the VOD is saved properly.

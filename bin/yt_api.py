@@ -116,7 +116,12 @@ def cmd_auth():
     print("  2. Enable 'YouTube Data API v3' for the project")
     print("  3. Create Credentials -> OAuth client ID -> application type 'TVs and Limited"
           " Input devices'")
-    print("  4. Paste the client id and secret below\n")
+    print("  4. OAuth consent screen -> PUBLISH THE APP ('In production').")
+    print("     This matters: while the app is in 'Testing', Google expires the refresh")
+    print("     token after 7 DAYS and the stream would silently stop rotating. Publishing")
+    print("     shows an 'unverified app' warning you can click past - that is fine for a")
+    print("     personal app, and the token then does not expire.")
+    print("  5. Paste the client id and secret below\n")
     cid = input("client_id: ").strip()
     csec = input("client_secret: ").strip()
     if not cid or not csec:
