@@ -47,6 +47,14 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
+: ${NOTIFY:=yes}                  # macOS notification for things that need a HUMAN
+
+# Logs are for the project's own bookkeeping, not for reading. Anything that actually
+# requires a person has to arrive somewhere a person will see it.
+notify() {
+  [[ "$NOTIFY" == yes ]] || return 0
+  /usr/bin/osascript -e "display notification \"${2//\"/}\" with title \"YTLive\" subtitle \"${1//\"/}\"" 2>/dev/null
+}
 
 # Trim in place rather than rotating: ffmpeg holds an O_APPEND fd on publisher.log, so
 # renaming the file would leave it writing to an unlinked inode forever. Rewriting the same
@@ -87,7 +95,8 @@ check_monitor() {
     log "MONITOR: heartbeat is ${age}s old - watchdog is hung. Killing it so launchd restarts it."
     pkill -9 -f "zsh.*yt_monitor.sh" 2>/dev/null
   else
-    log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED. Fix: launchctl load -w ~/Library/LaunchAgents/com.user.cctv-monitor.plist"
+    log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED."
+    notify "Watchdog is not running" "launchctl load -w ~/Library/LaunchAgents/com.user.cctv-monitor.plist"
   fi
 }
 
@@ -182,7 +191,10 @@ start_publisher() {
   else
     BASE_IN=( -re -f lavfi -i "color=c=${FILLER_BG}:s=${SIZE}:r=${OUT_FPS}" )
   fi
-  "$FF" -y -hide_banner -loglevel warning -progress "$PROG" \
+  # -loglevel error, not warning: the MP3 concat input emits a "Resumed reading at pts N
+  # after a lag" warning every few seconds, which was 5700+ repeats and most of a 6 MB file.
+  # Nothing reads it and nobody reads it.
+  "$FF" -y -hide_banner -loglevel error -progress "$PROG" \
     "${BASE_IN[@]}" \
     -thread_queue_size 16384 -fflags +genpts+discardcorrupt -itsoffset "$CAM_DELAY" \
     -f mpegts -i "${UDP}?fifo_size=8000000&overrun_nonfatal=1&buffer_size=8388608&timeout=0" \
@@ -191,8 +203,9 @@ start_publisher() {
     -map "[v]" -map 2:a:0 "${VENC[@]}" "${AUD_OUT[@]}" \
     -f flv -flvflags no_duration_filesize "$DEST" 2>>"$BASE/log/publisher.log" &
   PUBPID=$!
-  # Whatever restarted us, YouTube needs time before the channel reads as live again.
-  hold_monitor "$ROTATE_GRACE"
+  # Whatever restarted us, YouTube needs time before the channel reads as live again - and
+  # long enough to cover the native wait plus an API fallback behind it.
+  hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
 }
 
 # --- 8-HOUR BROADCAST ROTATION ------------------------------------------------
@@ -211,7 +224,37 @@ ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 ))
 # ROTATE_GRACE must stay comfortably above the monitor's OFFLINE_SECONDS for that reason.
 : ${ROTATE_GRACE:=420}         # monitor stands down this long after ANY publisher start
 : ${ROTATE_MIN_INTERVAL:=900}  # hard floor between unscheduled rotations - the livelock backstop
+# NATIVE ROTATION. This channel's own broadcasts carry autoStart=true AND autoStop=true, so
+# stopping ingest makes YouTube close and archive the broadcast by itself (measured: 9s), and
+# resuming ingest makes it create and start the next one by itself (measured: a roll-over on
+# 2026-09-03 was created 14s after the previous ended and was live 2m16s later, with no API
+# in existence). That is how this stream ran for weeks. The API is a FALLBACK now, not the
+# mechanism - which also means an expired token costs the safety net, not the stream.
+: ${ROTATE_NATIVE_WAIT:=360}   # how long to let YouTube produce the next broadcast on its own
+: ${ROTATE_END_PATIENCE:=60}   # if YouTube has not closed the old broadcast by now, end it via API
+ROTATE_HISTORY="$BASE/log/rotation_history.log"
 LAST_ROTATE=0
+
+# One line per rotation. This is STATE, not a report: native_is_proven() reads it back to
+# decide whether the API is still load-bearing, which in turn decides whether an expiring
+# OAuth token is worth interrupting a human about.
+: ${NATIVE_PROOF:=3}           # consecutive native rotations before the API counts as spare
+record_rotation() {
+  print -r -- "$(date '+%Y-%m-%d %H:%M:%S') mode=$1 seconds_to_live=$2 broadcast=$3" >> "$ROTATE_HISTORY"
+  # keep it bounded without losing the recent record
+  if [[ -s "$ROTATE_HISTORY" ]] && (( $(grep -c '' "$ROTATE_HISTORY") > 200 )); then
+    tail -n 100 "$ROTATE_HISTORY" > "$ROTATE_HISTORY.t" && cat "$ROTATE_HISTORY.t" > "$ROTATE_HISTORY"
+    rm -f "$ROTATE_HISTORY.t"
+  fi
+}
+
+# Have the last NATIVE_PROOF rotations all worked without the API? If so, an expired token
+# costs the spare wheel, not the stream, and does not warrant waking anyone.
+native_is_proven() {
+  [[ -s "$ROTATE_HISTORY" ]] || return 1
+  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c '') == NATIVE_PROOF )) || return 1
+  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c 'mode=native') == NATIVE_PROOF ))
+}
 
 # The hold is a deadline, not a marker: if stream.sh dies mid-rotation the file expires on its
 # own instead of muting the monitor forever.
@@ -247,34 +290,53 @@ yt_live_id() { yt_live_state | awk '$1=="live"{print $2}'; }
 # background so it never blocks the publisher watchdog. Releases the monitor hold as soon as
 # the channel is genuinely live, and says something useful if it never is. Used by BOTH the
 # rotation path and the cold start - a cold start needs exactly the same warm-up window.
+# $1 = the broadcast id we are replacing (empty if none)
+# $2 = "rotation" for a real 8h rotation, "start" for a cold start or publisher restart.
+#      Only rotations are written to the rotation history: mixing restarts into it would
+#      corrupt the very record we are keeping to decide whether native rotation works.
 await_broadcast() {
-  local old_id="${1:-}"
-  ( local n deadline=$(( $(date +%s) + ROTATE_GRACE )) out
-    # With credentials, do not sit and hope: ask YouTube to create the broadcast. This is
-    # idempotent - if the channel is already live it changes nothing.
-    if yt_api_ready; then
-      out=$(yt_api_call ensure-live)
-      if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
-        n=$(print -r -- "$out" | sed -n 's/.*"broadcast_id": *"\([^"]*\)".*/\1/p')
-        log "LIVE: broadcast is up via API: ${n} - https://www.youtube.com/watch?v=${n}"
-        release_monitor
-        exit
-      fi
-      log "YT-API: could not bring the channel live: $out"
-    fi
+  local old_id="${1:-}" ctx="${2:-start}"
+  ( local n out took started deadline
+    started=$(date +%s)
+    # NATIVE FIRST - just wait and see. Do not call the API here: doing so was what hid the
+    # fact that YouTube creates the broadcast perfectly well on its own, and it made a
+    # 7-day OAuth token a hard dependency of a stream that never needed one.
+    deadline=$(( started + ROTATE_NATIVE_WAIT ))
     while (( $(date +%s) < deadline )); do
       sleep 20
       n=$(yt_live_id)
-      if [[ -n "$n" ]]; then
-        log "LIVE: broadcast is up: $n (previous was ${old_id:-<none>}) - https://www.youtube.com/watch?v=$n"
+      if [[ -n "$n" && "$n" != "$old_id" ]]; then
+        took=$(( $(date +%s) - started ))
+        if [[ "$ctx" == rotation ]]; then
+          log "LIVE (native): YouTube created and started $n by itself after ${took}s - https://www.youtube.com/watch?v=$n"
+          record_rotation native "$took" "$n"
+        else
+          log "LIVE: channel is live on $n after ${took}s - https://www.youtube.com/watch?v=$n"
+        fi
         release_monitor
         exit
       fi
     done
+    # Only now, having given YouTube a real chance, reach for the API.
+    took=$(( $(date +%s) - started ))
     if yt_api_ready; then
-      log "WARNING: no live broadcast ${ROTATE_GRACE}s after ingest started, and the API could not create one. See the YT-API line above for YouTube's own reason."
+      log "ROTATE: nothing live ${took}s after ingest resumed - falling back to the API"
+      out=$(yt_api_call ensure-live)
+      if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
+        n=$(print -r -- "$out" | sed -n 's/.*"broadcast_id": *"\([^"]*\)".*/\1/p')
+        took=$(( $(date +%s) - started ))
+        log "LIVE (API fallback): ${n} - https://www.youtube.com/watch?v=${n}"
+        [[ "$ctx" == rotation ]] && record_rotation api-fallback "$took" "$n"
+        release_monitor
+        exit
+      fi
+      log "YT-API: the fallback could not bring the channel live either: $out"
+      [[ "$ctx" == rotation ]] && record_rotation failed "$took" ""
+      notify "Channel is DARK" "Neither YouTube nor the API started a broadcast after a rotation. Open Studio and press Go Live."
     else
-      log "WARNING: no live broadcast ${ROTATE_GRACE}s after ingest started, though RTMP is connected. Pushing ingest cannot CREATE a broadcast on this channel - it never has. Either press Go Live in YouTube Studio, or configure the API once with: bin/yt_api.py auth"
+      log "WARNING: no live broadcast ${took}s after ingest resumed, and no API credentials to fall back on."
+      [[ "$ctx" == rotation ]] && record_rotation failed-no-api "$took" ""
+      notify "Channel is DARK" "YouTube did not start a broadcast and there are no API credentials. Open Studio and press Go Live."
     fi ) &
 }
 
@@ -293,57 +355,57 @@ rotate_broadcast() {
       return
     fi
   fi
-  # PREFLIGHT - the most important rule in this script.
-  # Never end a working broadcast unless we can start the next one. Rotating without that
-  # ability does not "restart" anything; it just takes the channel dark until a human
-  # presses Go Live. That is exactly what happened on 2026-09-05: the 09:17 rotation ended
-  # a healthy 8h broadcast and the channel stayed dark for 5 hours. Losing the >12h archive
-  # is a far smaller cost than losing the stream, so when in doubt we do NOT rotate.
-  if ! yt_api_ready; then
-    log "ROTATE ($why): SKIPPED - no YouTube API credentials, so nothing here can create the next broadcast. Staying live on the current one. Run bin/yt_api.py auth to enable rotation."
-    rm -f "$ROTATE_NOW"
-    BROADCAST_STARTED=$(date +%s)   # do not re-ask every 5s
-    return
-  fi
+  # PREFLIGHT. This used to REFUSE to rotate without API credentials, on the belief that
+  # only the API could create the next broadcast. That belief was wrong - YouTube does it
+  # itself - so a missing or expired token no longer blocks a rotation. It only costs the
+  # fallback, which is reported rather than fatal.
   local pre
-  pre=$(yt_api_call status)
-  # The token countdown lives in this output and used to be thrown away here, so the one
-  # warning designed to give days of notice reached no log at all.
-  if print -r -- "$pre" | grep -q '"token_warning"'; then
-    log "TOKEN WARNING: $pre"
-    log "        Fix it with: $BASE/bin/yt_api.py auth"
-  fi
-  if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
-    log "ROTATE ($why): SKIPPED - the API cannot talk to YouTube, so the next broadcast could not be created. Staying live. YouTube said: $pre"
-    rm -f "$ROTATE_NOW"
-    BROADCAST_STARTED=$(date +%s)
-    return
+  if ! yt_api_ready; then
+    log "ROTATE ($why): no API credentials - rotating natively, with no fallback if YouTube does not create the next broadcast."
+  else
+    pre=$(yt_api_call status)
+    # The token countdown lives in this output and used to be thrown away here, so the one
+    # warning designed to give days of notice reached no log at all.
+    if print -r -- "$pre" | grep -q '"token_warning"'; then
+      log "TOKEN WARNING: $pre"
+      if native_is_proven; then
+        log "        Not alerting: the last $NATIVE_PROOF rotations were native, so the API is only a spare."
+      else
+        notify "OAuth token expiring" "Native rotation is not proven yet, so the API fallback still matters. Run: bin/yt_api.py auth"
+      fi
+    fi
+    if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
+      log "ROTATE ($why): the API cannot talk to YouTube ($pre). Rotating natively anyway - the fallback is simply unavailable."
+    fi
   fi
 
   old_id=$(yt_live_id)
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
-  # Ending the broadcast explicitly is what actually gets the VOD saved. Dropping ingest
-  # only makes YouTube eventually time the broadcast out.
-  if yt_api_ready; then
-    log "ROTATE: ending broadcast via API: $(yt_api_call end)"
-  fi
   # Cover the whole rotation AND the warm-up that follows it in one hold.
-  hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_GRACE ))
+  hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_NATIVE_WAIT + 120 ))
   kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
+  # Let YouTube close the broadcast itself - that is what saves the VOD, and with
+  # autoStop=true it takes seconds. Only if it has NOT done so (an older broadcast created
+  # by this script with autoStop off, say) do we end it explicitly.
+  local ended=0
   while (( waited < ROTATE_MAX_WAIT )); do
     state="${$(yt_live_state)%% *}"
     [[ "$state" == "offline" ]] && break
+    if (( waited >= ROTATE_END_PATIENCE )) && (( ended == 0 )) && yt_api_ready; then
+      log "ROTATE: YouTube still has it live after ${waited}s (autoStop off?) - ending it via the API: $(yt_api_call end)"
+      ended=1
+    fi
     sleep 15; waited=$(( waited + 15 ))
   done
-  log "ROTATE: YouTube state=${state} after ${waited}s, waiting ${ROTATE_GAP}s more, then starting a new broadcast"
+  log "ROTATE: YouTube state=${state} after ${waited}s, waiting ${ROTATE_GAP}s more, then resuming ingest"
   sleep "$ROTATE_GAP"
   start_publisher
   BROADCAST_STARTED=$(date +%s)
   LAST_ROTATE=$BROADCAST_STARTED
   rm -f "$ROTATE_NOW"
-  hold_monitor "$ROTATE_GRACE"
-  log "ROTATE: publisher back up (pid $PUBPID); monitor holds off ${ROTATE_GRACE}s while YouTube spins up; next rotation in ${ROTATE_HOURS:-8}h"
-  await_broadcast "$old_id"
+  hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
+  log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_HOURS:-8}h"
+  await_broadcast "$old_id" rotation
 }
 
 log "starting: MODE=$MODE ${OUT_FPS}fps ${ENC_BITRATE} cam=$CAM_URL audio=${AAC_ENC}@${AUD_BITRATE} (cctv mic NOT streamed)"
@@ -357,7 +419,7 @@ start_publisher
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_HOURS:-8}h; monitor holds off ${ROTATE_GRACE}s"
-await_broadcast ""
+await_broadcast "" start
 
 # Publisher watchdog: only a genuinely stuck publisher warrants a YouTube reconnect.
 last=""; stuck=0; housekeep_in=0
@@ -378,7 +440,7 @@ while true; do
   if ! kill -0 "$PUBPID" 2>/dev/null; then
     wait "$PUBPID" 2>/dev/null; local rc=$?
     log "PUBLISHER died rc=$rc - restarting (this does drop the YouTube session briefly)"
-    start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast ""; last=""; stuck=0; continue
+    start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0; continue
   fi
   cur=$(grep -a '^frame=' "$PROG" 2>/dev/null | tail -1 | cut -d= -f2)
   if [[ -n "$cur" && "$cur" != "$last" ]]; then last="$cur"; stuck=0
@@ -387,7 +449,7 @@ while true; do
     if (( stuck >= STALL_TIMEOUT )); then
       log "WATCHDOG: publisher output frozen ${stuck}s - restarting publisher"
       kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
-      start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast ""; last=""; stuck=0
+      start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0
     fi
   fi
 done

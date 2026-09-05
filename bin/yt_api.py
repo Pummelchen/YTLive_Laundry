@@ -319,13 +319,14 @@ def _create_and_bind(token, stream_id):
                           "selfDeclaredMadeForKids": False,
                       },
                       "contentDetails": {
-                          # enableAutoStart is the setting the stream-key trick was silently
-                          # missing: with it, YouTube puts the broadcast live by itself as
-                          # soon as ingest arrives, which is what this project always assumed
-                          # happened. enableAutoStop stays off so an ingest blip cannot end
-                          # the broadcast and strand the channel.
+                          # Match what YouTube itself puts on this channel's broadcasts:
+                          # autoStart so ingest brings it live, autoStop so stopping ingest
+                          # closes and ARCHIVES it. autoStop was off here, which broke the
+                          # native rotation - stopping ingest left the broadcast open, so
+                          # only an API call could ever end it. Brief publisher restarts do
+                          # not trip it: 15 of them on 2026-09-03 ended nothing.
                           "enableAutoStart": True,
-                          "enableAutoStop": False,
+                          "enableAutoStop": True,
                           "enableDvr": True,
                           "recordFromStart": True,
                       },
