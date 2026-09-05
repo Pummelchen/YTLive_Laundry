@@ -227,6 +227,7 @@ ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 ))
 : ${ROTATE_END_PATIENCE:=60}   # if YouTube has not closed the old broadcast by now, end it via API
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
 BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
+VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", one line per broadcast
 LAST_ROTATE=0
 
 # The rotation clock has to track the BROADCAST, not this script. It was set to "now" at
@@ -269,12 +270,53 @@ refresh_broadcast_clock() {
 # OAuth token is worth interrupting a human about.
 : ${NATIVE_PROOF:=3}           # consecutive native rotations before the API counts as spare
 record_rotation() {
-  print -r -- "$(date '+%Y-%m-%d %H:%M:%S') mode=$1 seconds_to_live=$2 broadcast=$3" >> "$ROTATE_HISTORY"
+  print -r -- "$(date '+%Y-%m-%d %H:%M:%S') mode=$1 seconds_to_live=$2 broadcast=$3 ended=${4:-}" >> "$ROTATE_HISTORY"
   # keep it bounded without losing the recent record
   if [[ -s "$ROTATE_HISTORY" ]] && (( $(grep -c '' "$ROTATE_HISTORY") > 200 )); then
     tail -n 100 "$ROTATE_HISTORY" > "$ROTATE_HISTORY.t" && cat "$ROTATE_HISTORY.t" > "$ROTATE_HISTORY"
     rm -f "$ROTATE_HISTORY.t"
   fi
+}
+
+# THE POINT OF THE WHOLE ROTATION is a recording you can watch later, and a rotation can
+# look perfectly successful while producing nothing reviewable - past 12h YouTube answers
+# "This live stream recording is not available", as it does for this channel's 26.1h and
+# 81.5h streams. So verify it, and do it with yt-dlp rather than the API so the check
+# still works after the OAuth token expires.
+#
+# Checked one rotation late, on purpose: an 8h stream needs time to process, and by the
+# next rotation it has had ~8 hours of it.
+vod_duration() {          # prints seconds if a playable recording exists, else fails
+  local out
+  out=$("$YTDLP" --no-warnings --skip-download --print "%(duration)s" \
+        "https://www.youtube.com/watch?v=$1" 2>/dev/null | head -1)
+  out=${out%%.*}
+  [[ "$out" == <-> ]] && (( out > 0 )) && { print -r -- "$out"; return 0; }
+  return 1
+}
+
+verify_pending_vods() {
+  [[ -s "$ROTATE_HISTORY" ]] || return 0
+  local id dur now
+  now=$(date '+%Y-%m-%d %H:%M:%S')
+  for id in ${(f)"$(sed -n 's/.*ended=\([A-Za-z0-9_-][A-Za-z0-9_-]*\).*/\1/p' "$ROTATE_HISTORY" | sort -u)"}; do
+    [[ -n "$id" ]] || continue
+    # only settled verdicts are final; a MISSING one is re-checked in case it was still
+    # processing when we last looked
+    grep -q "^$id ok " "$VODSTATE" 2>/dev/null && continue
+    if dur=$(vod_duration "$id"); then
+      print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+      log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)"
+    else
+      print -r -- "$id MISSING $now -" >> "$VODSTATE.new"
+      log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late."
+    fi
+  done
+  [[ -f "$VODSTATE.new" ]] || return 0
+  # one line per broadcast, newest verdict wins, bounded
+  { cat "$VODSTATE.new"; [[ -f "$VODSTATE" ]] && cat "$VODSTATE"; } 2>/dev/null \
+    | awk '!seen[$1]++' | head -50 > "$VODSTATE.t"
+  mv -f "$VODSTATE.t" "$VODSTATE"; rm -f "$VODSTATE.new"
 }
 
 # Have the last NATIVE_PROOF rotations all worked without the API? If so, an expired token
@@ -338,7 +380,7 @@ await_broadcast() {
         took=$(( $(date +%s) - started ))
         if [[ "$ctx" == rotation ]]; then
           log "LIVE (native): YouTube created and started $n by itself after ${took}s - https://www.youtube.com/watch?v=$n"
-          record_rotation native "$took" "$n"
+          record_rotation native "$took" "$n" "$old_id"
         else
           log "LIVE: channel is live on $n after ${took}s - https://www.youtube.com/watch?v=$n"
         fi
@@ -355,15 +397,15 @@ await_broadcast() {
         n=$(print -r -- "$out" | sed -n 's/.*"broadcast_id": *"\([^"]*\)".*/\1/p')
         took=$(( $(date +%s) - started ))
         log "LIVE (API fallback): ${n} - https://www.youtube.com/watch?v=${n}"
-        [[ "$ctx" == rotation ]] && record_rotation api-fallback "$took" "$n"
+        [[ "$ctx" == rotation ]] && record_rotation api-fallback "$took" "$n" "$old_id"
         release_monitor
         exit
       fi
       log "YT-API: the fallback could not bring the channel live either: $out"
-      [[ "$ctx" == rotation ]] && record_rotation failed "$took" ""
+      [[ "$ctx" == rotation ]] && record_rotation failed "$took" "" "$old_id"
     else
       log "WARNING: no live broadcast ${took}s after ingest resumed, and no API credentials to fall back on."
-      [[ "$ctx" == rotation ]] && record_rotation failed-no-api "$took" ""
+      [[ "$ctx" == rotation ]] && record_rotation failed-no-api "$took" "" "$old_id"
     fi ) &
 }
 
@@ -404,6 +446,10 @@ rotate_broadcast() {
       log "ROTATE ($why): the API cannot talk to YouTube ($pre). Rotating natively anyway - the fallback is simply unavailable."
     fi
   fi
+
+  # Before cutting again, confirm the recording the LAST cut was supposed to produce
+  # actually exists. Eight hours is ample processing time.
+  verify_pending_vods
 
   old_id=$(yt_live_id)
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
@@ -446,6 +492,7 @@ start_publisher
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's
+verify_pending_vods         # catch up on any recording we have not confirmed yet
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_HOURS:-8}h; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 

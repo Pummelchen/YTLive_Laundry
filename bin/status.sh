@@ -85,3 +85,14 @@ if [[ -s "$RH" ]]; then
 else
   print "  (no rotation has run yet)"
 fi
+
+print "\n=== recordings (the whole point of cutting at 8h) ==="
+VS="$BASE/log/vod_status"
+if [[ -s "$VS" ]]; then
+  head -5 "$VS" | sed 's/^/  /'
+  good=$(grep -c ' ok ' "$VS"); miss=$(grep -c ' MISSING ' "$VS")
+  (( miss == 0 )) && ok "${good} recordings saved and reviewable, none lost" \
+                  || bad "${miss} recording(s) NOT reviewable - the cut is happening too late"
+else
+  print "  (nothing verified yet - the first check runs at the rotation after next)"
+fi
