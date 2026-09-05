@@ -105,10 +105,12 @@ import os
 tp = [c for c in ("conf/thumbnail.png","conf/thumbnail.jpg")
       if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(sys.argv[1])), c))]
 print(f"  thumbnail {tp[0] if tp else 'NONE - run: bin/yt_api.py thumbnail <file>'}")
-for name,m in (d.get("manual") or {}).items():
-    state = "wanted ON" if m.get("desired") else "wanted OFF"
-    print(f"  MANUAL: {name} - {state}, NOT settable or readable via the API")
-    print(f"          set it at: {m.get('where')}")
+soft = [n for n,m in (d.get("manual") or {}).items() if m.get("severity")=="soft"]
+hard = [n for n,m in (d.get("manual") or {}).items() if m.get("severity")!="soft"]
+if soft: print(f"  soft (not chased): {', '.join(soft)}")
+for name in hard:
+    m = d["manual"][name]
+    print(f"  MANUAL: {name} - not settable via the API, set it at: {m.get('where')}")
 PY
 else
   print "  (no reference captured yet - run: bin/yt_api.py capture)"

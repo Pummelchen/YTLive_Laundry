@@ -76,10 +76,11 @@
   "manual": {
     "dualStream": {
       "desired": true,
+      "severity": "soft",
       "settable_via_api": false,
       "verifiable_via_api": false,
       "where": "YouTube Studio > Stream settings > Dual stream toggle",
-      "note": "Checked against the youtube/v3 discovery document and every part of the liveBroadcasts and liveStreams resources on 2026-09-06: no field for it exists anywhere in the API. It can be neither set nor read programmatically, so it must be toggled in Studio by hand and confirmed by eye. Whether it survives an 8h rotation is unknown - the rotation makes a new broadcast."
+      "note": "Soft issue, not worth chasing. No field for it exists anywhere in youtube/v3 (checked against the discovery document and every part of liveBroadcasts and liveStreams), so it can be neither set nor read here. It is also only toggleable while a stream is in its starting phase, not once running - which on an 8h rotation means a few unattended minutes every cycle. Treat it as off and move on."
     }
   },
   "_note": "Reference configuration for every new broadcast. stream.sh captures from the outgoing broadcast at each rotation and enforces this onto the new one. Anything under 'manual' cannot be automated - see each note.",
