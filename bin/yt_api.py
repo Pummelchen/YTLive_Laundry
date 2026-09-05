@@ -17,6 +17,7 @@ USAGE
     yt_api.py status          print the current broadcast state as JSON
     yt_api.py ensure-live     THE ONE THAT MATTERS: guarantee a live broadcast exists
     yt_api.py end             end the active broadcast (so YouTube saves the VOD)
+    yt_api.py prepare         create+bind a broadcast, ready for ingest to start it
     yt_api.py token           refresh-token expiry check, offline (0 ok, 1 soon, 2 expired)
 
 ensure-live is idempotent. If the channel is already live it does nothing and exits 0.
@@ -335,6 +336,12 @@ def _create_and_bind(token, stream_id):
                           # not trip it: 15 of them on 2026-09-03 ended nothing.
                           "enableAutoStart": True,
                           "enableAutoStop": True,
+                          # With a monitor stream the broadcast has to go
+                          # ready -> testing -> live, and BOTH transitions were refused on
+                          # 2026-09-05 while the stream was active and healthy. There is no
+                          # human previewing a 24/7 CCTV feed, so switch the stage off.
+                          "monitorStream": {"enableMonitorStream": False,
+                                            "broadcastStreamDelayMs": 0},
                           "enableDvr": True,
                           "recordFromStart": True,
                       },
@@ -383,6 +390,49 @@ def _await_live(token, stream_id, bid, action, swept):
         out["swept"] = swept
     print(json.dumps(out))
     return 0 if transitioned else 1
+
+
+def cmd_prepare(key):
+    """Ensure a bound broadcast exists and is READY - do not wait for it to go live.
+
+    YouTube starts an autoStart broadcast when ingest ARRIVES at the stream it is bound to.
+    If ingest is already flowing when the bind happens, that arrival has already gone by and
+    the broadcast sits in "ready" indefinitely; a manual transition is then refused with
+    invalidTransition precisely because the broadcast is set to auto-start. Proven on
+    2026-09-05: a bound broadcast sat "ready" for 17 minutes against an active, healthy
+    stream, and went live 30 seconds after the publisher was bounced.
+
+    So the broadcast has to exist and be bound BEFORE ingest starts. That is what this is
+    for: the streamer calls it during the rotation gap, then starts pushing.
+    """
+    token = access_token()
+    b = active_broadcast(token)
+    if b:
+        print(json.dumps({"status": "LIVE", "broadcast_id": b["id"], "action": "none",
+                          "url": f"https://www.youtube.com/watch?v={b['id']}"}))
+        return 0
+    stream = stream_for_key(token, key)
+    if not stream:
+        die("no liveStream on this channel uses the configured YT_KEY. Check YT_KEY in "
+            "conf/stream.env against Studio -> Go Live -> Stream key.")
+    reuse, stale = pending_broadcasts(token, stream["id"])
+    swept = []
+    for sid in stale:
+        try:
+            api("DELETE", "liveBroadcasts", token, {"id": sid}); swept.append(sid)
+        except RuntimeError:
+            pass
+    if reuse:
+        bid, action = reuse["id"], "reused"
+    else:
+        bid, action = _create_and_bind(token, stream["id"]), "created"
+    out = {"status": "READY", "broadcast_id": bid, "action": action,
+           "url": f"https://www.youtube.com/watch?v={bid}",
+           "msg": "bound and waiting for ingest to arrive - start the publisher now"}
+    if swept:
+        out["swept"] = swept
+    print(json.dumps(out))
+    return 0
 
 
 def cmd_end():
@@ -444,7 +494,9 @@ def main():
             return cmd_end()
         if cmd == "token":
             return cmd_token()
-        die(f"unknown command '{cmd}' - use: auth | status | ensure-live | end | token")
+        if cmd == "prepare":
+            return cmd_prepare(read_key())
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

@@ -172,7 +172,22 @@ reader_loop() {
 }
 
 # --- PUBLISHER: local UDP + music -> YouTube, stays up ----------------------
+# YouTube starts an autoStart broadcast when ingest ARRIVES at the stream it is bound to.
+# Bind after ingest is already flowing and that arrival has gone by: the broadcast sits in
+# "ready" forever, and a manual transition is refused (invalidTransition) precisely BECAUSE
+# it is set to auto-start. Proven the hard way on 2026-09-05 - the rotation resumed ingest
+# and only created the broadcast 6 minutes later, so the channel sat dark for 19 minutes,
+# then went live 30s after the publisher was bounced.
+#
+# Hence: the broadcast must exist and be bound BEFORE ffmpeg starts pushing. Every ingest
+# start goes through start_publisher, so this is the one place that guarantees the order.
+prepare_broadcast() {
+  yt_api_ready || { log "PREPARE: no API credentials - relying on YouTube to create a broadcast by itself"; return 0; }
+  log "PREPARE: $(yt_api_call prepare)"
+}
+
 start_publisher() {
+  prepare_broadcast
   : > "$PROG"
   # Refresh the filler still with one quick grab from the camera. Done here (not as a
   # second output on the publisher) because a second output stalls the whole filter graph.
@@ -388,7 +403,24 @@ await_broadcast() {
         exit
       fi
     done
-    # Only now, having given YouTube a real chance, reach for the API.
+    # The broadcast was bound before ingest started, so autoStart should already have taken
+    # it live. If it has not, bounce the publisher once: a fresh ingest arrival is the event
+    # YouTube actually reacts to, and it is what recovered the channel on 2026-09-05.
+    took=$(( $(date +%s) - started ))
+    if [[ -n "$PUBPID" ]] && kill -0 "$PUBPID" 2>/dev/null; then
+      log "ROTATE: nothing live after ${took}s - bouncing ingest so YouTube sees a fresh arrival"
+      kill -9 "$PUBPID" 2>/dev/null
+      # the publisher watchdog restarts it within 5s, which re-runs prepare_broadcast
+      sleep 60
+      n=$(yt_live_id)
+      if [[ -n "$n" && "$n" != "$old_id" ]]; then
+        took=$(( $(date +%s) - started ))
+        log "LIVE (after ingest bounce): $n after ${took}s - https://www.youtube.com/watch?v=$n"
+        [[ "$ctx" == rotation ]] && record_rotation bounce "$took" "$n" "$old_id"
+        release_monitor
+        exit
+      fi
+    fi
     took=$(( $(date +%s) - started ))
     if yt_api_ready; then
       log "ROTATE: nothing live ${took}s after ingest resumed - falling back to the API"
