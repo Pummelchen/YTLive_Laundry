@@ -26,6 +26,14 @@ YT_OAUTH="$BASE/conf/yt_oauth.json"
 # conf/yt_oauth.json exists, so the streamer keeps working unconfigured - just without the
 # ability to bring the channel live on its own.
 yt_api_ready() { [[ -s "$YT_OAUTH" && -x "$YT_API" ]] }
+# conf/stream.env is sourced, not exported, so settings there are invisible to a subprocess
+# unless passed explicitly. Route every API call through here so none of them get forgotten.
+yt_api_call() {
+  BASE="$BASE" \
+  YT_TITLE_FMT="${YT_TITLE_FMT:-}" \
+  YT_PRIVACY="${YT_PRIVACY:-public}" \
+  python3 "$YT_API" "$@" 2>&1
+}
 FF="$HOME/.local/bin/ffmpeg"
 source "$CONF"
 
@@ -193,7 +201,7 @@ await_broadcast() {
     # With credentials, do not sit and hope: ask YouTube to create the broadcast. This is
     # idempotent - if the channel is already live it changes nothing.
     if yt_api_ready; then
-      out=$(BASE="$BASE" python3 "$YT_API" ensure-live 2>&1)
+      out=$(yt_api_call ensure-live)
       if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
         n=$(print -r -- "$out" | sed -n 's/.*"broadcast_id": *"\([^"]*\)".*/\1/p')
         log "LIVE: broadcast is up via API: ${n} - https://www.youtube.com/watch?v=${n}"
@@ -246,7 +254,7 @@ rotate_broadcast() {
     return
   fi
   local pre
-  pre=$(BASE="$BASE" python3 "$YT_API" status 2>&1)
+  pre=$(yt_api_call status)
   if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
     log "ROTATE ($why): SKIPPED - the API cannot talk to YouTube, so the next broadcast could not be created. Staying live. YouTube said: $pre"
     rm -f "$ROTATE_NOW"
@@ -259,7 +267,7 @@ rotate_broadcast() {
   # Ending the broadcast explicitly is what actually gets the VOD saved. Dropping ingest
   # only makes YouTube eventually time the broadcast out.
   if yt_api_ready; then
-    log "ROTATE: ending broadcast via API: $(BASE="$BASE" python3 "$YT_API" end 2>&1)"
+    log "ROTATE: ending broadcast via API: $(yt_api_call end)"
   fi
   # Cover the whole rotation AND the warm-up that follows it in one hold.
   hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_GRACE ))

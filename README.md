@@ -161,6 +161,18 @@ expires the refresh token after 7 days - the stream would keep running but silen
 the ability to rotate, and the channel would go dark at the next 8h mark with no obvious
 cause. Publishing shows an "unverified app" warning you click past; the token then persists.
 
+**Verified end to end on 2026-09-05 15:01-15:03** - a forced rotation ran the whole path:
+
+    15:01:54  ROTATE (manual): stopping ingest, closing dcw5E1qrp8I
+    15:01:56  ending broadcast via API: {"status":"ENDED","broadcast_id":"dcw5E1qrp8I"}
+    15:02:15  YouTube state=offline after 15s
+    15:03:22  publisher back up
+    15:03:46  LIVE: broadcast is up via API: tzlsZ_Nv6VE
+
+110s of downtime, old broadcast saved as a 41:42 VOD, new one live with a new URL. Note
+"offline after 15s" - a real confirmation from YouTube, where the pre-API code always
+printed "0s" because it could not tell "offline" from "the lookup failed".
+
 Everything switches on automatically once `conf/yt_oauth.json` exists:
 - **stream.sh** calls `ensure-live` after every publisher start (cold start, watchdog
   restart, rotation), and `end` when rotating, so the VOD is saved properly.
@@ -173,8 +185,13 @@ can bring the channel live.
 always missing - with it YouTube puts the broadcast live by itself as soon as ingest lands.
 `enableAutoStop` is left OFF so a brief ingest blip cannot end the broadcast.
 
+Set YT_TITLE_FMT in conf/stream.env or every rotation loses the channel's hashtags -
+conf/stream.env is *sourced*, not exported, so stream.sh passes it through explicitly via
+yt_api_call(). YT_PRIVACY defaults to public.
+
 conf/yt_oauth.json is gitignored even though the repo is private: a refresh token grants
 ongoing control of the channel and would outlive any later decision to share the repo.
+conf/stream.env is gitignored for the same reason - it holds the stream key.
 
 ## Installing on another Mac  (install.sh)
     # on the SOURCE machine (this one):

@@ -1,10 +1,19 @@
-# Private repo: everything else is tracked, including MP3/, log/ and conf/stream.env.
-# conf/stream.env holds the live YouTube stream key - anyone with access to this repo can
-# push to the channel. Rotate the key in YouTube Studio if repo access ever changes.
+# Private repo, so the bulky and machine-specific parts ARE tracked: MP3/, log/,
+# conf/playlist.txt, conf/golden.jpg. Only live credentials are kept out.
 
-# OAuth refresh token for the YouTube Live Streaming API. This one is NEVER committed even
-# in a private repo: it grants ongoing control of the channel, not just the ability to push
-# pixels at it, and a refresh token in git history outlives any decision to share the repo.
+# The YouTube stream key. Anyone holding it can push to the channel. It was never
+# committed; this rule makes that deliberate rather than merely accidental, so a future
+# `git add -A` cannot sweep it in. conf/stream.env.example is the tracked template.
+conf/stream.env
+conf/stream.env.bak-*
+
+# OAuth refresh token for the Live Streaming API. Never committed even in a private repo:
+# it grants ongoing CONTROL of the channel, not just the ability to push pixels at it, and
+# a refresh token in git history outlives any later decision to share the repo.
 conf/yt_oauth.json
 
 .DS_Store
+
+# Python bytecode from running the scripts
+__pycache__/
+*.pyc

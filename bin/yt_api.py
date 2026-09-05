@@ -235,7 +235,10 @@ def cmd_ensure_live(key):
         die("no liveStream on this channel uses the configured YT_KEY. Check YT_KEY in "
             "conf/stream.env against Studio -> Go Live -> Stream key.")
 
-    title = time.strftime(os.environ.get("YT_TITLE_FMT", "Ternak Laundry Bengkong - %Y-%m-%d %H:%M"))
+    # `or` not a get() default: an empty YT_TITLE_FMT would otherwise make an empty title,
+    # which YouTube rejects.
+    title = time.strftime(os.environ.get("YT_TITLE_FMT")
+                          or "Ternak Laundry Bengkong - %Y-%m-%d %H:%M")
     created = api("POST", "liveBroadcasts", token,
                   {"part": "snippet,status,contentDetails"},
                   {

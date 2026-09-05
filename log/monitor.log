@@ -2164,3 +2164,77 @@
 2026-09-05 13:31:59 check 29/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
 2026-09-05 13:32:16 check 30/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
 2026-09-05 13:32:16 ACTION: channel OFFLINE for 30 checks - requesting a broadcast rotation (stop, gap, start); backing off 900s
+2026-09-05 13:47:17 golden reference refreshed from latest publisher start frame
+2026-09-05 13:47:28 check 1/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:48:14 check 2/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:48:47 check 3/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:49:16 check 4/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:49:37 check 5/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:49:57 check 6/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:50:16 check 7/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:50:35 check 8/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:50:56 check 9/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:51:16 check 10/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:51:35 check 11/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:51:56 check 12/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:52:17 check 13/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:52:36 check 14/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:52:54 check 15/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:53:13 check 16/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:53:31 check 17/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:53:48 check 18/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:54:05 check 19/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:54:23 check 20/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:54:40 check 21/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:54:58 check 22/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:55:15 check 23/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:55:32 check 24/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:55:50 check 25/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:56:10 check 26/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:56:30 check 27/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:56:49 check 28/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:57:09 check 29/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:57:27 check 30/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 13:57:27 ACTION: channel OFFLINE for 30 checks - requesting a broadcast rotation (stop, gap, start); backing off 900s
+2026-09-05 14:02:36 monitor start: @ternaklaundrybengkong every 10s, act after 6 bad checks / 30 OFFLINE checks (restart)
+2026-09-05 14:02:36 golden reference refreshed from latest publisher start frame
+2026-09-05 14:02:42 check 1/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:09:44 golden reference refreshed from latest publisher start frame
+2026-09-05 14:09:50 check 1/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:10:08 check 2/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:10:25 check 3/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:10:42 check 4/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:10:59 check 5/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:11:17 check 6/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:11:33 check 7/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:11:50 check 8/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:12:08 check 9/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:12:25 check 10/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:12:43 check 11/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:12:59 check 12/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:13:17 check 13/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:13:35 check 14/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:13:54 check 15/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:14:12 check 16/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:14:31 check 17/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:14:50 check 18/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:15:09 check 19/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:15:27 check 20/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:15:46 check 21/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:16:06 check 22/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:16:30 check 23/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:16:51 check 24/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:17:14 check 25/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:17:32 check 26/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:17:49 check 27/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:18:06 check 28/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:18:25 check 29/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:18:42 check 30/30: {"status": "OFFLINE", "msg": "no active live broadcast on the channel"}
+2026-09-05 14:18:42 ACTION: channel OFFLINE for 30 checks - requesting a broadcast rotation (stop, gap, start); backing off 900s
+2026-09-05 14:20:43 monitor start: @ternaklaundrybengkong every 10s, act after 6 bad checks / 30 OFFLINE checks (log)
+2026-09-05 14:20:44 golden reference refreshed from latest publisher start frame
+2026-09-05 14:46:08 monitor start: @ternaklaundrybengkong every 10s, act after 6 bad checks / 30 OFFLINE checks (log)
+2026-09-05 14:46:41 golden reference refreshed from latest publisher start frame
+2026-09-05 15:03:55 golden reference refreshed from latest publisher start frame
+2026-09-05 15:04:20 monitor start: @ternaklaundrybengkong every 10s, act after 6 bad checks / 30 OFFLINE checks (restart)
+2026-09-05 15:06:43 golden reference refreshed from latest publisher start frame

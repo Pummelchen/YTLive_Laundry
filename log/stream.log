@@ -1702,3 +1702,30 @@
 2026-09-05 13:32:23 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
 2026-09-05 13:33:30 ROTATE: publisher back up (pid 13372); monitor holds off 420s while YouTube spins up; next rotation in 8h
 2026-09-05 13:40:45 ROTATE: WARNING - YouTube still shows no live broadcast 420s after ingest resumed. Not rotating again for 900s. If this persists the channel needs Go Live pressed in YouTube Studio - restarting ingest cannot create a broadcast.
+2026-09-05 13:57:29 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 13:57:30 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 13:58:34 ROTATE: publisher back up (pid 16862); monitor holds off 420s while YouTube spins up; next rotation in 8h
+2026-09-05 14:02:36 audio: MP3 playlist (25 tracks, looping)
+2026-09-05 14:02:36 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-09-05 14:02:36 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-09-05 14:02:37 publisher up (pid 17519); broadcast rotation every 8h; monitor holds off 420s
+2026-09-05 14:09:52 WARNING: no live broadcast 420s after ingest started, though RTMP is connected. Pushing ingest cannot CREATE a broadcast on this channel - it never has. Either press Go Live in YouTube Studio, or configure the API once with: bin/yt_api.py auth
+2026-09-05 14:18:47 ROTATE (manual): stopping ingest so YouTube closes broadcast <none> and saves it
+2026-09-05 14:18:48 ROTATE: YouTube state=offline after 0s, waiting 60s more, then starting a new broadcast
+2026-09-05 14:19:54 ROTATE: publisher back up (pid 20095); monitor holds off 420s while YouTube spins up; next rotation in 8h
+2026-09-05 14:20:39 LIVE: broadcast is up: dcw5E1qrp8I (previous was <none>) - https://www.youtube.com/watch?v=dcw5E1qrp8I
+2026-09-05 14:46:08 audio: MP3 playlist (25 tracks, looping)
+2026-09-05 14:46:08 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-09-05 14:46:08 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-09-05 14:46:10 publisher up (pid 23262); broadcast rotation every 8h; monitor holds off 420s
+2026-09-05 14:46:34 LIVE: broadcast is up: dcw5E1qrp8I (previous was <none>) - https://www.youtube.com/watch?v=dcw5E1qrp8I
+2026-09-05 15:01:54 ROTATE (manual): stopping ingest so YouTube closes broadcast dcw5E1qrp8I and saves it
+2026-09-05 15:01:56 ROTATE: ending broadcast via API: {"status": "ENDED", "broadcast_id": "dcw5E1qrp8I", "url": "https://www.youtube.com/watch?v=dcw5E1qrp8I"}
+2026-09-05 15:02:15 ROTATE: YouTube state=offline after 15s, waiting 60s more, then starting a new broadcast
+2026-09-05 15:03:22 ROTATE: publisher back up (pid 25428); monitor holds off 420s while YouTube spins up; next rotation in 8h
+2026-09-05 15:03:46 LIVE: broadcast is up via API: tzlsZ_Nv6VE - https://www.youtube.com/watch?v=tzlsZ_Nv6VE
+2026-09-05 15:06:23 audio: MP3 playlist (25 tracks, looping)
+2026-09-05 15:06:23 starting: MODE=crop 30fps 6800k cam=rtsp://192.168.1.3/live/ch00_0 audio=aac@384k (cctv mic NOT streamed)
+2026-09-05 15:06:23 two-process: reader -> udp://127.0.0.1:5000 -> publisher -> youtube; filters: crop=1920:1080:0:0,hqdn3d=3:2:4:4,unsharp=5:5:0.7:5:5:0,eq=saturation=1.05
+2026-09-05 15:06:30 publisher up (pid 25909); broadcast rotation every 8h; monitor holds off 420s
+2026-09-05 15:06:31 LIVE: broadcast is up via API: tzlsZ_Nv6VE - https://www.youtube.com/watch?v=tzlsZ_Nv6VE

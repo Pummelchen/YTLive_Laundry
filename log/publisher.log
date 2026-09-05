@@ -73575,3 +73575,1513 @@
 [aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 748.336 with rate 1.050 after a lag of 0.318s
 [aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 770.416 with rate 1.050 after a lag of 0.339s
 [aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 779.824 with rate 1.050 after a lag of 0.332s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 793.792 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 802.336 with rate 1.050 after a lag of 0.396s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 802.552 with rate 1.050 after a lag of 0.982s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 831.424 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 831.544 with rate 1.050 after a lag of 1.029s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 850.000 with rate 1.050 after a lag of 0.367s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 850.288 with rate 1.050 after a lag of 1.351s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 853.500 with rate 1.050 after a lag of 0.486s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 855.000 with rate 1.050 after a lag of 0.307s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 857.000 with rate 1.050 after a lag of 0.433s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 858.000 with rate 1.050 after a lag of 0.396s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 859.000 with rate 1.050 after a lag of 0.308s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 860.000 with rate 1.050 after a lag of 0.387s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 861.000 with rate 1.050 after a lag of 0.437s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 862.500 with rate 1.050 after a lag of 0.423s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 863.500 with rate 1.050 after a lag of 0.365s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 871.000 with rate 1.050 after a lag of 0.491s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 872.500 with rate 1.050 after a lag of 0.361s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 873.500 with rate 1.050 after a lag of 0.434s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 875.000 with rate 1.050 after a lag of 0.381s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 878.500 with rate 1.050 after a lag of 0.344s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 894.000 with rate 1.050 after a lag of 0.432s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 895.000 with rate 1.050 after a lag of 0.385s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 896.000 with rate 1.050 after a lag of 0.380s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 897.000 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 896.968 with rate 1.050 after a lag of 0.375s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 897.016 with rate 1.050 after a lag of 0.684s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 898.000 with rate 1.050 after a lag of 0.307s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 897.304 with rate 1.050 after a lag of 1.005s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 900.000 with rate 1.050 after a lag of 0.333s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 901.000 with rate 1.050 after a lag of 0.365s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 902.000 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 904.192 with rate 1.050 after a lag of 1.408s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 907.500 with rate 1.050 after a lag of 0.370s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 908.500 with rate 1.050 after a lag of 0.302s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 909.500 with rate 1.050 after a lag of 0.300s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 910.500 with rate 1.050 after a lag of 0.415s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 912.000 with rate 1.050 after a lag of 0.421s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 913.000 with rate 1.050 after a lag of 0.386s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 914.000 with rate 1.050 after a lag of 0.327s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 918.500 with rate 1.050 after a lag of 0.331s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 946.336 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 956.824 with rate 1.050 after a lag of 0.765s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1009.216 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1014.712 with rate 1.050 after a lag of 0.867s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1022.320 with rate 1.050 after a lag of 1.383s
+[vist#0:0/mjpeg @ 0x7f8014f06900] Resumed reading at pts 1025.000 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1056.416 with rate 1.050 after a lag of 0.337s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1060.832 with rate 1.050 after a lag of 0.820s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1084.472 with rate 1.050 after a lag of 1.124s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1116.848 with rate 1.050 after a lag of 0.314s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1122.488 with rate 1.050 after a lag of 0.809s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1143.824 with rate 1.050 after a lag of 0.320s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1154.840 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1174.304 with rate 1.050 after a lag of 0.376s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1183.328 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1192.304 with rate 1.050 after a lag of 0.369s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1213.808 with rate 1.050 after a lag of 0.322s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1222.304 with rate 1.050 after a lag of 0.365s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1231.328 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1242.320 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1262.816 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1281.176 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1290.296 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1299.800 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1316.312 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1329.176 with rate 1.050 after a lag of 0.360s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1337.288 with rate 1.050 after a lag of 0.360s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1342.808 with rate 1.050 after a lag of 0.834s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1360.328 with rate 1.050 after a lag of 0.344s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1371.808 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1385.320 with rate 1.050 after a lag of 0.332s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1394.560 with rate 1.050 after a lag of 0.321s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1402.768 with rate 1.050 after a lag of 0.319s
+[aist#2:0/mp3 @ 0x7f8016006400] Resumed reading at pts 1415.800 with rate 1.050 after a lag of 0.348s
+[udp @ 0x7fb19f805580] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fb19f805580] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[h264 @ 0x7fb19f806200] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb19f806200] no frame!
+[swscaler @ 0x7fb1a3891000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 0.504 with rate 1.050 after a lag of 0.986s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 22.224 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 31.320 with rate 1.050 after a lag of 0.397s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 44.184 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 51.264 with rate 1.050 after a lag of 0.314s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 58.320 with rate 1.050 after a lag of 0.369s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 69.816 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 79.200 with rate 1.050 after a lag of 0.338s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 83.160 with rate 1.050 after a lag of 0.872s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 101.304 with rate 1.050 after a lag of 0.363s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 109.824 with rate 1.050 after a lag of 0.320s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 116.832 with rate 1.050 after a lag of 0.313s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 128.328 with rate 1.050 after a lag of 0.334s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 135.312 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 160.320 with rate 1.050 after a lag of 0.327s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 166.752 with rate 1.050 after a lag of 0.818s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 186.216 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 207.024 with rate 1.050 after a lag of 0.313s
+[aist#2:0/mp3 @ 0x7fb19f813f40] Resumed reading at pts 217.800 with rate 1.050 after a lag of 0.360s
+[udp @ 0x7fd70f807100] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fd70f807100] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[h264 @ 0x7fd70e704c80] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fd70e704c80] no frame!
+[swscaler @ 0x7fd713077000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 0.504 with rate 1.050 after a lag of 0.863s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 25.320 with rate 1.050 after a lag of 0.333s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 50.208 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 61.320 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 76.680 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 91.824 with rate 1.050 after a lag of 0.319s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 101.256 with rate 1.050 after a lag of 0.821s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 121.176 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 130.248 with rate 1.050 after a lag of 0.362s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 147.696 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 155.208 with rate 1.050 after a lag of 0.321s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 162.288 with rate 1.050 after a lag of 0.331s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 173.832 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 185.736 with rate 1.050 after a lag of 0.314s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 193.296 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 202.824 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 209.808 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 221.304 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 228.312 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 237.312 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 244.296 with rate 1.050 after a lag of 0.322s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 259.800 with rate 1.050 after a lag of 0.361s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 268.824 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 280.248 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 289.824 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 298.296 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 311.304 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 320.352 with rate 1.050 after a lag of 0.351s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 329.256 with rate 1.050 after a lag of 0.360s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 341.784 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 350.312 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 362.288 with rate 1.050 after a lag of 0.394s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 373.784 with rate 1.050 after a lag of 0.321s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 383.720 with rate 1.050 after a lag of 0.320s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 392.312 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 399.296 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 415.304 with rate 1.050 after a lag of 0.337s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 424.184 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 432.800 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 442.304 with rate 1.050 after a lag of 0.376s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 451.808 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 462.296 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 470.672 with rate 1.050 after a lag of 0.362s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 483.296 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 495.800 with rate 1.050 after a lag of 0.311s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 511.328 with rate 1.050 after a lag of 0.315s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 518.816 with rate 1.050 after a lag of 0.310s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 531.680 with rate 1.050 after a lag of 0.384s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 540.824 with rate 1.050 after a lag of 0.323s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 551.240 with rate 1.050 after a lag of 0.306s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 558.296 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 577.304 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 585.296 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 601.304 with rate 1.050 after a lag of 0.371s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 612.296 with rate 1.050 after a lag of 0.349s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 621.800 with rate 1.050 after a lag of 0.381s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 635.312 with rate 1.050 after a lag of 0.372s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 638.792 with rate 1.050 after a lag of 0.813s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 658.208 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 665.816 with rate 1.050 after a lag of 0.372s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 676.312 with rate 1.050 after a lag of 0.319s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 690.784 with rate 1.050 after a lag of 0.386s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 716.296 with rate 1.050 after a lag of 0.337s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 727.816 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 737.320 with rate 1.050 after a lag of 0.336s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 744.304 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 751.312 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 762.688 with rate 1.050 after a lag of 0.347s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 768.328 with rate 1.050 after a lag of 0.795s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 785.320 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 805.816 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 811.624 with rate 1.050 after a lag of 0.678s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 814.000 with rate 1.050 after a lag of 1.032s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 830.680 with rate 1.050 after a lag of 1.347s
+[vist#0:0/mjpeg @ 0x7fd70f8087c0] Resumed reading at pts 833.000 with rate 1.050 after a lag of 0.562s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 832.264 with rate 1.050 after a lag of 1.943s
+[vist#0:0/mjpeg @ 0x7fd70f8087c0] Resumed reading at pts 840.000 with rate 1.050 after a lag of 0.430s
+[vist#0:0/mjpeg @ 0x7fd70f8087c0] Resumed reading at pts 862.000 with rate 1.050 after a lag of 0.362s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 873.304 with rate 1.050 after a lag of 0.392s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 884.752 with rate 1.050 after a lag of 0.349s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 893.800 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 903.304 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 925.816 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 937.288 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 950.296 with rate 1.050 after a lag of 0.377s
+[aist#2:0/mp3 @ 0x7fd70f90b380] Resumed reading at pts 958.168 with rate 1.050 after a lag of 0.367s
+[udp @ 0x7fb26f005dc0] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fb26f005dc0] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[h264 @ 0x7fb26df04e00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fb26df04e00] no frame!
+[swscaler @ 0x7fb27287f000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 0.504 with rate 1.050 after a lag of 1.115s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 25.296 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 39.216 with rate 1.050 after a lag of 0.384s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 52.824 with rate 1.050 after a lag of 0.324s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 69.816 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 78.432 with rate 1.050 after a lag of 0.310s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 85.824 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 95.664 with rate 1.050 after a lag of 0.399s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 106.320 with rate 1.050 after a lag of 0.327s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 119.304 with rate 1.050 after a lag of 0.356s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 138.312 with rate 1.050 after a lag of 0.400s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 151.296 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 169.824 with rate 1.050 after a lag of 0.332s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 177.288 with rate 1.050 after a lag of 0.384s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 187.296 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 207.792 with rate 1.050 after a lag of 0.359s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 217.296 with rate 1.050 after a lag of 0.356s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 225.288 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 235.296 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 250.392 with rate 1.050 after a lag of 0.303s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 269.784 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 279.288 with rate 1.050 after a lag of 0.351s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 288.312 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 298.680 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 306.312 with rate 1.050 after a lag of 0.379s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 319.800 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 335.304 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 343.776 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 353.288 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 364.232 with rate 1.050 after a lag of 0.365s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 373.808 with rate 1.050 after a lag of 0.367s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 383.264 with rate 1.050 after a lag of 0.309s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 390.296 with rate 1.050 after a lag of 0.351s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 401.312 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 415.304 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 426.296 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 434.696 with rate 1.050 after a lag of 0.337s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 443.792 with rate 1.050 after a lag of 0.311s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 450.296 with rate 1.050 after a lag of 0.348s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 459.824 with rate 1.050 after a lag of 0.323s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 479.792 with rate 1.050 after a lag of 0.384s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 491.288 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 504.296 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 523.808 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 535.304 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 544.304 with rate 1.050 after a lag of 0.377s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 553.304 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 561.296 with rate 1.050 after a lag of 0.381s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 581.312 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 594.248 with rate 1.050 after a lag of 0.363s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 603.296 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 615.320 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 631.304 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 655.712 with rate 1.050 after a lag of 0.327s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 677.776 with rate 1.050 after a lag of 0.363s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 690.304 with rate 1.050 after a lag of 0.387s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 699.808 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 720.328 with rate 1.050 after a lag of 0.320s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 728.824 with rate 1.050 after a lag of 0.324s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 737.824 with rate 1.050 after a lag of 0.324s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 754.288 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 765.304 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 774.304 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 790.312 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 797.176 with rate 1.050 after a lag of 0.347s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 805.816 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 812.824 with rate 1.050 after a lag of 0.315s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 821.800 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 831.304 with rate 1.050 after a lag of 0.348s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 842.824 with rate 1.050 after a lag of 0.313s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 849.808 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 863.296 with rate 1.050 after a lag of 0.348s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 875.248 with rate 1.050 after a lag of 0.365s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 893.296 with rate 1.050 after a lag of 0.371s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 901.288 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 910.192 with rate 1.050 after a lag of 0.372s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 921.304 with rate 1.050 after a lag of 0.385s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 935.296 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 947.296 with rate 1.050 after a lag of 0.312s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 954.304 with rate 1.050 after a lag of 0.375s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 965.296 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 974.176 with rate 1.050 after a lag of 0.364s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 984.184 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 991.744 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 999.184 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1025.320 with rate 1.050 after a lag of 0.312s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1033.288 with rate 1.050 after a lag of 0.359s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1049.792 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1062.296 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1077.296 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1091.240 with rate 1.050 after a lag of 0.323s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1100.288 with rate 1.050 after a lag of 0.367s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1111.280 with rate 1.050 after a lag of 0.362s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1120.280 with rate 1.050 after a lag of 0.388s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1140.296 with rate 1.050 after a lag of 0.312s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1148.816 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1161.296 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1171.784 with rate 1.050 after a lag of 0.361s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1203.800 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1214.288 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1221.320 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1229.816 with rate 1.050 after a lag of 0.331s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1239.296 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1251.248 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1263.296 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1274.816 with rate 1.050 after a lag of 0.348s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1286.312 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1299.296 with rate 1.050 after a lag of 0.314s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1310.312 with rate 1.050 after a lag of 0.333s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1325.744 with rate 1.050 after a lag of 0.393s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1336.736 with rate 1.050 after a lag of 0.302s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1343.792 with rate 1.050 after a lag of 0.381s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1357.808 with rate 1.050 after a lag of 0.375s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1368.784 with rate 1.050 after a lag of 0.362s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1385.776 with rate 1.050 after a lag of 0.376s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1396.768 with rate 1.050 after a lag of 0.349s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1405.816 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1417.264 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1425.784 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1439.296 with rate 1.050 after a lag of 0.347s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1456.288 with rate 1.050 after a lag of 0.348s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1471.264 with rate 1.050 after a lag of 0.351s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1480.288 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1492.288 with rate 1.050 after a lag of 0.334s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1499.800 with rate 1.050 after a lag of 0.337s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1515.712 with rate 1.050 after a lag of 0.316s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1527.304 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1540.192 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fb26f010c40] Resumed reading at pts 1547.296 with rate 1.050 after a lag of 0.357s
+[udp @ 0x7fdd26107340] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fdd26107340] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[h264 @ 0x7fdd26004840] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fdd26004840] no frame!
+[swscaler @ 0x7fdd2987f000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 0.504 with rate 1.050 after a lag of 1.024s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 29.184 with rate 1.050 after a lag of 0.380s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 44.184 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 61.680 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 70.296 with rate 1.050 after a lag of 0.340s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 79.296 with rate 1.050 after a lag of 0.320s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 90.768 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 101.832 with rate 1.050 after a lag of 0.417s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 115.296 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 124.296 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 133.824 with rate 1.050 after a lag of 0.316s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 151.800 with rate 1.050 after a lag of 0.353s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 161.328 with rate 1.050 after a lag of 0.355s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 172.296 with rate 1.050 after a lag of 0.374s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 181.824 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 197.808 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 207.792 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 224.688 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 245.184 with rate 1.050 after a lag of 0.352s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 253.800 with rate 1.050 after a lag of 0.338s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 258.936 with rate 1.050 after a lag of 0.671s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 279.816 with rate 1.050 after a lag of 0.331s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 290.304 with rate 1.050 after a lag of 0.338s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 297.792 with rate 1.050 after a lag of 0.361s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 307.272 with rate 1.050 after a lag of 0.323s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 314.280 with rate 1.050 after a lag of 0.372s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 328.296 with rate 1.050 after a lag of 0.376s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 337.800 with rate 1.050 after a lag of 0.389s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 360.200 with rate 1.050 after a lag of 0.374s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 373.832 with rate 1.050 after a lag of 0.319s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 387.800 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 399.296 with rate 1.050 after a lag of 0.343s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 416.240 with rate 1.050 after a lag of 0.363s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 425.312 with rate 1.050 after a lag of 0.305s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 433.328 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 449.312 with rate 1.050 after a lag of 0.376s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 459.824 with rate 1.050 after a lag of 0.418s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 469.304 with rate 1.050 after a lag of 0.363s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 482.816 with rate 1.050 after a lag of 0.338s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 493.304 with rate 1.050 after a lag of 0.390s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 503.816 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 515.792 with rate 1.050 after a lag of 0.322s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 527.312 with rate 1.050 after a lag of 0.368s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 538.304 with rate 1.050 after a lag of 0.389s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 547.784 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 565.784 with rate 1.050 after a lag of 0.380s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 596.288 with rate 1.050 after a lag of 0.350s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 605.792 with rate 1.050 after a lag of 0.358s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 630.320 with rate 1.050 after a lag of 0.335s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 657.728 with rate 1.050 after a lag of 0.306s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 669.824 with rate 1.050 after a lag of 0.331s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 683.296 with rate 1.050 after a lag of 0.342s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 692.848 with rate 1.050 after a lag of 0.307s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 699.784 with rate 1.050 after a lag of 0.326s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 716.320 with rate 1.050 after a lag of 0.334s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 732.832 with rate 1.050 after a lag of 0.330s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 741.808 with rate 1.050 after a lag of 0.400s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 755.752 with rate 1.050 after a lag of 0.354s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 763.240 with rate 1.050 after a lag of 0.324s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 779.728 with rate 1.050 after a lag of 0.301s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 788.296 with rate 1.050 after a lag of 0.351s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 797.320 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 802.696 with rate 1.050 after a lag of 0.839s
+[vist#0:0/mjpeg @ 0x7fdd26108b00] Resumed reading at pts 811.500 with rate 1.050 after a lag of 0.345s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 810.736 with rate 1.050 after a lag of 1.243s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 843.808 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 853.312 with rate 1.050 after a lag of 0.339s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 861.352 with rate 1.050 after a lag of 0.315s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 869.824 with rate 1.050 after a lag of 0.325s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 885.808 with rate 1.050 after a lag of 0.357s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 895.288 with rate 1.050 after a lag of 0.324s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 904.312 with rate 1.050 after a lag of 0.364s
+[aist#2:0/mp3 @ 0x7fdd24f0fc00] Resumed reading at pts 920.320 with rate 1.050 after a lag of 0.379s
+[udp @ 0x7fa05ea07140] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fa05ea07140] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[h264 @ 0x7fa05ea09d00] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fa05ea09d00] no frame!
+[swscaler @ 0x7fa0625c5000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 0.504 with rate 1.050 after a lag of 1.161s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 28.464 with rate 1.050 after a lag of 0.315s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 57.912 with rate 1.050 after a lag of 0.310s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 69.816 with rate 1.050 after a lag of 0.332s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 79.800 with rate 1.050 after a lag of 0.329s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 91.296 with rate 1.050 after a lag of 0.321s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 109.344 with rate 1.050 after a lag of 0.341s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 156.312 with rate 1.050 after a lag of 0.346s
+[aist#2:0/mp3 @ 0x7fa05e80d780] Resumed reading at pts 164.856 with rate 1.050 after a lag of 0.308s
+[udp @ 0x7fbb71a04e00] setsockopt(SO_RECVBUF): No buffer space available
+[udp @ 0x7fbb71a04e00] attempted to set receive buffer to size 8388608 but it only ended up set as 786896
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[h264 @ 0x7fbb71a05b40] non-existing PPS 0 referenced
+    Last message repeated 1 times
+[h264 @ 0x7fbb71a05b40] no frame!
+[swscaler @ 0x7fbb7507c000] deprecated pixel format used, make sure you did set range correctly
+[aist#2:0/mp3 @ 0x7fbb71a07880] Resumed reading at pts 0.504 with rate 1.050 after a lag of 1.123s
+[aist#2:0/mp3 @ 0x7fbb71a07880] Resumed reading at pts 25.800 with rate 1.050 after a lag of 0.387s
+[aist#2:0/mp3 @ 0x7fbb71a07880] Resumed reading at pts 66.720 with rate 1.050 after a lag of 0.385s

@@ -63,7 +63,7 @@ while true; do
       if [[ "$MONITOR_ACTION" == "restart" && "$st" == "OFFLINE" ]] && [[ -s "$BASE/conf/yt_oauth.json" && -x "$BASE/bin/yt_api.py" ]]; then
         # The whole point of the project: no live stream found, so MAKE one. Restarting
         # ingest cannot do this - only the API can.
-        out=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" ensure-live 2>&1)
+        out=$(BASE="$BASE" YT_TITLE_FMT="${YT_TITLE_FMT:-}" YT_PRIVACY="${YT_PRIVACY:-public}" python3 "$BASE/bin/yt_api.py" ensure-live 2>&1)
         if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
           mlog "ACTION: channel was OFFLINE - brought it live via the API: $out"
           streak=0
