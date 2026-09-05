@@ -60,7 +60,23 @@ while true; do
     [[ "$st" == "OFFLINE" ]] && need=$OFFLINE_STREAK
     mlog "check ${streak}/${need}: $out"
     if (( streak >= need )); then
-      if [[ "$MONITOR_ACTION" == "restart" && "$st" == "OFFLINE" ]]; then
+      if [[ "$MONITOR_ACTION" == "restart" && "$st" == "OFFLINE" ]] && [[ -s "$BASE/conf/yt_oauth.json" && -x "$BASE/bin/yt_api.py" ]]; then
+        # The whole point of the project: no live stream found, so MAKE one. Restarting
+        # ingest cannot do this - only the API can.
+        out=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" ensure-live 2>&1)
+        if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
+          mlog "ACTION: channel was OFFLINE - brought it live via the API: $out"
+          streak=0
+          sleep 60
+          continue
+        fi
+        mlog "ACTION: channel OFFLINE and the API could not fix it: $out"
+        mlog "        falling back to a rotation request; backing off ${ROTATE_REQUEST_BACKOFF}s"
+        touch "$BASE/log/rotate_now"
+        streak=0
+        sleep "$ROTATE_REQUEST_BACKOFF"
+        continue
+      elif [[ "$MONITOR_ACTION" == "restart" && "$st" == "OFFLINE" ]]; then
         # OFFLINE means YouTube has no broadcast. A quick publisher restart never fixes
         # that; only a proper stop -> gap -> start does (same as the 8h rotation), so ask
         # stream.sh to rotate. This is a REQUEST, not a command: stream.sh refuses it if it

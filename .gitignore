@@ -1,4 +1,10 @@
 # Private repo: everything else is tracked, including MP3/, log/ and conf/stream.env.
 # conf/stream.env holds the live YouTube stream key - anyone with access to this repo can
 # push to the channel. Rotate the key in YouTube Studio if repo access ever changes.
+
+# OAuth refresh token for the YouTube Live Streaming API. This one is NEVER committed even
+# in a private repo: it grants ongoing control of the channel, not just the ability to push
+# pixels at it, and a refresh token in git history outlives any decision to share the repo.
+conf/yt_oauth.json
+
 .DS_Store

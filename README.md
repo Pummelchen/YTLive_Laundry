@@ -105,11 +105,19 @@ Do NOT tick "Use as exit node" and do not select an exit node.
 
 
 ## 8-hour broadcast rotation  (added 2026-09-05)
-YouTube only archives live streams up to 12h. Every ROTATE_HOURS (8) stream.sh stops
-ingest, waits until YouTube reports the channel not live (max ROTATE_MAX_WAIT), waits
-ROTATE_GAP more seconds, then starts pushing again so YouTube auto-starts a NEW broadcast
-with a new URL - the same thing that already happens after a power cut. The old one is
-saved as a VOD. A quick 6s restart does NOT do this; the gap is the whole point.
+YouTube only archives live streams up to 12h, so every ROTATE_HOURS (8) the current
+broadcast is ended and a new one started. The old one is saved as a VOD.
+
+**Ingest alone cannot create a broadcast on this channel - this was the project's founding
+mistake.** The original design stopped ingest, waited, and pushed again, expecting YouTube
+to auto-start a new broadcast "the same thing that already happens after a power cut".
+It does not, and it never did here. Rotations at 01:04, 01:10, 01:13 and 01:16 on
+2026-09-05 each logged "no live broadcast seen"; the broadcast that appeared at 01:18 was
+started by hand in Studio. When the first scheduled 8h rotation ran at 09:17 the channel
+went dark and stayed dark - 93 further rotations changed nothing, because no number of
+RTMP reconnects can make YouTube create a broadcast.
+
+Creating a broadcast requires the YouTube Live Streaming API: see `bin/yt_api.py`.
     touch ~/Downloads/YTLive/log/rotate_now        # force a rotation right now
     grep ROTATE ~/Downloads/YTLive/log/stream.log  # see what it did
 log/rotating holds an epoch deadline; the monitor stands down until then, and a stale file
@@ -134,6 +142,34 @@ logged "not live after 0s" - it was never really confirming anything.
 If ROTATE_GRACE passes with no live broadcast, the log says so and nothing further is tried
 for ROTATE_MIN_INTERVAL: at that point YouTube is refusing to auto-create a broadcast and
 only Go Live in Studio will fix it.
+
+## The YouTube API  (bin/yt_api.py)
+The only thing that can create a broadcast. Stdlib only, no pip installs.
+
+    bin/yt_api.py auth          one-time: OAuth device flow -> conf/yt_oauth.json
+    bin/yt_api.py status        what is live right now, as JSON
+    bin/yt_api.py ensure-live   idempotent: if nothing is live, create + bind + go live
+    bin/yt_api.py end           end the active broadcast so YouTube saves the VOD
+
+One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Data API v3"
+-> Create OAuth client ID -> type **TVs and Limited Input devices** -> run `bin/yt_api.py
+auth` and paste the id and secret. It prints a short code to enter at google.com/device.
+No browser is needed on the streaming Mac, so this works fine over SSH.
+
+Everything switches on automatically once `conf/yt_oauth.json` exists:
+- **stream.sh** calls `ensure-live` after every publisher start (cold start, watchdog
+  restart, rotation), and `end` when rotating, so the VOD is saved properly.
+- **yt_monitor.sh** calls `ensure-live` when it sees the channel OFFLINE, instead of asking
+  for a rotation that cannot help.
+Without the file both fall back to the old yt-dlp polling and say plainly that only Studio
+can bring the channel live.
+
+`enableAutoStart: true` on the created broadcast is the setting the stream-key approach was
+always missing - with it YouTube puts the broadcast live by itself as soon as ingest lands.
+`enableAutoStop` is left OFF so a brief ingest blip cannot end the broadcast.
+
+conf/yt_oauth.json is gitignored even though the repo is private: a refresh token grants
+ongoing control of the channel and would outlive any later decision to share the repo.
 
 ## Installing on another Mac  (install.sh)
     # on the SOURCE machine (this one):

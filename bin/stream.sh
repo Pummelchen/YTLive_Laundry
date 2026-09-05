@@ -19,6 +19,13 @@ CAMIP_FILE="$BASE/log/cam_ip"   # runtime source of truth for the camera address
 ROTATE_FLAG="$BASE/log/rotating"    # holds an epoch deadline: the monitor stands down until then
 ROTATE_NOW="$BASE/log/rotate_now"   # touch this file to force a rotation immediately
 YTDLP="$HOME/.local/bin/yt-dlp"
+YT_API="$BASE/bin/yt_api.py"
+YT_OAUTH="$BASE/conf/yt_oauth.json"
+# The API is the only thing that can actually CREATE a broadcast. Pushing RTMP at a stream
+# key never has on this channel (see yt_api.py). It switches itself on as soon as
+# conf/yt_oauth.json exists, so the streamer keeps working unconfigured - just without the
+# ability to bring the channel live on its own.
+yt_api_ready() { [[ -s "$YT_OAUTH" && -x "$YT_API" ]] }
 FF="$HOME/.local/bin/ffmpeg"
 source "$CONF"
 
@@ -182,7 +189,19 @@ yt_live_id() { yt_live_state | awk '$1=="live"{print $2}'; }
 # rotation path and the cold start - a cold start needs exactly the same warm-up window.
 await_broadcast() {
   local old_id="${1:-}"
-  ( local n deadline=$(( $(date +%s) + ROTATE_GRACE ))
+  ( local n deadline=$(( $(date +%s) + ROTATE_GRACE )) out
+    # With credentials, do not sit and hope: ask YouTube to create the broadcast. This is
+    # idempotent - if the channel is already live it changes nothing.
+    if yt_api_ready; then
+      out=$(BASE="$BASE" python3 "$YT_API" ensure-live 2>&1)
+      if print -r -- "$out" | grep -q '"status": *"LIVE"'; then
+        n=$(print -r -- "$out" | sed -n 's/.*"broadcast_id": *"\([^"]*\)".*/\1/p')
+        log "LIVE: broadcast is up via API: ${n} - https://www.youtube.com/watch?v=${n}"
+        release_monitor
+        exit
+      fi
+      log "YT-API: could not bring the channel live: $out"
+    fi
     while (( $(date +%s) < deadline )); do
       sleep 20
       n=$(yt_live_id)
@@ -192,7 +211,11 @@ await_broadcast() {
         exit
       fi
     done
-    log "WARNING: YouTube still shows no live broadcast ${ROTATE_GRACE}s after ingest started, though RTMP is connected. Not rotating again for ${ROTATE_MIN_INTERVAL}s. If this persists the channel is not auto-creating broadcasts from the stream key - press Go Live in YouTube Studio; restarting ingest cannot create a broadcast." ) &
+    if yt_api_ready; then
+      log "WARNING: no live broadcast ${ROTATE_GRACE}s after ingest started, and the API could not create one. See the YT-API line above for YouTube's own reason."
+    else
+      log "WARNING: no live broadcast ${ROTATE_GRACE}s after ingest started, though RTMP is connected. Pushing ingest cannot CREATE a broadcast on this channel - it never has. Either press Go Live in YouTube Studio, or configure the API once with: bin/yt_api.py auth"
+    fi ) &
 }
 
 rotate_broadcast() {
@@ -212,6 +235,11 @@ rotate_broadcast() {
   fi
   old_id=$(yt_live_id)
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
+  # Ending the broadcast explicitly is what actually gets the VOD saved. Dropping ingest
+  # only makes YouTube eventually time the broadcast out.
+  if yt_api_ready; then
+    log "ROTATE: ending broadcast via API: $(BASE="$BASE" python3 "$YT_API" end 2>&1)"
+  fi
   # Cover the whole rotation AND the warm-up that follows it in one hold.
   hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_GRACE ))
   kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
@@ -256,7 +284,7 @@ while true; do
   if ! kill -0 "$PUBPID" 2>/dev/null; then
     wait "$PUBPID" 2>/dev/null; local rc=$?
     log "PUBLISHER died rc=$rc - restarting (this does drop the YouTube session briefly)"
-    start_publisher; log "publisher back up (pid $PUBPID)"; last=""; stuck=0; continue
+    start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast ""; last=""; stuck=0; continue
   fi
   cur=$(grep -a '^frame=' "$PROG" 2>/dev/null | tail -1 | cut -d= -f2)
   if [[ -n "$cur" && "$cur" != "$last" ]]; then last="$cur"; stuck=0
@@ -265,7 +293,7 @@ while true; do
     if (( stuck >= STALL_TIMEOUT )); then
       log "WATCHDOG: publisher output frozen ${stuck}s - restarting publisher"
       kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
-      start_publisher; log "publisher back up (pid $PUBPID)"; last=""; stuck=0
+      start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast ""; last=""; stuck=0
     fi
   fi
 done
