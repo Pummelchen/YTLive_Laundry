@@ -182,6 +182,16 @@ reader_loop() {
 #
 # Hence: the broadcast must exist and be bound BEFORE ffmpeg starts pushing. Every ingest
 # start goes through start_publisher, so this is the one place that guarantees the order.
+# Stamp the saved title/description/tags/category onto a new broadcast. Runs only AFTER the
+# channel is live and swallows every failure: being on air matters more than being tagged,
+# so nothing in here may ever be a reason the stream is down.
+apply_settings() {
+  yt_api_ready || return 0
+  [[ -s "$BASE/conf/broadcast_template.json" ]] || return 0
+  log "SETTINGS: $(yt_api_call apply "$1")"
+  return 0
+}
+
 prepare_broadcast() {
   yt_api_ready || { log "PREPARE: no API credentials - relying on YouTube to create a broadcast by itself"; return 0; }
   log "PREPARE: $(yt_api_call prepare)"
@@ -400,6 +410,7 @@ await_broadcast() {
         else
           log "LIVE: channel is live on $n after ${took}s - https://www.youtube.com/watch?v=$n"
         fi
+        apply_settings "$n"
         release_monitor
         exit
       fi
@@ -418,6 +429,7 @@ await_broadcast() {
         took=$(( $(date +%s) - started ))
         log "LIVE (after ingest bounce): $n after ${took}s - https://www.youtube.com/watch?v=$n"
         [[ "$ctx" == rotation ]] && record_rotation bounce "$took" "$n" "$old_id"
+        apply_settings "$n"
         release_monitor
         exit
       fi
@@ -431,6 +443,7 @@ await_broadcast() {
         took=$(( $(date +%s) - started ))
         log "LIVE (API fallback): ${n} - https://www.youtube.com/watch?v=${n}"
         [[ "$ctx" == rotation ]] && record_rotation api-fallback "$took" "$n" "$old_id"
+        apply_settings "$n"
         release_monitor
         exit
       fi
@@ -485,6 +498,11 @@ rotate_broadcast() {
   verify_pending_vods
 
   old_id=$(yt_live_id)
+  # Snapshot what is configured on the outgoing broadcast BEFORE ending it, so anything
+  # edited in Studio carries to the next one. A new video inherits the channel's default
+  # description and category but NOT its tags, and on this channel that is 35 local search
+  # terms - they were being silently dropped at every rotation.
+  [[ -n "$old_id" ]] && yt_api_ready && log "CAPTURE: $(yt_api_call capture "$old_id")"
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
   # Cover the whole rotation AND the warm-up that follows it in one hold.
   hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_NATIVE_WAIT + 120 ))

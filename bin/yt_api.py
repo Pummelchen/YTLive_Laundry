@@ -18,6 +18,8 @@ USAGE
     yt_api.py ensure-live     THE ONE THAT MATTERS: guarantee a live broadcast exists
     yt_api.py end             end the active broadcast (so YouTube saves the VOD)
     yt_api.py prepare         create+bind a broadcast, ready for ingest to start it
+    yt_api.py capture [id]    snapshot title/description/tags/category into a template
+    yt_api.py apply <id>      stamp that template onto a newly created broadcast
     yt_api.py token           refresh-token expiry check, offline (0 ok, 1 soon, 2 expired)
 
 ensure-live is idempotent. If the channel is already live it does nothing and exits 0.
@@ -33,6 +35,7 @@ import calendar, json, os, re, sys, time, pathlib, urllib.request, urllib.parse,
 
 BASE  = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
 CREDS = BASE / "conf/yt_oauth.json"
+TEMPLATE = BASE / "conf/broadcast_template.json"
 API   = "https://www.googleapis.com/youtube/v3"
 OAUTH = "https://oauth2.googleapis.com/token"
 DEVICE_CODE = "https://oauth2.googleapis.com/device/code"
@@ -398,6 +401,102 @@ def _await_live(token, stream_id, bid, action, swept):
     return 0 if transitioned else 1
 
 
+# ---------------------------------------------------------- settings carry-over
+# Every rotation makes a NEW video, and a new video does not inherit what was configured on
+# the old one. Description, category, language and privacy happen to come across because
+# they are channel default-upload settings - TAGS DO NOT, and on this channel that is 34
+# local search terms doing the discovery work. Losing them three times a day, and expecting
+# a human to retype them in Studio, is not a workable design.
+#
+# So: snapshot the outgoing broadcast at every rotation and stamp the snapshot onto the new
+# one. Whatever is configured in Studio propagates forward by itself from then on.
+CARRY_SNIPPET = ("title", "description", "tags", "categoryId",
+                 "defaultLanguage", "defaultAudioLanguage")
+CARRY_STATUS  = ("privacyStatus", "license", "embeddable", "publicStatsViewable",
+                 "selfDeclaredMadeForKids")
+
+
+def load_template():
+    try:
+        return json.loads(TEMPLATE.read_text())
+    except Exception:
+        return {}
+
+
+def cmd_capture(video_id=None, key=None):
+    """Snapshot a broadcast's settings into conf/broadcast_template.json.
+
+    MERGES rather than replaces: a field the source lacks keeps whatever the template
+    already had. That matters because the first API-created broadcast has no tags - a
+    replacing capture would helpfully record "no tags" and destroy them permanently.
+    """
+    token = access_token()
+    if not video_id:
+        b = active_broadcast(token)
+        if not b:
+            die("nothing live to capture from - pass a video id")
+        video_id = b["id"]
+    r = api("GET", "videos", token, {"part": "snippet,status", "id": video_id})
+    if not r.get("items"):
+        die(f"video {video_id} not found")
+    sn, st = r["items"][0]["snippet"], r["items"][0]["status"]
+    t = load_template()
+    kept, taken = [], []
+    for k in CARRY_SNIPPET:
+        v = sn.get(k)
+        if v not in (None, "", []):
+            t[k] = v; taken.append(k)
+        elif k in t:
+            kept.append(k)
+    for k in CARRY_STATUS:
+        v = st.get(k)
+        if v is not None:
+            t[k] = v; taken.append(k)
+        elif k in t:
+            kept.append(k)
+    t["_captured_from"] = video_id
+    t["_captured_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
+    TEMPLATE.write_text(json.dumps(t, indent=2, ensure_ascii=False))
+    print(json.dumps({"status": "CAPTURED", "from": video_id,
+                      "took": taken, "kept_from_before": kept,
+                      "tags": len(t.get("tags", []))}))
+    return 0
+
+
+def cmd_apply(video_id):
+    """Stamp the saved settings onto a video. Never fatal: the stream being live matters
+    more than its tags, so a failure here is reported and swallowed by the caller."""
+    t = load_template()
+    if not t:
+        print(json.dumps({"status": "SKIPPED", "msg": f"no {TEMPLATE} yet"}))
+        return 0
+    token = access_token()
+    r = api("GET", "videos", token, {"part": "snippet,status", "id": video_id})
+    if not r.get("items"):
+        die(f"video {video_id} not found")
+    sn, st = r["items"][0]["snippet"], r["items"][0]["status"]
+    # videos.update REPLACES the parts it is given, so start from what is there and
+    # overlay the template - otherwise omitted fields get wiped.
+    for k in CARRY_SNIPPET:
+        if k in t:
+            sn[k] = t[k]
+    for k in CARRY_STATUS:
+        if k in t:
+            st[k] = t[k]
+    # Report what YouTube STORED, not what we sent. Reporting the request back as if it
+    # were the result once had this claiming "35 tags applied" while the video still had
+    # none - a success message that cannot fail is worth nothing.
+    resp = api("PUT", "videos", token, {"part": "snippet,status"},
+               {"id": video_id, "snippet": sn, "status": st})
+    got = resp.get("snippet", {})
+    print(json.dumps({"status": "APPLIED", "video": video_id,
+                      "tags_sent": len(sn.get("tags") or []),
+                      "tags_stored": len(got.get("tags") or []),
+                      "title": got.get("title", "")[:60]}))
+    return 0
+
+
 def cmd_prepare(key):
     """Ensure a bound broadcast exists and is READY - do not wait for it to go live.
 
@@ -502,7 +601,13 @@ def main():
             return cmd_token()
         if cmd == "prepare":
             return cmd_prepare(read_key())
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token")
+        if cmd == "capture":
+            return cmd_capture(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd == "apply":
+            if len(sys.argv) < 3:
+                die("apply needs a video id")
+            return cmd_apply(sys.argv[2])
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | apply")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:
