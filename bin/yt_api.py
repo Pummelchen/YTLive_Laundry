@@ -478,7 +478,15 @@ def cmd_apply(video_id):
     sn, st = r["items"][0]["snippet"], r["items"][0]["status"]
     # videos.update REPLACES the parts it is given, so start from what is there and
     # overlay the template - otherwise omitted fields get wiped.
+    # YT_TITLE_FMT owns the title when it is set. Carrying the title from the template too
+    # meant one bad title propagated forever: a capture from a broadcast that had the
+    # fallback name stamped "Ternak Laundry Bengkong - 2026-09-05 15:03" onto the live
+    # stream, replacing the configured hashtag title. Configuration beats inheritance.
+    fmt = os.environ.get("YT_TITLE_FMT")
     for k in CARRY_SNIPPET:
+        if k == "title" and fmt:
+            sn["title"] = time.strftime(fmt)
+            continue
         if k in t:
             sn[k] = t[k]
     for k in CARRY_STATUS:
