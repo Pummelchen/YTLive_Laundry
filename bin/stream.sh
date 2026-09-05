@@ -32,6 +32,7 @@ yt_api_call() {
   BASE="$BASE" \
   YT_TITLE_FMT="${YT_TITLE_FMT:-}" \
   YT_PRIVACY="${YT_PRIVACY:-public}" \
+  YT_LATENCY="${YT_LATENCY:-normal}" \
   python3 "$YT_API" "$@" 2>&1
 }
 FF="$HOME/.local/bin/ffmpeg"

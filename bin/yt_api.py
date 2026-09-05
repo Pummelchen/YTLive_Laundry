@@ -334,6 +334,12 @@ def _create_and_bind(token, stream_id):
                           # native rotation - stopping ingest left the broadcast open, so
                           # only an API call could ever end it. Brief publisher restarts do
                           # not trip it: 15 of them on 2026-09-03 ended nothing.
+                          # Explicit, not left to the API default: Studio-created broadcasts
+                          # on this channel used latencyPreference "low", and low/ultraLow
+                          # trade away DVR depth and archive robustness. Normal is the right
+                          # setting for a 24/7 camera whose whole purpose is a reviewable
+                          # recording, and nobody is interacting with this feed live.
+                          "latencyPreference": os.environ.get("YT_LATENCY", "normal"),
                           "enableAutoStart": True,
                           "enableAutoStop": True,
                           # With a monitor stream the broadcast has to go

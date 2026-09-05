@@ -34,6 +34,7 @@ YT_API="$BASE/bin/yt_api.py"
 yt_api_ready() { [[ -s "$BASE/conf/yt_oauth.json" && -x "$YT_API" ]] }
 yt_api_call() {
   BASE="$BASE" YT_TITLE_FMT="${YT_TITLE_FMT:-}" YT_PRIVACY="${YT_PRIVACY:-public}" \
+  YT_LATENCY="${YT_LATENCY:-normal}" \
   python3 "$YT_API" "$@" 2>&1
 }
 
