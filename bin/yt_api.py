@@ -122,8 +122,14 @@ def cmd_auth():
     print("     shows an 'unverified app' warning you can click past - that is fine for a")
     print("     personal app, and the token then does not expire.")
     print("  5. Paste the client id and secret below\n")
-    cid = input("client_id: ").strip()
-    csec = input("client_secret: ").strip()
+    try:
+        cid = input("client_id: ").strip()
+        csec = input("client_secret: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        # Reached when run without a terminal (a pipe, a launchd job, a cron entry).
+        # This flow needs a human, so say so plainly instead of dumping a traceback.
+        print()
+        die("auth needs an interactive terminal - run it yourself: bin/yt_api.py auth")
     if not cid or not csec:
         die("client_id and client_secret are both required")
 
