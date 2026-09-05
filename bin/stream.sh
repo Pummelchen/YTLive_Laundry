@@ -40,6 +40,57 @@ source "$CONF"
 log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 /usr/bin/caffeinate -ism -w $$ &
 
+# --- HOUSEKEEPING ------------------------------------------------------------
+# Nothing here used to bound the logs. publisher.log is ffmpeg's stderr and grows forever;
+# a noisy camera can turn that into gigabytes on a machine whose only job is to stay up.
+: ${LOG_MAX_BYTES:=2097152}       # 2 MB per log file
+: ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
+: ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
+MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
+
+# Trim in place rather than rotating: ffmpeg holds an O_APPEND fd on publisher.log, so
+# renaming the file would leave it writing to an unlinked inode forever. Rewriting the same
+# inode keeps every existing writer pointed at the right place.
+trim_log() {
+  local f="$1" sz tmp
+  [[ -f "$f" ]] || return 0
+  sz=$(/usr/bin/stat -f %z "$f" 2>/dev/null) || return 0
+  (( sz > LOG_MAX_BYTES )) || return 0
+  tmp="${TMPDIR:-/tmp}/ytlive-trim.$$"
+  if tail -c $(( LOG_MAX_BYTES / 2 )) "$f" > "$tmp" 2>/dev/null; then
+    cat "$tmp" > "$f"
+    log "HOUSEKEEP: trimmed $(basename $f) from ${sz} to $(/usr/bin/stat -f %z "$f") bytes"
+  fi
+  rm -f "$tmp"
+}
+
+housekeep() {
+  local f
+  # log/progress.txt is deliberately NOT trimmed: ffmpeg writes it at a fixed offset, so
+  # rewriting it underneath would corrupt the frame counter the watchdog below reads. It is
+  # truncated at every publisher start instead, which bounds it to one rotation's worth.
+  for f in "$BASE/log/publisher.log" "$BASE/log/stream.log" "$BASE/log/reader.log" \
+           "$BASE/log/monitor.log" "$HOME/Library/Logs/YTLive/"*.log(N); do
+    trim_log "$f"
+  done
+}
+
+# Watchdog for the watchdog. launchd KeepAlive restarts a monitor that EXITS, but not one
+# that hangs - and a hung monitor is silent in exactly the same way a healthy one is.
+check_monitor() {
+  local beat age
+  [[ -f "$MON_HEARTBEAT" ]] || { log "MONITOR: no heartbeat file yet - is com.user.cctv-monitor loaded?"; return; }
+  beat=$(/usr/bin/stat -f %m "$MON_HEARTBEAT" 2>/dev/null) || return
+  age=$(( $(date +%s) - beat ))
+  (( age < MONITOR_STALE )) && return
+  if launchctl list 2>/dev/null | grep -q com.user.cctv-monitor; then
+    log "MONITOR: heartbeat is ${age}s old - watchdog is hung. Killing it so launchd restarts it."
+    pkill -9 -f "zsh.*yt_monitor.sh" 2>/dev/null
+  else
+    log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED. Fix: launchctl load -w ~/Library/LaunchAgents/com.user.cctv-monitor.plist"
+  fi
+}
+
 [[ -z "$YT_KEY" ]] && { log "FATAL: YT_KEY empty in $CONF"; exit 1; }
 DEST="${YT_URL}/${YT_KEY}"
 UDP="udp://127.0.0.1:${UDP_PORT}"
@@ -157,6 +208,7 @@ ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 ))
 # minutes. The monitor used to start judging the instant the publisher came back, see OFFLINE
 # (correctly, YouTube was still spinning up), and demand another rotation ~70s later. That
 # livelocked the stream: 93 rotations in 3.5h on 2026-09-05, none ever allowed to go live.
+# ROTATE_GRACE must stay comfortably above the monitor's OFFLINE_SECONDS for that reason.
 : ${ROTATE_GRACE:=420}         # monitor stands down this long after ANY publisher start
 : ${ROTATE_MIN_INTERVAL:=900}  # hard floor between unscheduled rotations - the livelock backstop
 LAST_ROTATE=0
@@ -255,6 +307,12 @@ rotate_broadcast() {
   fi
   local pre
   pre=$(yt_api_call status)
+  # The token countdown lives in this output and used to be thrown away here, so the one
+  # warning designed to give days of notice reached no log at all.
+  if print -r -- "$pre" | grep -q '"token_warning"'; then
+    log "TOKEN WARNING: $pre"
+    log "        Fix it with: $BASE/bin/yt_api.py auth"
+  fi
   if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
     log "ROTATE ($why): SKIPPED - the API cannot talk to YouTube, so the next broadcast could not be created. Staying live. YouTube said: $pre"
     rm -f "$ROTATE_NOW"
@@ -302,9 +360,16 @@ log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_HOURS:-8}h; m
 await_broadcast ""
 
 # Publisher watchdog: only a genuinely stuck publisher warrants a YouTube reconnect.
-last=""; stuck=0
+last=""; stuck=0; housekeep_in=0
+housekeep
 while true; do
   sleep 5
+  housekeep_in=$(( housekeep_in + 5 ))
+  if (( housekeep_in >= HOUSEKEEP_EVERY )); then
+    housekeep_in=0
+    housekeep
+    check_monitor
+  fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue
   elif (( $(date +%s) - BROADCAST_STARTED >= ROTATE_SECONDS )); then

@@ -17,6 +17,7 @@ USAGE
     yt_api.py status          print the current broadcast state as JSON
     yt_api.py ensure-live     THE ONE THAT MATTERS: guarantee a live broadcast exists
     yt_api.py end             end the active broadcast (so YouTube saves the VOD)
+    yt_api.py token           refresh-token expiry check, offline (0 ok, 1 soon, 2 expired)
 
 ensure-live is idempotent. If the channel is already live it does nothing and exits 0.
 Otherwise it creates a broadcast, binds it to the stream that owns YT_KEY, and transitions
@@ -39,6 +40,13 @@ SCOPE = "https://www.googleapis.com/auth/youtube"
 # How long to wait for the ingest stream to report active before transitioning. YouTube
 # refuses the transition while the stream is inactive, so this is not optional padding.
 INGEST_WAIT = int(os.environ.get("YT_API_INGEST_WAIT", "120"))
+
+# Google expires a refresh token after 7 days while the OAuth app is in "Testing".
+# This project stays in Testing permanently (branding review is not being pursued), so
+# re-running `yt_api.py auth` every 7 days is normal maintenance, not an edge case. Warn
+# early and loudly - a silently dead token is the one failure nothing else can recover from.
+TOKEN_TTL_DAYS  = float(os.environ.get("YT_TOKEN_TTL_DAYS", "7"))
+TOKEN_WARN_DAYS = float(os.environ.get("YT_TOKEN_WARN_DAYS", "2"))   # days left before warning
 
 
 def die(msg, code=2):
@@ -183,21 +191,57 @@ def stream_for_key(token, key):
     return None
 
 
+def pending_broadcasts(token, stream_id):
+    """Broadcasts we created but never got live, bound to our stream.
+
+    Returns (newest_reusable_or_None, [stale_ids_to_delete]).
+
+    active_broadcast() only matches a broadcast that is actually live, so a broadcast
+    created and bound while ingest was down was invisible to the next ensure-live - which
+    happily minted another one, and another, every retry. Reuse the newest instead, and
+    delete the abandoned ones so the channel does not silently fill with dead broadcasts.
+    """
+    r = api("GET", "liveBroadcasts", token,
+            {"part": "id,snippet,status,contentDetails", "broadcastStatus": "upcoming",
+             "broadcastType": "all", "maxResults": "50"})
+    # Only ever touch broadcasts bound to OUR stream: a broadcast a human scheduled by hand
+    # in Studio is not ours to reuse and certainly not ours to delete.
+    mine = [it for it in r.get("items", [])
+            if it.get("contentDetails", {}).get("boundStreamId") == stream_id
+            and it.get("status", {}).get("lifeCycleStatus") in ("created", "ready", "testing")]
+    if not mine:
+        return None, []
+    mine.sort(key=lambda it: it.get("snippet", {}).get("publishedAt", ""))
+    return mine[-1], [it["id"] for it in mine[:-1]]
+
+
+def token_age():
+    """(age_days, days_left) for the refresh token, or (None, None) if unknowable."""
+    try:
+        t = load_creds().get("authorised_at")
+    except SystemExit:
+        return None, None
+    if not t:
+        return None, None
+    age = (time.time() - t) / 86400.0
+    return age, TOKEN_TTL_DAYS - age
+
+
 def token_age_warning():
     """Google expires refresh tokens after 7 days while the OAuth app is in 'Testing'.
     That failure is silent and looks like nothing at all until a rotation needs the API,
     so surface the countdown long before it bites."""
-    try:
-        t = load_creds().get("authorised_at")
-    except SystemExit:
+    age, left = token_age()
+    if age is None:
         return None
-    if not t:
-        return None
-    days = (time.time() - t) / 86400.0
-    if days >= 6.0:
-        return (f"refresh token is {days:.1f} days old. If the OAuth app is still in "
-                f"'Testing', Google expires it at 7 days - re-run bin/yt_api.py auth, or "
-                f"publish the app so it stops expiring.")
+    if left <= 0:
+        return (f"refresh token is {age:.1f} days old and has EXPIRED (Testing apps get "
+                f"{TOKEN_TTL_DAYS:.0f} days). Rotation and self-healing are dead until you "
+                f"re-run: bin/yt_api.py auth")
+    if left <= TOKEN_WARN_DAYS:
+        return (f"refresh token expires in {left:.1f} days ({age:.1f} days old, Testing apps "
+                f"get {TOKEN_TTL_DAYS:.0f}). Re-run bin/yt_api.py auth before then or the "
+                f"stream loses rotation and self-healing.")
     return None
 
 
@@ -213,6 +257,10 @@ def cmd_status(token=None, key=None):
         "stream_id": s["id"] if s else None,
         "ingest": (s or {}).get("status", {}).get("streamStatus"),
     }
+    age, left = token_age()
+    if age is not None:
+        out["token_age_days"] = round(age, 2)
+        out["token_days_left"] = round(left, 2)
     w = token_age_warning()
     if w:
         out["token_warning"] = w
@@ -235,6 +283,26 @@ def cmd_ensure_live(key):
         die("no liveStream on this channel uses the configured YT_KEY. Check YT_KEY in "
             "conf/stream.env against Studio -> Go Live -> Stream key.")
 
+    # Pick up where a previous attempt left off rather than creating a fresh broadcast on
+    # every retry. Deleting the abandoned ones keeps the channel clean.
+    reuse, stale = pending_broadcasts(token, stream["id"])
+    swept = []
+    for sid in stale:
+        try:
+            api("DELETE", "liveBroadcasts", token, {"id": sid})
+            swept.append(sid)
+        except RuntimeError:
+            pass    # not fatal - a broadcast we could not delete is untidy, not broken
+
+    if reuse:
+        bid, action = reuse["id"], "reused"
+    else:
+        bid, action = _create_and_bind(token, stream["id"]), "created"
+
+    return _await_live(token, stream["id"], bid, action, swept)
+
+
+def _create_and_bind(token, stream_id):
     # `or` not a get() default: an empty YT_TITLE_FMT would otherwise make an empty title,
     # which YouTube rejects.
     title = time.strftime(os.environ.get("YT_TITLE_FMT")
@@ -263,15 +331,17 @@ def cmd_ensure_live(key):
                       },
                   })
     bid = created["id"]
-
     api("POST", "liveBroadcasts/bind", token,
-        {"part": "id,contentDetails", "id": bid, "streamId": stream["id"]})
+        {"part": "id,contentDetails", "id": bid, "streamId": stream_id})
+    return bid
 
+
+def _await_live(token, stream_id, bid, action, swept):
     # With enableAutoStart the transition happens on its own once ingest is flowing, but
     # only if ingest IS flowing. Wait for it, then transition explicitly if YouTube has not.
     waited, transitioned = 0, False
     while waited < INGEST_WAIT:
-        st = api("GET", "liveStreams", token, {"part": "status", "id": stream["id"]})
+        st = api("GET", "liveStreams", token, {"part": "status", "id": stream_id})
         ingest = st["items"][0]["status"]["streamStatus"] if st.get("items") else "unknown"
         cur = api("GET", "liveBroadcasts", token, {"part": "status", "id": bid})
         life = cur["items"][0]["status"]["lifeCycleStatus"] if cur.get("items") else "unknown"
@@ -291,14 +361,18 @@ def cmd_ensure_live(key):
         time.sleep(5)
         waited += 5
 
-    print(json.dumps({
+    out = {
         "status": "LIVE" if transitioned else "PENDING",
         "broadcast_id": bid,
-        "action": "created",
+        "action": action,
         "url": f"https://www.youtube.com/watch?v={bid}",
         "msg": "" if transitioned else
-               f"created and bound, but not live after {INGEST_WAIT}s - is ingest running?",
-    }))
+               f"{action} and bound, but not live after {INGEST_WAIT}s - is ingest running? "
+               f"The next ensure-live will reuse this broadcast rather than make another.",
+    }
+    if swept:
+        out["swept"] = swept
+    print(json.dumps(out))
     return 0 if transitioned else 1
 
 
@@ -313,6 +387,27 @@ def cmd_end():
     print(json.dumps({"status": "ENDED", "broadcast_id": b["id"],
                       "url": f"https://www.youtube.com/watch?v={b['id']}"}))
     return 0
+
+
+def cmd_token():
+    """Token expiry check that touches no network - cheap enough to run on a schedule.
+
+    Exit 0 fine, 1 expiring soon, 2 expired or unknown. The monitor calls this daily so a
+    dying token is noticed days before it takes rotation and self-healing down with it.
+    """
+    age, left = token_age()
+    if age is None:
+        print(json.dumps({"status": "UNKNOWN",
+                          "msg": f"{CREDS} has no authorised_at - re-run bin/yt_api.py auth "
+                                 f"to stamp it"}))
+        return 2
+    state = "EXPIRED" if left <= 0 else ("EXPIRING" if left <= TOKEN_WARN_DAYS else "OK")
+    print(json.dumps({"status": state,
+                      "age_days": round(age, 2), "days_left": round(left, 2),
+                      "expires": time.strftime("%Y-%m-%d %H:%M",
+                                               time.localtime(time.time() + left * 86400)),
+                      "msg": token_age_warning() or ""}))
+    return {"OK": 0, "EXPIRING": 1, "EXPIRED": 2}[state]
 
 
 def read_key():
@@ -338,7 +433,9 @@ def main():
             return cmd_ensure_live(read_key())
         if cmd == "end":
             return cmd_end()
-        die(f"unknown command '{cmd}' - use: auth | status | ensure-live | end")
+        if cmd == "token":
+            return cmd_token()
+        die(f"unknown command '{cmd}' - use: auth | status | ensure-live | end | token")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

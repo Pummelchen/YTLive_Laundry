@@ -124,7 +124,9 @@ EOF
 }
 # ProcessType MUST be Interactive for the streamer: Background is CPU-throttled by macOS.
 write_plist com.user.cctv-stream  stream.sh     Interactive 10
-write_plist com.user.cctv-monitor yt_monitor.sh Background  30
+# Standard, not Background: macOS CPU-throttles Background jobs and every check of the
+# watchdog spawns yt-dlp and ffmpeg.
+write_plist com.user.cctv-monitor yt_monitor.sh Standard    30
 
 # --- 6. Full Disk Access check --------------------------------------------------
 # A LaunchAgent cannot read ~/Downloads without FDA. Probe it the same way launchd will.

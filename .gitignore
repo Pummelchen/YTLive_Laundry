@@ -17,3 +17,15 @@ conf/yt_oauth.json
 # Python bytecode from running the scripts
 __pycache__/
 *.pyc
+
+# --- runtime state: never track anything the running stream rewrites -----------------
+# log/ and conf/golden.jpg are regenerated constantly (publisher.log is ffmpeg stderr,
+# progress.txt is the frame counter, golden.jpg is re-grabbed at every publisher start).
+# Tracking them meant every commit stored another multi-megabyte copy forever - .git had
+# reached 352 MB. They are machine-local state, not source.
+log/
+conf/golden.jpg
+
+# Editor/tool backups of the scripts. Git IS the backup.
+bin/*.bak-*
+conf/*.bak-*

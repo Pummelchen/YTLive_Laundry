@@ -65,6 +65,14 @@ Measured: ~106% CPU of 400% available (4 logical cores) = comfortable headroom.
 ## Control
     launchctl load -w   ~/Library/LaunchAgents/com.user.cctv-stream.plist   # start
     launchctl unload    ~/Library/LaunchAgents/com.user.cctv-stream.plist   # stop
+
+There are TWO jobs and both must be loaded - `com.user.cctv-stream` (the streamer) and
+`com.user.cctv-monitor` (the watchdog). For a while only the streamer was installed here
+and the watchdog was running as a hand-started orphan, so it would not have survived a
+reboot, and nothing would have said so: the streamer's own KeepAlive kept everything
+looking healthy. `bin/status.sh` now reports both, and stream.sh watches the watchdog's
+heartbeat (log/monitor.heartbeat) - if it goes stale the streamer restarts it, because
+launchd revives a job that EXITS but not one that HANGS.
     ~/Downloads/YTLive/bin/status.sh
     tail -f ~/Downloads/YTLive/log/stream.log
 
@@ -133,12 +141,20 @@ OFFLINE, and demanded another rotation ~70s later - which killed the new publish
 YouTube could ever open the broadcast. That livelocked the stream for 3.5h (93 rotations,
 09:17-12:47 on 2026-09-05) after the first scheduled 8h rotation. Three things stop it:
     ROTATE_GRACE=420          monitor stands down for 7 min after ANY publisher start
-    OFFLINE_STREAK=30         5 min of continuous OFFLINE before the monitor even asks
+    OFFLINE_SECONDS=300       5 min of continuous OFFLINE before the monitor even acts
     ROTATE_MIN_INTERVAL=900   stream.sh REFUSES an unscheduled rotation within 15 min of the
                               last one (scheduled 8h rotations are exempt)
-yt_live_state() also now distinguishes "offline" (YouTube said so) from "unknown" (the
-yt-dlp lookup itself failed). The old yt_live_id() could not, which is why every rotation
-logged "not live after 0s" - it was never really confirming anything.
+Both yt_live_state() (stream.sh) and yt_check.py distinguish "offline" (YouTube said so)
+from "unknown" (the lookup itself failed). Only stream.sh did at first, which mattered
+because the monitor uses yt_check.py: a yt-dlp rate limit or a broken yt-dlp release read
+as OFFLINE, and OFFLINE is the status that makes the monitor act. UNKNOWN never triggers an
+action. If UNKNOWN persists past BLIND_SECONDS the monitor asks the YouTube API instead,
+which does not involve yt-dlp at all - so a blind lookup no longer means a blind watchdog.
+
+**Thresholds are seconds, not check counts.** They used to be counts, and counts lied: each
+check spawns yt-dlp *and* ffmpeg, so a "10s" interval measured 14s median and 118s worst
+case over 1342 logged checks. "30 checks = 5 min" was really ~7. Wall-clock thresholds stay
+true however slow an individual check happens to be.
 If ROTATE_GRACE passes with no live broadcast, the log says so and nothing further is tried
 for ROTATE_MIN_INTERVAL: at that point YouTube is refusing to auto-create a broadcast and
 only Go Live in Studio will fix it.
@@ -156,10 +172,21 @@ One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Dat
 auth` and paste the id and secret. It prints a short code to enter at google.com/device.
 No browser is needed on the streaming Mac, so this works fine over SSH.
 
-**Publish the OAuth consent screen ("In production").** While it sits in "Testing", Google
-expires the refresh token after 7 days - the stream would keep running but silently lose
-the ability to rotate, and the channel would go dark at the next 8h mark with no obvious
-cause. Publishing shows an "unverified app" warning you click past; the token then persists.
+**The OAuth app stays in "Testing", so the token expires every 7 days.** Branding review is
+not being pursued, so this is permanent: Google kills the refresh token after 7 days and
+`bin/yt_api.py auth` has to be re-run. That is normal maintenance for this project, not an
+edge case, and it is the one failure nothing else here can recover from - with a dead token
+the stream keeps running but cannot rotate, and a channel that goes dark stays dark.
+
+Three things make sure it never surprises you:
+
+    bin/yt_api.py token       offline check: 0 = fine, 1 = expiring, 2 = expired
+    bin/status.sh             shows days remaining every time you look
+    yt_monitor.sh             re-checks every TOKEN_CHECK_EVERY (6h) and logs a loud
+                              warning from 2 days out; stream.sh logs it at every rotation
+
+The countdown existed before but was written into a variable the rotation preflight threw
+away, so it reached no log at all. Now it reaches three.
 
 **Verified end to end on 2026-09-05 15:01-15:03** - a forced rotation ran the whole path:
 
@@ -178,6 +205,11 @@ Everything switches on automatically once `conf/yt_oauth.json` exists:
   restart, rotation), and `end` when rotating, so the VOD is saved properly.
 - **yt_monitor.sh** calls `ensure-live` when it sees the channel OFFLINE, instead of asking
   for a rotation that cannot help.
+- **ensure-live reuses a broadcast it already created** rather than minting a new one on
+  every retry, and deletes the abandoned ones. Without that, a spell of "channel dark and
+  ingest broken" left a fresh orphaned broadcast on the channel every retry, at 100 quota
+  units each. It only ever touches broadcasts bound to our own stream key - a broadcast
+  scheduled by hand in Studio is left alone.
 Without the file both fall back to the old yt-dlp polling and say plainly that only Studio
 can bring the channel live.
 
@@ -224,3 +256,24 @@ The monitor refreshes conf/golden.jpg from log/basefill.jpg whenever that is new
 after every publisher start / rotation), so the reference never goes stale. CORR_MIN is
 0.35: a 5-day-old golden measured only 0.52-0.64 against a perfectly healthy stream,
 while black is ~0.01 and garbage ~-0.2.
+
+## Disk and logs  (added 2026-09-05)
+Nothing bounded the logs before, and `log/` was tracked in git - so every commit stored
+another copy of a multi-megabyte `publisher.log`, and `.git` reached 352 MB.
+
+    LOG_MAX_BYTES=2097152     2 MB cap per log file
+    HOUSEKEEP_EVERY=300       stream.sh trims every 5 min, and once at startup
+
+Trimming rewrites the SAME inode (keeping the last 1 MB) rather than renaming the file.
+That matters: ffmpeg holds an `O_APPEND` fd on `publisher.log`, so a rename would leave it
+writing to an unlinked inode forever, invisibly. Verified with a live append-mode writer -
+it kept appending correctly across a trim, with no offset corruption.
+
+`log/progress.txt` is deliberately NOT trimmed: ffmpeg writes it at a fixed offset, so
+rewriting it underneath would corrupt the frame counter the publisher watchdog reads. It is
+truncated at every publisher start instead, which bounds it to one rotation's worth (~12 MB).
+
+Runtime state is gitignored, not tracked: `log/` and `conf/golden.jpg` (re-grabbed at every
+publisher start). `MP3/` stays tracked - it is write-once, so it does not grow the repo.
+The 352 MB already in history is untouched; shrinking that needs a history rewrite and a
+force-push, which is a separate, deliberate decision.

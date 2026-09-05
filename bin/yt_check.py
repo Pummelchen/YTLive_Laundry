@@ -5,7 +5,7 @@ Tolerant by design: the scene is a fixed CCTV view, so people coming and going a
 day/night light changes must NOT trigger an alert. Only gross failures should:
 black frame, frozen filler, garbage, or the stream being offline.
 
-Exit codes: 0 = OK, 1 = MISMATCH, 2 = COULD NOT FETCH
+Exit codes: 0 = OK, 1 = MISMATCH/OFFLINE, 2 = COULD NOT FETCH / UNKNOWN
 """
 import subprocess, sys, os, json, time, pathlib, tempfile
 
@@ -27,38 +27,64 @@ BLACK_LUMA = float(os.environ.get("BLACK_LUMA", "16"))
 URL_TTL    = int(os.environ.get("URL_TTL", "1800"))
 VIDCACHE   = BASE/"log/yt_videoid.cache"
 
+# Phrases YouTube/yt-dlp use when the channel is genuinely not streaming. Anything else
+# that goes wrong is a failure of the LOOKUP, not evidence about the channel.
+OFFLINE_SIGNS = ("not currently live", "does not have a live", "is not live",
+                 "not currently streaming", "this live event will begin",
+                 "the channel is not currently live")
+
+
 def live_info():
-    """Resolve the channel's CURRENT live video. Returns (video_id, is_live) or (None, False)."""
-    r = subprocess.run([YTDLP, "--no-warnings", "--skip-download",
-                        "--print", "%(id)s|%(is_live)s", WATCH],
-                       capture_output=True, text=True, timeout=90)
+    """Resolve the channel's CURRENT live video.
+
+    Returns (video_id, state) where state is "live", "offline" or "unknown".
+
+    "unknown" is NOT evidence that the channel is dark. This used to return a bare
+    (None, False) for every failure, so a yt-dlp hiccup - rate limit, bot check, network
+    blip, a yt-dlp release that breaks extraction - was reported to the monitor as OFFLINE,
+    and OFFLINE is the status that makes the monitor act. stream.sh has always drawn this
+    three-way distinction (yt_live_state); this checker is the one the monitor actually
+    uses, and it did not.
+    """
+    try:
+        r = subprocess.run([YTDLP, "--no-warnings", "--skip-download",
+                            "--print", "%(id)s|%(is_live)s", WATCH],
+                           capture_output=True, text=True, timeout=90)
+    except subprocess.TimeoutExpired:
+        return None, "unknown"
     line = (r.stdout.strip().split("\n") or [""])[0]
-    if "|" not in line:
-        return None, False
-    vid, live = line.split("|", 1)
-    return vid.strip(), live.strip().lower() == "true"
+    if "|" in line:
+        vid, live = line.split("|", 1)
+        return vid.strip(), ("live" if live.strip().lower() == "true" else "offline")
+    err = (r.stderr or "").lower()
+    if any(sign in err for sign in OFFLINE_SIGNS):
+        return None, "offline"
+    return None, "unknown"
 
 def resolve(force=False):
     """Direct media URL for the current live stream. Re-resolves when the broadcast
     changes video id (YouTube rotates these) or when the cached URL expires."""
-    vid, is_live = live_info()
-    if not vid or not is_live:
-        return None, vid, is_live
+    vid, state = live_info()
+    if state != "live":
+        return None, vid, state
     prev = VIDCACHE.read_text().strip() if VIDCACHE.exists() else ""
     fresh = (CACHE.exists() and time.time() - CACHE.stat().st_mtime < URL_TTL
              and prev == vid and not force)
     if fresh:
         u = CACHE.read_text().strip()
-        if u: return u, vid, True
-    r = subprocess.run([YTDLP, "-g", "-f", "bv*[height<=720]/bv*/best", "--no-warnings",
-                        f"https://www.youtube.com/watch?v={vid}"],
-                       capture_output=True, text=True, timeout=90)
+        if u: return u, vid, "live"
+    try:
+        r = subprocess.run([YTDLP, "-g", "-f", "bv*[height<=720]/bv*/best", "--no-warnings",
+                            f"https://www.youtube.com/watch?v={vid}"],
+                           capture_output=True, text=True, timeout=90)
+    except subprocess.TimeoutExpired:
+        return None, vid, "live"
     url = (r.stdout.strip().split("\n") or [""])[0]
     if not url:
-        return None, vid, True
+        return None, vid, "live"
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     CACHE.write_text(url); VIDCACHE.write_text(vid)
-    return url, vid, True
+    return url, vid, "live"
 
 def grab(url, out):
     r = subprocess.run([FF, "-y", "-v", "error", "-headers", "User-Agent: Mozilla/5.0\r\n",
@@ -87,12 +113,19 @@ def main():
     if not GOLD.exists():
         print(json.dumps({"status":"NOGOLDEN","msg":f"missing {GOLD}"})); return 2
 
-    url, vid, is_live = resolve()
-    if not is_live:
+    url, vid, state = resolve()
+    if state == "unknown":
+        # Deliberately NOT offline: the monitor must not create or rotate a broadcast
+        # because yt-dlp fell over. It logs this and keeps waiting.
+        print(json.dumps({"status":"UNKNOWN",
+                          "msg":"could not determine whether the channel is live "
+                                "(yt-dlp failed) - not treating this as offline"}))
+        return 2
+    if state != "live":
         print(json.dumps({"status":"OFFLINE","msg":"no active live broadcast on the channel"}))
         return 1
     if not url or not grab(url, LAST):
-        url, vid, is_live = resolve(force=True)      # rotated/expired media URL
+        url, vid, state = resolve(force=True)        # rotated/expired media URL
         if not url or not grab(url, LAST):
             print(json.dumps({"status":"FETCHFAIL","vid":vid,"msg":"could not pull a frame"}))
             return 2
