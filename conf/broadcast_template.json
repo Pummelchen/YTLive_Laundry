@@ -82,5 +82,6 @@
       "note": "Checked against the youtube/v3 discovery document and every part of the liveBroadcasts and liveStreams resources on 2026-09-06: no field for it exists anywhere in the API. It can be neither set nor read programmatically, so it must be toggled in Studio by hand and confirmed by eye. Whether it survives an 8h rotation is unknown - the rotation makes a new broadcast."
     }
   },
-  "_note": "Reference configuration for every new broadcast. stream.sh captures from the outgoing broadcast at each rotation and enforces this onto the new one. Anything under 'manual' cannot be automated - see each note."
+  "_note": "Reference configuration for every new broadcast. stream.sh captures from the outgoing broadcast at each rotation and enforces this onto the new one. Anything under 'manual' cannot be automated - see each note.",
+  "_source": "given explicitly by the user 2026-09-06"
 }
