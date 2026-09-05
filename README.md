@@ -57,10 +57,20 @@ Measured: ~106% CPU of 400% available (4 logical cores) = comfortable headroom.
     bin/preflight.sh         probe camera codecs
     bin/camscan.py           find cameras on the LAN (ONVIF + port sweep)
     bin/onvif_probe.py       pull RTSP URLs from an ONVIF camera
-    conf/stream.env          settings + YouTube key (chmod 600)
+    bin/yt_api.py            YouTube Live API: create/bind/end, and the config reference
+    bin/yt_check.py          pulls a frame from the public stream and grades it
+    bin/yt_monitor.sh        the watchdog loop
+    conf/stream.env          settings + YouTube key (chmod 600, gitignored)
+    conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
+    conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,
+                             language, privacy, latency - enforced onto every new broadcast
+    conf/thumbnail.jpg       the golden thumbnail, re-applied at every rotation
+    conf/thumbnail_source.jpg  untouched original, so the crop/angle can be redone
     conf/playlist.txt        the shuffled order (generated)
-    log/                     stream.log, progress.txt
-    ~/Library/Logs/YTLive/   launchd.out.log, launchd.err.log (outside Downloads on purpose)
+    log/                     runtime state, gitignored. Files the project reads back:
+                             broadcast_started (rotation clock), monitor.heartbeat,
+                             rotation_history.log, vod_status, progress.txt
+    ~/Library/Logs/YTLive/   launchd stdout/stderr (outside Downloads on purpose)
 
 ## Control
     launchctl load -w   ~/Library/LaunchAgents/com.user.cctv-stream.plist   # start
@@ -73,8 +83,12 @@ reboot, and nothing would have said so: the streamer's own KeepAlive kept everyt
 looking healthy. `bin/status.sh` now reports both, and stream.sh watches the watchdog's
 heartbeat (log/monitor.heartbeat) - if it goes stale the streamer restarts it, because
 launchd revives a job that EXITS but not one that HANGS.
-    ~/Downloads/YTLive/bin/status.sh
-    tail -f ~/Downloads/YTLive/log/stream.log
+    ~/Downloads/YTLive/bin/status.sh          # everything that can fail silently, on one page
+    ~/Downloads/YTLive/bin/status.sh --no-net  # same, skipping the YouTube API calls
+
+The logs are the project's own bookkeeping, not a report to be read - nothing here depends
+on a human noticing anything, and there are deliberately no notifications. Every failure
+path retries instead of reporting. status.sh is the one place that answers "is it healthy".
 
 Reshuffle the music (takes effect on next restart):
     ~/Downloads/YTLive/bin/shuffle_playlist.sh
@@ -155,17 +169,54 @@ which does not involve yt-dlp at all - so a blind lookup no longer means a blind
 check spawns yt-dlp *and* ffmpeg, so a "10s" interval measured 14s median and 118s worst
 case over 1342 logged checks. "30 checks = 5 min" was really ~7. Wall-clock thresholds stay
 true however slow an individual check happens to be.
-If ROTATE_GRACE passes with no live broadcast, the log says so and nothing further is tried
-for ROTATE_MIN_INTERVAL: at that point YouTube is refusing to auto-create a broadcast and
-only Go Live in Studio will fix it.
+**The broadcast must be BOUND BEFORE INGEST STARTS (fixed 2026-09-06).** This is the part
+that actually makes the rotation work, and getting it backwards cost 19 minutes of dark air
+on the first live run. YouTube starts an `enableAutoStart` broadcast when ingest ARRIVES at
+the stream it is bound to. Bind after ingest is already flowing and that arrival has gone
+by: the broadcast sits in `ready` indefinitely, and a manual transition is refused with
+`invalidTransition` precisely BECAUSE it is set to auto-start. Both ready->testing and
+ready->live were rejected for 60s each against a stream YouTube itself reported active and
+healthy. The broadcast sat `ready` for 17 minutes and went live 30 seconds after the
+publisher was bounced.
+
+So `prepare_broadcast()` runs inside `start_publisher()` - the one place every ingest start
+goes through - and the order is always: create + bind, then push.
+    PREPARE: {"status":"READY","broadcast_id":"...","msg":"bound and waiting for ingest"}
+    publisher up (pid ...)          <- ingest starts AFTER the bind
+    LIVE: channel is live on ...    <- autoStart fires on arrival, ~30s
+A `PREPARE` line appearing BEFORE `publisher up` is the tell that this is working.
+
+`monitorStream` is forced off on every broadcast we create, regardless of what the
+reference says. With a monitor stream the broadcast has to go ready->testing->live, and
+that is the transition YouTube was refusing. Nobody previews a 24/7 CCTV feed.
+
+If nothing is live after ROTATE_NATIVE_WAIT the streamer bounces the publisher once, because
+a fresh ingest arrival is the event YouTube actually reacts to - that is what recovered the
+channel. Only after that does it fall back to `ensure-live`.
+
+**The rotation clock follows the BROADCAST, not this process.** BROADCAST_STARTED used to be
+set to "now" at every stream.sh start, so any restart - launchd reviving a crash, a reboot,
+a config change - silently handed the running broadcast another full 8 hours. Caught in the
+act: restarts had pushed a broadcast that went live at 15:03 to a 03:12 rotation, making it
+12h08m old and unarchivable. log/broadcast_started holds "<id> <epoch>"; on a first sighting
+it takes YouTube's own actualStartTime. When the age is uncertain it assumes the broadcast
+is OLDER, never younger - rotating early costs a shorter VOD, rotating late costs the
+recording outright.
 
 ## The YouTube API  (bin/yt_api.py)
 The only thing that can create a broadcast. Stdlib only, no pip installs.
 
     bin/yt_api.py auth          one-time: OAuth device flow -> conf/yt_oauth.json
     bin/yt_api.py status        what is live right now, as JSON
+    bin/yt_api.py prepare       create + bind a broadcast, ready for ingest to start it
     bin/yt_api.py ensure-live   idempotent: if nothing is live, create + bind + go live
     bin/yt_api.py end           end the active broadcast so YouTube saves the VOD
+    bin/yt_api.py token         refresh-token expiry, offline (0 ok, 1 soon, 2 expired)
+    bin/yt_api.py capture [id]  snapshot the configuration into the reference
+    bin/yt_api.py verify [id]   compare a broadcast against the reference (0 match, 1 drift)
+    bin/yt_api.py enforce [id]  apply the reference and retry until it matches
+    bin/yt_api.py thumbnail [f] adopt a file as the golden thumbnail, or re-apply it
+    bin/yt_api.py thumbnail --check   is the live thumbnail actually ours?
 
 One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Data API v3"
 -> Create OAuth client ID -> type **TVs and Limited Input devices** -> run `bin/yt_api.py
@@ -277,3 +328,103 @@ Runtime state is gitignored, not tracked: `log/` and `conf/golden.jpg` (re-grabb
 publisher start). `MP3/` stays tracked - it is write-once, so it does not grow the repo.
 The 352 MB already in history is untouched; shrinking that needs a history rewrite and a
 force-push, which is a separate, deliberate decision.
+
+## Broadcast configuration  (added 2026-09-06)
+Every rotation makes a NEW video, and a new video inherits almost nothing. Description,
+category and language happen to come across because they are channel default-upload
+settings. **Tags do not** - and here that is 38 local search terms doing the discovery
+work, which were being silently dropped three times a day and expected to be retyped in
+Studio by hand.
+
+`conf/broadcast_template.json` is the reference: title, description, tags, categoryId,
+language, privacy, license, embeddable, DVR, latency, and the thumbnail. At every rotation
+stream.sh captures from the OUTGOING broadcast and enforces the reference onto the new one,
+so anything edited in Studio propagates forward by itself.
+
+    bin/yt_api.py capture     # adopt what is live now as the reference
+    bin/yt_api.py verify      # 0 = matches, 1 = drifted (names what differs)
+    bin/yt_api.py enforce     # fix it, retrying until it matches
+
+stream.sh re-checks every ENFORCE_EVERY (30 min) and repairs drift. Cheap when nothing is
+wrong: one videos.list, and an update only when something actually moved.
+
+Five things this needed in order to work rather than merely appear to:
+
+**capture MERGES, it does not replace.** A field the source lacks keeps whatever the
+reference already had. Without that, the first capture from a freshly created broadcast -
+which has no tags yet - records "no tags" and destroys them permanently.
+
+**enforce judges by the WRITE RESPONSE, not by re-reading.** videos.list is eventually
+consistent and serves stale data for a surprisingly long time; a read-back loop reported
+"tags(1 vs 38)" three times over for a write that had already succeeded, and fired three
+redundant updates chasing it.
+
+**The reference owns the title, not conf/stream.env.** YT_TITLE_FMT was overwriting a
+"#indonesia" added in Studio at every enforcement. Requiring stream.env to be edited in
+lockstep just relocates the manual work. capture refuses to adopt a dated fallback title,
+which is what made an explicit override seem necessary in the first place.
+
+**localizations are not compared.** With defaultLanguage set, YouTube mirrors the main
+snippet into that localization itself and lags doing it, so comparing them reported drift
+permanently and would have fired a pointless update every 30 minutes forever.
+
+**The drift log names the tags it adds and removes.** It used to print counts, so a tag
+added in Studio was removed by enforcement with no record of which one - and that is not
+recoverable from YouTube afterwards.
+
+### Editing settings in Studio
+The drift check will treat a Studio edit as drift and revert it if the reference still
+holds the old value. Before editing, move the reference aside:
+
+    mv conf/broadcast_template.json conf/broadcast_template.json.held   # enforcement OFF
+    # ... edit in Studio, wait for it to appear (the API lags, sometimes by many minutes)
+    cp conf/broadcast_template.json.held conf/broadcast_template.json
+    bin/yt_api.py capture                                              # adopt the change
+
+Both `apply_settings` and `enforce_drift` guard on that file existing, so moving it
+disables enforcement instantly with no restart and no write to YouTube.
+
+## Thumbnail
+`conf/thumbnail.jpg` is re-applied and verified at every rotation. It is checked against
+**YouTube's render of it**, not against the source file: a 4:3 source comes back as a 16:9
+render with the sides filled, which correlates at ~0.5 against the original no matter how
+correct it is. conf/thumbnail_rendered.jpg is that baseline; comparing render to render is
+like for like and scores 1.0.
+
+    bin/yt_api.py thumbnail path/to/image.jpg   # adopt and apply
+    bin/yt_api.py thumbnail --check             # is the live one ours?
+
+The current still is the shop entrance rotated 3 degrees left and cropped to fill 16:9.
+Rotate first, crop second: a 3 degree rotation leaves empty wedges at the edges, so the crop
+has to clear those as well as the 4:3 letterbox. For a 1280x960 source the safe inner box is
+1180x826 and the 16:9 crop taken from it is 1180x664, scaled to 1280x720. ffmpeg's rotate
+filter takes a positive angle as CLOCKWISE, so "3 degrees left" is `rotate=-3*PI/180`.
+
+Cropping to fill is only safe when the source has nothing in the corners. The previous
+branded still had text in two corners and had to be pillarboxed instead.
+
+There is no local file-size check. YouTube documents a 2 MB limit but does not enforce it -
+a 2.29 MB PNG uploaded fine. Refusing a file the service would accept is not validation.
+
+## Did the recording actually save?
+The whole point of cutting at 8h is a reviewable VOD, and a rotation can look perfectly
+successful while producing nothing watchable. Past 12h YouTube answers "This live stream
+recording is not available" - as it does for this channel's 26.1h and 81.5h streams, over
+four days of footage lost permanently.
+
+Each rotation verifies the broadcast the PREVIOUS one ended, a cut late on purpose so
+YouTube has had ~8 hours to process it. The check is yt-dlp, deliberately not the API, so it
+keeps working after the OAuth token expires - and "does a playable recording exist" is
+exactly the question a viewer asks. Verdicts land in log/vod_status, one line per broadcast;
+an "ok" is final, a MISSING is retried at every later rotation in case it was still
+processing. status.sh reports the tally.
+
+    tzlsZ_Nv6VE ok 2026-09-05 23:24:30 7h57m
+
+## Dual stream
+Soft issue, not chased. No field for it exists anywhere in youtube/v3 - checked against the
+discovery document and every part of the liveBroadcasts and liveStreams resources - so it
+can be neither set nor read here. It is also only toggleable while a stream is in its
+starting phase, not once running, which on an 8h rotation is a few unattended minutes per
+cycle. Recorded under "manual" in the reference and reported by status.sh as a single quiet
+line. Treat it as off.
