@@ -18,8 +18,9 @@ USAGE
     yt_api.py ensure-live     THE ONE THAT MATTERS: guarantee a live broadcast exists
     yt_api.py end             end the active broadcast (so YouTube saves the VOD)
     yt_api.py prepare         create+bind a broadcast, ready for ingest to start it
-    yt_api.py capture [id]    snapshot title/description/tags/category into a template
-    yt_api.py apply <id>      stamp that template onto a newly created broadcast
+    yt_api.py capture [id]    snapshot the full configuration into conf/broadcast_template.json
+    yt_api.py verify [id]     compare a broadcast against that reference (0 match, 1 drifted)
+    yt_api.py enforce [id]    apply the reference, read back, and retry until it matches
     yt_api.py token           refresh-token expiry check, offline (0 ok, 1 soon, 2 expired)
 
 ensure-live is idempotent. If the channel is already live it does nothing and exits 0.
@@ -36,6 +37,16 @@ import calendar, json, os, re, sys, time, pathlib, urllib.request, urllib.parse,
 BASE  = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
 CREDS = BASE / "conf/yt_oauth.json"
 TEMPLATE = BASE / "conf/broadcast_template.json"
+# The channel's branded still, reused at every rotation. Kept in whatever format it was
+# given - PNG included - because re-encoding it is not ours to decide.
+THUMBNAIL_CANDIDATES = ("conf/thumbnail.png", "conf/thumbnail.jpg")
+def _thumb_path():
+    for c in THUMBNAIL_CANDIDATES:
+        f = BASE / c
+        if f.exists():
+            return f
+    return BASE / THUMBNAIL_CANDIDATES[0]
+UPLOAD = "https://www.googleapis.com/upload/youtube/v3"
 API   = "https://www.googleapis.com/youtube/v3"
 OAUTH = "https://oauth2.googleapis.com/token"
 DEVICE_CODE = "https://oauth2.googleapis.com/device/code"
@@ -44,6 +55,9 @@ SCOPE = "https://www.googleapis.com/auth/youtube"
 # How long to wait for the ingest stream to report active before transitioning. YouTube
 # refuses the transition while the stream is inactive, so this is not optional padding.
 INGEST_WAIT = int(os.environ.get("YT_API_INGEST_WAIT", "120"))
+
+# How long to wait before believing a read-back. videos.list is eventually consistent.
+READBACK_WAIT = (8, 20, 40)
 
 # Google expires a refresh token after 7 days while the OAuth app is in "Testing".
 # This project stays in Testing permanently (branding review is not being pursued), so
@@ -315,10 +329,38 @@ def cmd_ensure_live(key):
 
 
 def _create_and_bind(token, stream_id):
-    # `or` not a get() default: an empty YT_TITLE_FMT would otherwise make an empty title,
-    # which YouTube rejects.
-    title = time.strftime(os.environ.get("YT_TITLE_FMT")
-                          or "Ternak Laundry Bengkong - %Y-%m-%d %H:%M")
+    # The reference's title first - it is what Studio last showed. Then YT_TITLE_FMT, then
+    # a dated fallback. `or` not a get() default: an empty YT_TITLE_FMT would otherwise
+    # produce an empty title, which YouTube rejects.
+    title = (t.get("video") or {}).get("title") or time.strftime(
+        os.environ.get("YT_TITLE_FMT") or "Ternak Laundry Bengkong - %Y-%m-%d %H:%M")
+    t = load_template()
+    ref_bc = dict(t.get("broadcast") or {})
+    ref_st = dict(t.get("video_status") or {})
+    # NEVER inherited, always off. A monitor stream forces ready->testing->live, and both
+    # of those transitions were refused on 2026-09-05 against a healthy active stream - the
+    # broadcast sat in "ready" for 17 minutes and the channel was dark. Nobody previews a
+    # 24/7 CCTV feed, so this one setting is not the reference's to decide.
+    ref_bc.pop("enableMonitorStream", None)
+    monitor = False
+    content = {
+        "enableAutoStart": True,
+        "enableAutoStop": True,
+        "enableDvr": True,
+        "recordFromStart": True,
+        "latencyPreference": os.environ.get("YT_LATENCY", "normal"),
+        "monitorStream": {"enableMonitorStream": bool(monitor),
+                          "broadcastStreamDelayMs": 0},
+    }
+    # the reference wins for anything it actually records, except the three that keep the
+    # rotation working at all - autoStart/autoStop/monitorStream are load-bearing here
+    for k, v in ref_bc.items():
+        if k not in ("enableAutoStart", "enableAutoStop"):
+            content[k] = v
+    content["enableAutoStart"] = True
+    content["enableAutoStop"] = True
+    if os.environ.get("YT_LATENCY"):
+        content["latencyPreference"] = os.environ["YT_LATENCY"]
     created = api("POST", "liveBroadcasts", token,
                   {"part": "snippet,status,contentDetails"},
                   {
@@ -327,33 +369,12 @@ def _create_and_bind(token, stream_id):
                           "scheduledStartTime": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                       },
                       "status": {
-                          "privacyStatus": os.environ.get("YT_PRIVACY", "public"),
-                          "selfDeclaredMadeForKids": False,
+                          "privacyStatus": ref_st.get("privacyStatus")
+                                           or os.environ.get("YT_PRIVACY", "public"),
+                          "selfDeclaredMadeForKids": bool(
+                              ref_st.get("selfDeclaredMadeForKids", False)),
                       },
-                      "contentDetails": {
-                          # Match what YouTube itself puts on this channel's broadcasts:
-                          # autoStart so ingest brings it live, autoStop so stopping ingest
-                          # closes and ARCHIVES it. autoStop was off here, which broke the
-                          # native rotation - stopping ingest left the broadcast open, so
-                          # only an API call could ever end it. Brief publisher restarts do
-                          # not trip it: 15 of them on 2026-09-03 ended nothing.
-                          # Explicit, not left to the API default: Studio-created broadcasts
-                          # on this channel used latencyPreference "low", and low/ultraLow
-                          # trade away DVR depth and archive robustness. Normal is the right
-                          # setting for a 24/7 camera whose whole purpose is a reviewable
-                          # recording, and nobody is interacting with this feed live.
-                          "latencyPreference": os.environ.get("YT_LATENCY", "normal"),
-                          "enableAutoStart": True,
-                          "enableAutoStop": True,
-                          # With a monitor stream the broadcast has to go
-                          # ready -> testing -> live, and BOTH transitions were refused on
-                          # 2026-09-05 while the stream was active and healthy. There is no
-                          # human previewing a 24/7 CCTV feed, so switch the stage off.
-                          "monitorStream": {"enableMonitorStream": False,
-                                            "broadcastStreamDelayMs": 0},
-                          "enableDvr": True,
-                          "recordFromStart": True,
-                      },
+                      "contentDetails": content,
                   })
     bid = created["id"]
     api("POST", "liveBroadcasts/bind", token,
@@ -402,18 +423,21 @@ def _await_live(token, stream_id, bid, action, swept):
 
 
 # ---------------------------------------------------------- settings carry-over
-# Every rotation makes a NEW video, and a new video does not inherit what was configured on
-# the old one. Description, category, language and privacy happen to come across because
-# they are channel default-upload settings - TAGS DO NOT, and on this channel that is 34
-# local search terms doing the discovery work. Losing them three times a day, and expecting
-# a human to retype them in Studio, is not a workable design.
+# THE REFERENCE. Every rotation makes a new video and a new video inherits almost nothing,
+# so conf/broadcast_template.json holds the intended configuration and every new broadcast
+# is stamped with it, then read back and checked, and fixed until it matches.
 #
-# So: snapshot the outgoing broadcast at every rotation and stamp the snapshot onto the new
-# one. Whatever is configured in Studio propagates forward by itself from then on.
-CARRY_SNIPPET = ("title", "description", "tags", "categoryId",
+# Three groups, because they are set through three different API calls:
+#   video        -> videos.update part=snippet
+#   video_status -> videos.update part=status
+#   broadcast    -> liveBroadcasts.insert contentDetails (fixed at creation time)
+VIDEO_FIELDS  = ("title", "description", "tags", "categoryId",
                  "defaultLanguage", "defaultAudioLanguage")
-CARRY_STATUS  = ("privacyStatus", "license", "embeddable", "publicStatsViewable",
+STATUS_FIELDS = ("privacyStatus", "license", "embeddable", "publicStatsViewable",
                  "selfDeclaredMadeForKids")
+BCAST_FIELDS  = ("latencyPreference", "enableDvr", "enableEmbed", "recordFromStart",
+                 "enableAutoStart", "enableAutoStop", "enableContentEncryption",
+                 "closedCaptionsType", "projection")
 
 
 def load_template():
@@ -423,12 +447,17 @@ def load_template():
         return {}
 
 
-def cmd_capture(video_id=None, key=None):
-    """Snapshot a broadcast's settings into conf/broadcast_template.json.
+def save_template(t):
+    TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
+    TEMPLATE.write_text(json.dumps(t, indent=2, ensure_ascii=False))
 
-    MERGES rather than replaces: a field the source lacks keeps whatever the template
-    already had. That matters because the first API-created broadcast has no tags - a
-    replacing capture would helpfully record "no tags" and destroy them permanently.
+
+def cmd_capture(video_id=None):
+    """Snapshot a broadcast's full configuration into the reference.
+
+    MERGES rather than replaces: a field the source lacks keeps whatever the reference
+    already had. Without that, capturing from a freshly created broadcast - which has no
+    tags yet - would record "no tags" and destroy them permanently.
     """
     token = access_token()
     if not video_id:
@@ -436,72 +465,359 @@ def cmd_capture(video_id=None, key=None):
         if not b:
             die("nothing live to capture from - pass a video id")
         video_id = b["id"]
-    r = api("GET", "videos", token, {"part": "snippet,status", "id": video_id})
-    if not r.get("items"):
+    v = api("GET", "videos", token,
+            {"part": "snippet,status,localizations", "id": video_id})
+    if not v.get("items"):
         die(f"video {video_id} not found")
-    sn, st = r["items"][0]["snippet"], r["items"][0]["status"]
+    v = v["items"][0]
+    sn, st = v["snippet"], v["status"]
     t = load_template()
-    kept, taken = [], []
-    for k in CARRY_SNIPPET:
-        v = sn.get(k)
-        if v not in (None, "", []):
-            t[k] = v; taken.append(k)
-        elif k in t:
+    vid_t = t.setdefault("video", {})
+    st_t = t.setdefault("video_status", {})
+    bc_t = t.setdefault("broadcast", {})
+    took, kept = [], []
+    for k in VIDEO_FIELDS:
+        val = sn.get(k)
+        if k == "title" and val and FALLBACK_TITLE.match(val):
+            kept.append("title(refused a fallback title)"); continue
+        if val not in (None, "", []):
+            vid_t[k] = val; took.append(k)
+        elif k in vid_t:
             kept.append(k)
-    for k in CARRY_STATUS:
-        v = st.get(k)
-        if v is not None:
-            t[k] = v; taken.append(k)
-        elif k in t:
+    loc = v.get("localizations")
+    if loc:
+        t["localizations"] = loc; took.append("localizations")
+    elif "localizations" in t:
+        kept.append("localizations")
+    for k in STATUS_FIELDS:
+        val = st.get(k)
+        if val is not None:
+            st_t[k] = val; took.append(k)
+        elif k in st_t:
             kept.append(k)
+    # broadcast-level settings, if this id is still a live broadcast
+    b = api("GET", "liveBroadcasts", token, {"part": "contentDetails", "id": video_id})
+    if b.get("items"):
+        cd = b["items"][0]["contentDetails"]
+        for k in BCAST_FIELDS:
+            if cd.get(k) is not None:
+                bc_t[k] = cd[k]; took.append(k)
+        bc_t["enableMonitorStream"] = cd.get("monitorStream", {}).get("enableMonitorStream", False)
     t["_captured_from"] = video_id
     t["_captured_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
-    TEMPLATE.write_text(json.dumps(t, indent=2, ensure_ascii=False))
+    save_template(t)
     print(json.dumps({"status": "CAPTURED", "from": video_id,
-                      "took": taken, "kept_from_before": kept,
-                      "tags": len(t.get("tags", []))}))
+                      "took": len(took), "kept_from_before": kept,
+                      "tags": len(vid_t.get("tags") or []),
+                      "description_chars": len(vid_t.get("description") or ""),
+                      "localizations": list((t.get("localizations") or {}).keys())}))
     return 0
 
 
-def cmd_apply(video_id):
-    """Stamp the saved settings onto a video. Never fatal: the stream being live matters
-    more than its tags, so a failure here is reported and swallowed by the caller."""
+# A broadcast created before a title was known gets this shape. Capturing FROM one of
+# these is how a wrong title got propagated on 2026-09-06, so they are never adopted.
+FALLBACK_TITLE = re.compile(r"^Ternak Laundry Bengkong - \d{4}-\d{2}-\d{2} \d{2}:\d{2}$")
+
+
+def _wanted_video(t):
+    """The snippet/status the reference says a broadcast should have.
+
+    The REFERENCE owns the title, not conf/stream.env. Studio is where a title actually
+    gets edited, and requiring stream.env to be edited in lockstep just moves the manual
+    work somewhere less visible - the "#indonesia" added in Studio was being overwritten
+    on every enforcement by a stale YT_TITLE_FMT. YT_TITLE_FMT is now only the name used
+    when creating a broadcast before any reference exists.
+    """
+    vid_t = dict(t.get("video") or {})
+    if not vid_t.get("title"):
+        fmt = os.environ.get("YT_TITLE_FMT")
+        if fmt:
+            vid_t["title"] = time.strftime(fmt)
+    return vid_t, dict(t.get("video_status") or {})
+
+
+def _diff_video(sn, st, loc, t):
+    """Which reference fields do NOT match what YouTube currently has."""
+    vid_t, st_t = _wanted_video(t)
+    diffs = []
+    for k, want in vid_t.items():
+        got = sn.get(k)
+        if k == "tags":
+            if sorted(got or []) != sorted(want or []):
+                diffs.append(f"tags({len(got or [])} vs {len(want)})")
+        elif got != want:
+            diffs.append(k)
+    for k, want in st_t.items():
+        if st.get(k) != want:
+            diffs.append(k)
+    # localizations are NOT compared. With defaultLanguage set, YouTube mirrors the main
+    # snippet into that language's localization itself, and lags doing it - so comparing
+    # them reported "localizations" drift permanently and would have fired a needless
+    # update every ENFORCE_EVERY seconds forever. Enforcing title, description and
+    # defaultLanguage is what actually determines the localized text.
+    return diffs
+
+
+def _apply_video(token, video_id, t):
+    v = api("GET", "videos", token,
+            {"part": "snippet,status,localizations", "id": video_id})["items"][0]
+    sn, st = v["snippet"], v["status"]
+    vid_t, st_t = _wanted_video(t)
+    sn.update(vid_t)
+    st.update(st_t)
+    return api("PUT", "videos", token, {"part": "snippet,status"},
+               {"id": video_id, "snippet": sn, "status": st})
+
+
+def _ensure_thumbnail(token, video_id):
+    """Put the branded still back if it is not already there. Never fatal."""
+    if not _thumb_path().exists():
+        return {}
+    try:
+        ok, c = thumbnail_matches(token, video_id, _thumb_path())
+        if ok:
+            return {"thumbnail": "ok", "thumbnail_corr": c}
+        set_thumbnail(token, video_id, _thumb_path())
+        time.sleep(READBACK_WAIT[1])
+        if not RENDERED.exists():
+            snapshot_rendered(token, video_id)
+        ok, c = thumbnail_matches(token, video_id, _thumb_path())
+        return {"thumbnail": "applied" if ok else "applied_unconfirmed",
+                "thumbnail_corr": c}
+    except Exception as e:
+        return {"thumbnail": "failed", "thumbnail_error": str(e)[:180]}
+
+
+def cmd_verify(video_id=None, quiet=False):
+    """Compare a broadcast against the reference. Exit 0 if it matches, 1 if it drifted."""
     t = load_template()
     if not t:
-        print(json.dumps({"status": "SKIPPED", "msg": f"no {TEMPLATE} yet"}))
-        return 0
+        print(json.dumps({"status": "NOREF", "msg": f"no {TEMPLATE} yet"})); return 2
     token = access_token()
-    r = api("GET", "videos", token, {"part": "snippet,status", "id": video_id})
-    if not r.get("items"):
+    if not video_id:
+        b = active_broadcast(token)
+        if not b:
+            print(json.dumps({"status": "OFFLINE", "msg": "nothing live to verify"})); return 2
+        video_id = b["id"]
+    v = api("GET", "videos", token,
+            {"part": "snippet,status,localizations", "id": video_id})
+    if not v.get("items"):
         die(f"video {video_id} not found")
-    sn, st = r["items"][0]["snippet"], r["items"][0]["status"]
-    # videos.update REPLACES the parts it is given, so start from what is there and
-    # overlay the template - otherwise omitted fields get wiped.
-    # YT_TITLE_FMT owns the title when it is set. Carrying the title from the template too
-    # meant one bad title propagated forever: a capture from a broadcast that had the
-    # fallback name stamped "Ternak Laundry Bengkong - 2026-09-05 15:03" onto the live
-    # stream, replacing the configured hashtag title. Configuration beats inheritance.
-    fmt = os.environ.get("YT_TITLE_FMT")
-    for k in CARRY_SNIPPET:
-        if k == "title" and fmt:
-            sn["title"] = time.strftime(fmt)
-            continue
-        if k in t:
-            sn[k] = t[k]
-    for k in CARRY_STATUS:
-        if k in t:
-            st[k] = t[k]
-    # Report what YouTube STORED, not what we sent. Reporting the request back as if it
-    # were the result once had this claiming "35 tags applied" while the video still had
-    # none - a success message that cannot fail is worth nothing.
-    resp = api("PUT", "videos", token, {"part": "snippet,status"},
-               {"id": video_id, "snippet": sn, "status": st})
-    got = resp.get("snippet", {})
-    print(json.dumps({"status": "APPLIED", "video": video_id,
-                      "tags_sent": len(sn.get("tags") or []),
-                      "tags_stored": len(got.get("tags") or []),
-                      "title": got.get("title", "")[:60]}))
+    v = v["items"][0]
+    diffs = _diff_video(v["snippet"], v["status"], v.get("localizations"), t)
+    # broadcast-level settings are fixed at creation; report them but never claim to fix
+    bdiffs = []
+    b = api("GET", "liveBroadcasts", token, {"part": "contentDetails", "id": video_id})
+    if b.get("items"):
+        cd = b["items"][0]["contentDetails"]
+        for k, want in (t.get("broadcast") or {}).items():
+            got = cd.get("monitorStream", {}).get("enableMonitorStream") \
+                  if k == "enableMonitorStream" else cd.get(k)
+            if got != want:
+                bdiffs.append(f"{k}({got} vs {want})")
+    if _thumb_path().exists():
+        try:
+            tok, tc = thumbnail_matches(token, video_id, _thumb_path())
+            if not tok:
+                diffs.append(f"thumbnail(corr {tc})")
+        except Exception:
+            pass
+    out = {"status": "OK" if not diffs and not bdiffs else "DRIFTED",
+           "video": video_id, "diffs": diffs, "broadcast_diffs": bdiffs}
+    manual = (t.get("manual") or {})
+    if manual:
+        out["manual_unverifiable"] = list(manual.keys())
+    if not quiet:
+        print(json.dumps(out))
+    return 0 if (not diffs and not bdiffs) else 1
+
+
+def cmd_enforce(video_id=None, attempts=3):
+    """Apply the reference, read it back, and keep fixing until it matches.
+
+    "Applied" is not "correct" - videos.update happily accepts a request and returns a
+    body that is not what was stored. Only a read-back proves anything.
+    """
+    t = load_template()
+    if not t:
+        print(json.dumps({"status": "NOREF", "msg": f"no {TEMPLATE} yet"})); return 2
+    token = access_token()
+    if not video_id:
+        b = active_broadcast(token)
+        if not b:
+            print(json.dumps({"status": "OFFLINE", "msg": "nothing live to enforce on"})); return 2
+        video_id = b["id"]
+    tries = []
+    for i in range(attempts):
+        v = api("GET", "videos", token,
+                {"part": "snippet,status,localizations", "id": video_id})["items"][0]
+        diffs = _diff_video(v["snippet"], v["status"], v.get("localizations"), t)
+        if not diffs:
+            print(json.dumps({"status": "OK", "video": video_id, "attempts": i,
+                              "tags": len(v["snippet"].get("tags") or []),
+                              "tries": tries}))
+            return 0
+        tries.append({"attempt": i + 1, "fixing": diffs})
+        resp = _apply_video(token, video_id, t)
+        # Judge by the WRITE RESPONSE, not by re-reading. videos.list is eventually
+        # consistent and serves stale data for several seconds, so a read-back loop
+        # reported "tags(1 vs 38)" three times over for a write that had already
+        # succeeded - and did three more redundant updates chasing it. The response to
+        # the update reflects what was actually stored.
+        rdiffs = _diff_video(resp.get("snippet", {}), resp.get("status", {}),
+                             resp.get("localizations"), t)
+        if not rdiffs:
+            out = {"status": "OK", "video": video_id, "attempts": i + 1, "fixed": diffs,
+                   "tags": len(resp.get("snippet", {}).get("tags") or []),
+                   "confirmed_by": "write response"}
+            out.update(_ensure_thumbnail(token, video_id))
+            print(json.dumps(out))
+            return 0
+        time.sleep(READBACK_WAIT[min(i, len(READBACK_WAIT) - 1)])
+    time.sleep(READBACK_WAIT[-1])       # final word, after the longest settle
+    v = api("GET", "videos", token,
+            {"part": "snippet,status,localizations", "id": video_id})["items"][0]
+    diffs = _diff_video(v["snippet"], v["status"], v.get("localizations"), t)
+    print(json.dumps({"status": "OK" if not diffs else "FAILED", "video": video_id,
+                      "attempts": attempts, "remaining": diffs, "tries": tries}))
+    return 0 if not diffs else 1
+
+
+# ------------------------------------------------------------------- thumbnail
+# A new broadcast every 8 hours means a new video every 8 hours, each one defaulting to a
+# frame YouTube grabbed from the stream. The branded still has to be re-applied every time,
+# which is exactly the kind of thing nobody should be doing by hand three times a day.
+def set_thumbnail(token, video_id, path):
+    data = pathlib.Path(path).read_bytes()
+    # No local size check. YouTube documents a 2 MB limit, but the documented limit is not
+    # the enforced one and a pre-emptive refusal here just means rejecting a file the
+    # service would have accepted. Send it and report what YouTube actually says.
+    ctype = "image/png" if data[:8] == b"\x89PNG\r\n\x1a\n" else "image/jpeg"
+    req = urllib.request.Request(
+        f"{UPLOAD}/thumbnails/set?videoId={urllib.parse.quote(video_id)}&uploadType=media",
+        data=data, method="POST",
+        headers={"Authorization": f"Bearer {token}", "Content-Type": ctype,
+                 "Content-Length": str(len(data))})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            return json.loads(r.read() or b"{}")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode()[:400]
+        if e.code == 403 and "forbidden" in detail.lower():
+            raise RuntimeError("YouTube refused the custom thumbnail. The channel must be "
+                               "verified (phone) to use custom thumbnails: "
+                               f"{detail}")
+        raise RuntimeError(f"thumbnails.set -> HTTP {e.code}: {detail}")
+
+
+def _gray(src, is_url=False):
+    """64x36 grayscale bytes, via ffmpeg - same trick yt_check.py uses to compare frames."""
+    ff = str(pathlib.Path.home() / ".local/bin/ffmpeg")
+    import subprocess
+    r = subprocess.run([ff, "-v", "error", "-i", src, "-vf", "scale=64:36,format=gray",
+                        "-f", "rawvideo", "-"], capture_output=True, timeout=60)
+    return list(r.stdout)
+
+
+def _corr(a, b):
+    if len(a) != len(b) or not a:
+        return 0.0
+    n = len(a); ma = sum(a) / n; mb = sum(b) / n
+    va = sum((x - ma) ** 2 for x in a); vb = sum((x - mb) ** 2 for x in b)
+    if va == 0 or vb == 0:
+        return 0.0
+    return sum((a[i] - ma) * (b[i] - mb) for i in range(n)) / ((va * vb) ** 0.5)
+
+
+RENDERED = BASE / "conf/thumbnail_rendered.jpg"   # what YouTube shows once ours is applied
+
+
+def _thumb_url(token, video_id):
+    v = api("GET", "videos", token, {"part": "snippet", "id": video_id})
+    if not v.get("items"):
+        return None
+    th = v["items"][0]["snippet"].get("thumbnails", {})
+    for k in ("maxres", "standard", "high", "medium", "default"):
+        if th.get(k, {}).get("url"):
+            return th[k]["url"]
+    return None
+
+
+def snapshot_rendered(token, video_id):
+    """Save YouTube's rendering of our thumbnail as the comparison baseline.
+
+    Comparing the SOURCE file against YouTube's version is a false mismatch waiting to
+    happen: a 4:3 source comes back as a 16:9 render with the sides filled in, which
+    correlates at ~0.5 against the original however correct it is. Comparing YouTube's
+    render against a stored copy of YouTube's render is like for like.
+    """
+    url = _thumb_url(token, video_id)
+    if not url:
+        return False
+    try:
+        with urllib.request.urlopen(url, timeout=60) as r:
+            RENDERED.write_bytes(r.read())
+        return True
+    except Exception:
+        return False
+
+
+def thumbnail_matches(token, video_id, path, min_corr=0.90):
+    """Is the video's thumbnail actually ours?
+
+    YouTube re-encodes what it is given, so the bytes never match. Compare the picture
+    instead, the same way the stream monitor compares frames: downscale both to 64x36
+    grey and correlate. That is immune to re-encoding and still catches "YouTube is
+    showing a frame it grabbed from the stream" - a completely different image.
+    """
+    v = api("GET", "videos", token, {"part": "snippet", "id": video_id})
+    if not v.get("items"):
+        return False, 0.0
+    th = v["items"][0]["snippet"].get("thumbnails", {})
+    url = None
+    for k in ("maxres", "standard", "high", "medium", "default"):
+        if th.get(k, {}).get("url"):
+            url = th[k]["url"]; break
+    if not url:
+        return False, 0.0
+    ref = str(RENDERED) if RENDERED.exists() else str(path)
+    live = _gray(url); mine = _gray(ref)
+    if not live or not mine:
+        return False, 0.0
+    c = _corr(live, mine)
+    return c >= min_corr, round(c, 3)
+
+
+def cmd_thumbnail(arg=None):
+    """`thumbnail <file>` adopts a file as the reference; `thumbnail` re-applies it."""
+    token = access_token()
+    if arg and arg not in ("--check",):
+        src = pathlib.Path(arg).expanduser()
+        if not src.exists():
+            die(f"no such file: {src}")
+        _thumb_path().parent.mkdir(parents=True, exist_ok=True)
+        (BASE / ('conf/thumbnail' + src.suffix.lower())).write_bytes(src.read_bytes())
+    if not _thumb_path().exists():
+        die(f"no reference thumbnail yet - run: bin/yt_api.py thumbnail <file>")
+    b = active_broadcast(token)
+    if not b:
+        print(json.dumps({"status": "STORED", "file": str(_thumb_path()),
+                          "bytes": _thumb_path().stat().st_size,
+                          "msg": "nothing live - it will be applied at the next broadcast"}))
+        return 0
+    if arg == "--check":
+        ok, c = thumbnail_matches(token, b["id"], _thumb_path())
+        print(json.dumps({"status": "OK" if ok else "MISMATCH",
+                          "video": b["id"], "correlation": c}))
+        return 0 if ok else 1
+    set_thumbnail(token, b["id"], _thumb_path())
+    time.sleep(READBACK_WAIT[1])          # YouTube needs a moment to render it
+    RENDERED.unlink(missing_ok=True)      # re-baseline against the new upload
+    snapshot_rendered(token, b["id"])
+    ok, c = thumbnail_matches(token, b["id"], _thumb_path())
+    print(json.dumps({"status": "APPLIED" if ok else "APPLIED_UNCONFIRMED",
+                      "video": b["id"], "bytes": _thumb_path().stat().st_size,
+                      "correlation": c}))
     return 0
 
 
@@ -611,11 +927,13 @@ def main():
             return cmd_prepare(read_key())
         if cmd == "capture":
             return cmd_capture(sys.argv[2] if len(sys.argv) > 2 else None)
-        if cmd == "apply":
-            if len(sys.argv) < 3:
-                die("apply needs a video id")
-            return cmd_apply(sys.argv[2])
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | apply")
+        if cmd == "verify":
+            return cmd_verify(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd == "thumbnail":
+            return cmd_thumbnail(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd in ("apply", "enforce"):
+            return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

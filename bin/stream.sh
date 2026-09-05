@@ -188,8 +188,27 @@ reader_loop() {
 apply_settings() {
   yt_api_ready || return 0
   [[ -s "$BASE/conf/broadcast_template.json" ]] || return 0
-  log "SETTINGS: $(yt_api_call apply "$1")"
+  log "SETTINGS: $(yt_api_call enforce "$1")"
   return 0
+}
+
+# Drift check on the running broadcast. Cheap when nothing is wrong - one videos.list, and
+# an update only when the configuration has actually moved away from the reference. This is
+# what makes "it will be fixed until it is right" true rather than aspirational: a setting
+# changed by hand, or a broadcast that came up wrong, is corrected without anyone noticing.
+: ${ENFORCE_EVERY:=1800}          # seconds between drift checks (0 disables)
+LAST_ENFORCE=0
+enforce_drift() {
+  (( ENFORCE_EVERY > 0 )) || return 0
+  yt_api_ready || return 0
+  [[ -s "$BASE/conf/broadcast_template.json" ]] || return 0
+  local now=$(date +%s) out
+  (( now - LAST_ENFORCE >= ENFORCE_EVERY )) || return 0
+  LAST_ENFORCE=$now
+  out=$(yt_api_call verify)
+  print -r -- "$out" | grep -q '"status": *"DRIFTED"' || return 0
+  log "DRIFT: $out"
+  log "DRIFT: $(yt_api_call enforce)"
 }
 
 prepare_broadcast() {
@@ -558,6 +577,7 @@ while true; do
     housekeep
     check_monitor
     refresh_broadcast_clock
+    enforce_drift
   fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue

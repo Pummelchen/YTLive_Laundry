@@ -86,6 +86,34 @@ else
   print "  (no rotation has run yet)"
 fi
 
+print "\n=== configuration vs conf/broadcast_template.json ==="
+if [[ -s "$BASE/conf/broadcast_template.json" ]]; then
+  if [[ "$NET" == yes ]]; then
+    v=$(BASE="$BASE" YT_TITLE_FMT="${YT_TITLE_FMT:-}" python3 "$BASE/bin/yt_api.py" verify 2>&1)
+    print -r -- "$v" | grep -q '"status": *"OK"' && ok "live broadcast matches the reference" || bad "$v"
+  fi
+  python3 - "$BASE/conf/broadcast_template.json" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1]))
+v=d.get("video",{})
+print(f"  title  {len(v.get('title',''))} chars | desc {len(v.get('description',''))} chars | "
+      f"{len(v.get('tags') or [])} tags | cat {v.get('categoryId')} | lang {v.get('defaultLanguage')}")
+print(f"  latency {d.get('broadcast',{}).get('latencyPreference')} | dvr "
+      f"{d.get('broadcast',{}).get('enableDvr')} | localizations "
+      f"{list((d.get('localizations') or {}).keys())}")
+import os
+tp = [c for c in ("conf/thumbnail.png","conf/thumbnail.jpg")
+      if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(sys.argv[1])), c))]
+print(f"  thumbnail {tp[0] if tp else 'NONE - run: bin/yt_api.py thumbnail <file>'}")
+for name,m in (d.get("manual") or {}).items():
+    state = "wanted ON" if m.get("desired") else "wanted OFF"
+    print(f"  MANUAL: {name} - {state}, NOT settable or readable via the API")
+    print(f"          set it at: {m.get('where')}")
+PY
+else
+  print "  (no reference captured yet - run: bin/yt_api.py capture)"
+fi
+
 print "\n=== recordings (the whole point of cutting at 8h) ==="
 VS="$BASE/log/vod_status"
 if [[ -s "$VS" ]]; then
