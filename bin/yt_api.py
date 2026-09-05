@@ -39,6 +39,8 @@ CREDS = BASE / "conf/yt_oauth.json"
 TEMPLATE = BASE / "conf/broadcast_template.json"
 # The channel's branded still, reused at every rotation. Kept in whatever format it was
 # given - PNG included - because re-encoding it is not ours to decide.
+# Order matters: the first that exists wins, so a stray PNG dropped in later would
+# silently override the golden thumbnail. Every result names the file it actually used.
 THUMBNAIL_CANDIDATES = ("conf/thumbnail.png", "conf/thumbnail.jpg")
 def _thumb_path():
     for c in THUMBNAIL_CANDIDATES:
@@ -592,7 +594,7 @@ def _ensure_thumbnail(token, video_id):
             snapshot_rendered(token, video_id)
         ok, c = thumbnail_matches(token, video_id, _thumb_path())
         return {"thumbnail": "applied" if ok else "applied_unconfirmed",
-                "thumbnail_corr": c}
+                "thumbnail_file": _thumb_path().name, "thumbnail_corr": c}
     except Exception as e:
         return {"thumbnail": "failed", "thumbnail_error": str(e)[:180]}
 
@@ -825,7 +827,8 @@ def cmd_thumbnail(arg=None):
     snapshot_rendered(token, b["id"])
     ok, c = thumbnail_matches(token, b["id"], _thumb_path())
     print(json.dumps({"status": "APPLIED" if ok else "APPLIED_UNCONFIRMED",
-                      "video": b["id"], "bytes": _thumb_path().stat().st_size,
+                      "video": b["id"], "file": _thumb_path().name,
+                      "bytes": _thumb_path().stat().st_size,
                       "correlation": c}))
     return 0
 
