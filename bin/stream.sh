@@ -233,6 +233,27 @@ rotate_broadcast() {
       return
     fi
   fi
+  # PREFLIGHT - the most important rule in this script.
+  # Never end a working broadcast unless we can start the next one. Rotating without that
+  # ability does not "restart" anything; it just takes the channel dark until a human
+  # presses Go Live. That is exactly what happened on 2026-09-05: the 09:17 rotation ended
+  # a healthy 8h broadcast and the channel stayed dark for 5 hours. Losing the >12h archive
+  # is a far smaller cost than losing the stream, so when in doubt we do NOT rotate.
+  if ! yt_api_ready; then
+    log "ROTATE ($why): SKIPPED - no YouTube API credentials, so nothing here can create the next broadcast. Staying live on the current one. Run bin/yt_api.py auth to enable rotation."
+    rm -f "$ROTATE_NOW"
+    BROADCAST_STARTED=$(date +%s)   # do not re-ask every 5s
+    return
+  fi
+  local pre
+  pre=$(BASE="$BASE" python3 "$YT_API" status 2>&1)
+  if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
+    log "ROTATE ($why): SKIPPED - the API cannot talk to YouTube, so the next broadcast could not be created. Staying live. YouTube said: $pre"
+    rm -f "$ROTATE_NOW"
+    BROADCAST_STARTED=$(date +%s)
+    return
+  fi
+
   old_id=$(yt_live_id)
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
   # Ending the broadcast explicitly is what actually gets the VOD saved. Dropping ingest

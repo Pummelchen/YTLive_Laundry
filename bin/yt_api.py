@@ -150,7 +150,8 @@ def cmd_auth():
                 continue
             die(f"device flow failed: {err}")
         save_creds({"client_id": cid, "client_secret": csec,
-                    "refresh_token": t["refresh_token"]})
+                    "refresh_token": t["refresh_token"],
+                    "authorised_at": int(time.time())})
         print(f"\nSaved {CREDS} (chmod 600). Verify with: bin/yt_api.py status")
         return 0
     die("timed out waiting for approval")
@@ -176,6 +177,24 @@ def stream_for_key(token, key):
     return None
 
 
+def token_age_warning():
+    """Google expires refresh tokens after 7 days while the OAuth app is in 'Testing'.
+    That failure is silent and looks like nothing at all until a rotation needs the API,
+    so surface the countdown long before it bites."""
+    try:
+        t = load_creds().get("authorised_at")
+    except SystemExit:
+        return None
+    if not t:
+        return None
+    days = (time.time() - t) / 86400.0
+    if days >= 6.0:
+        return (f"refresh token is {days:.1f} days old. If the OAuth app is still in "
+                f"'Testing', Google expires it at 7 days - re-run bin/yt_api.py auth, or "
+                f"publish the app so it stops expiring.")
+    return None
+
+
 def cmd_status(token=None, key=None):
     token = token or access_token()
     b = active_broadcast(token)
@@ -188,6 +207,9 @@ def cmd_status(token=None, key=None):
         "stream_id": s["id"] if s else None,
         "ingest": (s or {}).get("status", {}).get("streamStatus"),
     }
+    w = token_age_warning()
+    if w:
+        out["token_warning"] = w
     print(json.dumps(out))
     return 0 if b else 1
 
