@@ -402,6 +402,22 @@ yt_live_state() {
 
 yt_live_id() { yt_live_state | awk '$1=="live"{print $2}'; }
 
+# Has YouTube closed the broadcast? Ask the API when we have it. yt_live_state() goes
+# through yt-dlp, which lags by tens of seconds, and twice reported a broadcast still live
+# after YouTube had already closed it - firing a spurious "autoStop off?" warning and a
+# no-op API end. The API knows immediately, and this is the one question where being wrong
+# costs a misleading log line in the record we rely on to diagnose anything later.
+broadcast_closed() {
+  local out
+  if yt_api_ready; then
+    out=$(yt_api_call status)
+    print -r -- "$out" | grep -q '"status": *"OFFLINE"' && return 0
+    print -r -- "$out" | grep -q '"status": *"LIVE"'    && return 1
+    # API could not answer - fall through to the slow path rather than guess
+  fi
+  [[ "${$(yt_live_state)%% *}" == "offline" ]]
+}
+
 # Watch for the broadcast YouTube is supposed to open once ingest is flowing. Runs in the
 # background so it never blocks the publisher watchdog. Releases the monitor hold as soon as
 # the channel is genuinely live, and says something useful if it never is. Used by BOTH the
@@ -531,10 +547,10 @@ rotate_broadcast() {
   # by this script with autoStop off, say) do we end it explicitly.
   local ended=0
   while (( waited < ROTATE_MAX_WAIT )); do
-    state="${$(yt_live_state)%% *}"
-    [[ "$state" == "offline" ]] && break
+    if broadcast_closed; then state=offline; break; fi
+    state=live
     if (( waited >= ROTATE_END_PATIENCE )) && (( ended == 0 )) && yt_api_ready; then
-      log "ROTATE: YouTube still has it live after ${waited}s (autoStop off?) - ending it via the API: $(yt_api_call end)"
+      log "ROTATE: YouTube has NOT closed it after ${waited}s (autoStop off on this broadcast) - ending it via the API: $(yt_api_call end)"
       ended=1
     fi
     sleep 15; waited=$(( waited + 15 ))
