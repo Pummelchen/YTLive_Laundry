@@ -331,12 +331,12 @@ def cmd_ensure_live(key):
 
 
 def _create_and_bind(token, stream_id):
+    t = load_template()
     # The reference's title first - it is what Studio last showed. Then YT_TITLE_FMT, then
     # a dated fallback. `or` not a get() default: an empty YT_TITLE_FMT would otherwise
     # produce an empty title, which YouTube rejects.
     title = (t.get("video") or {}).get("title") or time.strftime(
         os.environ.get("YT_TITLE_FMT") or "Ternak Laundry Bengkong - %Y-%m-%d %H:%M")
-    t = load_template()
     ref_bc = dict(t.get("broadcast") or {})
     ref_st = dict(t.get("video_status") or {})
     # NEVER inherited, always off. A monitor stream forces ready->testing->live, and both
