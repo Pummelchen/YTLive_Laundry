@@ -57,6 +57,10 @@ Measured: ~106% CPU of 400% available (4 logical cores) = comfortable headroom.
     bin/preflight.sh         probe camera codecs
     bin/camscan.py           find cameras on the LAN (ONVIF + port sweep)
     bin/onvif_probe.py       pull RTSP URLs from an ONVIF camera
+    bin/smoke_test.sh        RUN THIS BEFORE RESTARTING ANYTHING - see below
+    bin/lib.sh               yt_api_ready/yt_api_call, shared by stream.sh and yt_monitor.sh
+    bin/cam_ip.py            resolves the camera's address; nothing hardcodes it
+    bin/find_cam.py          ONVIF WS-Discovery, used by cam_ip.py as the last resort
     bin/yt_api.py            YouTube Live API: create/bind/end, and the config reference
     bin/yt_check.py          pulls a frame from the public stream and grades it
     bin/yt_monitor.sh        the watchdog loop
@@ -488,3 +492,64 @@ talks to the wrong device: cam_config.py still pointed at 192.168.1.2 a week lat
 
 The winner is written back to log/cam_ip, so a stale entry self-heals rather than persisting.
 cam_config.py and cam_reboot.py both use it; neither holds an address any more.
+
+## Before you restart anything: bin/smoke_test.sh
+Both outages this project has had came from the same mistake - editing a path and
+validating everything except that path. `prepare`/`_create_and_bind` only runs when a
+broadcast has to be CREATED, once every 8 hours, so an `UnboundLocalError` in it sat
+harmless for hours and then fired during a scheduled rotation, taking the channel dark.
+
+    bin/smoke_test.sh        exit 0 = safe to restart
+
+It checks every script parses, runs the read-only API commands, scans for the specific
+use-before-assignment class with an AST pass, and exercises the creation path through
+`yt_api.py prepare --dry-run`, which builds the real request body without sending it.
+Verified against the actual bug: reintroduced in a copy, the test fails twice over -
+statically and at runtime with the genuine UnboundLocalError.
+
+## Suggested thumbnail for the finished video  (added 2026-09-07)
+**YouTube throws the thumbnail away when a broadcast becomes a video.** It falls back to a
+frame of its own choosing, which is why Studio then offers "pick one of 3". Verified on
+ufmT_Fjg9aw: `maxresdefault.jpg` was byte-identical to YouTube's own `maxres1.jpg` despite
+the branded thumbnail having been enforced for the whole eight hours it was live. So
+conf/thumbnail.jpg only ever applies while LIVE; every finished VOD reverts.
+
+The three suggestions are fetchable at predictable URLs. `1/2/3.jpg` are only 120x90, far
+under the 640x360 minimum for an upload - but `maxres1/2/3.jpg` are the same frames at
+1280x720, exactly the recommended size. Uploading maxres1 back through thumbnails.set turns
+the auto-pick into a real custom thumbnail.
+
+    bin/yt_api.py pick-thumbnail <videoId> [1|2|3] [--force]
+
+It REFUSES when the video already has a custom thumbnail, so a deliberate choice is never
+overwritten. "Custom" is decided by comparing the served thumbnail against the three
+suggestions: byte-identical to one of them means it is still the auto-pick.
+
+stream.sh schedules this at every cut for the outgoing video, THUMB_DELAY (1h) later, via
+log/thumb_pending rather than a sleeping subshell so it survives a restart. The file is
+OVERWRITTEN at each cut, so only ever the most recent video is pending - there is no queue.
+A video still processing returns NOTREADY and is retried every THUMB_RETRY (15 min) up to
+THUMB_MAX_TRIES (8), then given up on rather than retried forever.
+
+## Concurrency and shared code
+`await_broadcast` is serialised behind an atomic `mkdir` lock (log/await.lock). A rotation
+spawns one and a publisher restart inside the same window spawns another; both then poll
+YouTube and both enforce settings on the same video - observed 2026-09-06 07:33:21, two
+SETTINGS lines in one second. A lock older than AWAIT_LOCK_TTL is taken, so a killed
+subshell cannot block rotations forever.
+
+`yt_api_ready()` and `yt_api_call()` live in bin/lib.sh. They were defined in both
+stream.sh and yt_monitor.sh and had already drifted - YT_LATENCY added to each by hand, and
+the two `yt_api_ready()` bodies testing different paths for the same file. conf/stream.env
+is SOURCED rather than exported, so anything a subprocess needs must be passed explicitly;
+doing that in two places is how the channel silently lost its hashtags for a day.
+
+## Timing settings, and why they are what they are
+    ROTATE_HOURS=8 + ROTATE_MINUTES=3   cut at 8h03m so the SAVED recording clears 8h -
+                                        YouTube's encode loses 0.6-2.3 min making the VOD
+    CHECK_INTERVAL=20                   each monitor check spawns yt-dlp AND ffmpeg for
+                                        ~2.0 CPU-seconds; at 10s that was ~15% of a core
+                                        burning continuously on a box with 17% idle
+    ENFORCE_EVERY=1800                  configuration drift check; one cheap read when
+                                        nothing is wrong
+    THUMB_DELAY=3600                    how long after a cut to adopt YouTube's suggestion
