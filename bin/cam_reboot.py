@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Reboot the ONVIF camera. Usage: cam_reboot.py [HOST] [PORT] [USER] [PASS]"""
 import sys, urllib.request, hashlib, base64, os, datetime
-host = sys.argv[1] if len(sys.argv)>1 else "192.168.1.2"
+import os, pathlib, importlib.util
+BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home()/"Downloads/YTLive")))
+_s = importlib.util.spec_from_file_location("cam_ip", BASE/"bin/cam_ip.py")
+_c = importlib.util.module_from_spec(_s); _s.loader.exec_module(_c)
+host = sys.argv[1] if len(sys.argv)>1 else (_c.resolve(need_onvif=True)[0] or sys.exit("camera not found"))
 port = sys.argv[2] if len(sys.argv)>2 else "8899"
 user = sys.argv[3] if len(sys.argv)>3 else ""
 pw   = sys.argv[4] if len(sys.argv)>4 else ""

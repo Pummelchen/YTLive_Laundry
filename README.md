@@ -449,3 +449,42 @@ token died on the 12th.
 
 A green light saying a dependency is optional, when it is not, is worse than no light.
 status.sh now states plainly that the API is required for every rotation.
+
+## What the camera actually does  (measured 2026-09-07)
+It accepts ONVIF encoder writes, reports them back, and then ignores them. Do not trust
+`cam_config.py get` as a description of the stream - it is a description of what the camera
+has been *told*.
+
+    configured                      actually delivered
+    bitrate 8192 -> 20480 kbps      2.3 Mbit/s, unchanged by the setting
+    fps 30                          14 fps  (r_frame_rate=100/7, avg_frame_rate=14/1)
+
+Raising the bitrate to 12288, 16384 and 20480 all returned OK and read back correctly, and
+changed the delivered bitrate by nothing - verified on a freshly established RTSP session,
+not just the running one. `SRC_FPS="14"` in conf/stream.env was already right.
+
+Two things follow. The denoise and sharpen filters are compensating for a genuinely
+starved source (~0.026 bits/pixel at 14fps) and are not gratuitous. And OUT_FPS=30 from a
+14fps source means half the encoded frames are duplicates.
+
+To probe the camera directly, stop the reader first - it holds the only RTSP session and
+this camera is unreliable with two:
+
+    pkill -f 'ffmpeg.*rtsp://'      # reader_loop reconnects on its own in ~2s
+    ffprobe -rtsp_transport tcp -i "rtsp://$(bin/cam_ip.py)/live/ch00_0"
+
+## Finding the camera  (bin/cam_ip.py)
+The camera is on DHCP and moves after a power cut - it went .2 -> .3 on 2026-08-31 and this
+Mac's own LAN port then took the vacated .2. Anything holding a hardcoded address eventually
+talks to the wrong device: cam_config.py still pointed at 192.168.1.2 a week later, so a
+`set` would have written encoder config to this Mac.
+
+`bin/cam_ip.py` resolves it, cheapest first, and every candidate must actually answer:
+
+    1. --host / CAM_HOST      explicit override
+    2. log/cam_ip             runtime truth, maintained by stream.sh's cam_ip_watcher
+    3. CAM_URL in conf/stream.env
+    4. ONVIF WS-Discovery     slow, definitive
+
+The winner is written back to log/cam_ip, so a stale entry self-heals rather than persisting.
+cam_config.py and cam_reboot.py both use it; neither holds an address any more.
