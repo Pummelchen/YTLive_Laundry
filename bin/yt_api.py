@@ -840,6 +840,74 @@ def cmd_thumbnail(arg=None):
     return 0
 
 
+# ------------------------------------------------------- suggested VOD thumbnail
+# When a broadcast ends and becomes a video, YouTube DISCARDS the custom thumbnail the live
+# broadcast carried and falls back to a frame it picked itself - which is why Studio then
+# offers "choose one of 3". Verified on ufmT_Fjg9aw: maxresdefault.jpg was byte-identical to
+# maxres1.jpg, i.e. the auto-pick, despite the branded thumbnail having been enforced
+# throughout the eight hours it was live.
+#
+# The three suggestions are fetchable at predictable URLs. The numbered ones (1/2/3.jpg) are
+# only 120x90, far below the 640x360 minimum for an upload, but maxres1/2/3.jpg are the same
+# frames at 1280x720 - exactly the recommended size.
+#
+# Adopting suggestion 1 explicitly turns an auto-pick into a real custom thumbnail, so it is
+# locked in rather than left to YouTube's discretion.
+THUMB_CANDIDATES = ("maxres{n}", "sd{n}", "hq{n}")
+
+
+def _yt_img(video_id, name):
+    try:
+        req = urllib.request.Request(f"https://i.ytimg.com/vi/{video_id}/{name}.jpg",
+                                     headers={"Cache-Control": "no-cache"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.read()
+    except Exception:
+        return None
+
+
+def cmd_pick_thumbnail(video_id, which=1, force=False):
+    """Set YouTube's own suggestion #which as the video's thumbnail.
+
+    Refuses if the video already has a CUSTOM thumbnail, so a deliberate choice is never
+    overwritten. "Custom" is decided by comparing the live thumbnail against the three
+    suggestions: if it is byte-identical to one of them it is still YouTube's auto-pick.
+    """
+    token = access_token()
+    cur = _yt_img(video_id, "maxresdefault") or _yt_img(video_id, "hqdefault")
+    if cur is None:
+        print(json.dumps({"status": "NOTREADY", "video": video_id,
+                          "msg": "no thumbnail served yet - video still processing"}))
+        return 1
+    sugg = {}
+    for n in (1, 2, 3):
+        for pat in THUMB_CANDIDATES:
+            b = _yt_img(video_id, pat.format(n=n))
+            if b:
+                sugg[n] = b
+                break
+    if which not in sugg:
+        print(json.dumps({"status": "NOTREADY", "video": video_id,
+                          "msg": f"suggestion {which} not available yet",
+                          "available": sorted(sugg)}))
+        return 1
+    import hashlib
+    h = lambda b: hashlib.md5(b).hexdigest()
+    if not force and h(cur) not in {h(b) for b in sugg.values()}:
+        print(json.dumps({"status": "CUSTOM", "video": video_id, "action": "none",
+                          "msg": "already has a custom thumbnail - leaving it alone"}))
+        return 0
+    tmp = BASE / "log/.suggested_thumb.jpg"
+    tmp.parent.mkdir(parents=True, exist_ok=True)
+    tmp.write_bytes(sugg[which])
+    set_thumbnail(token, video_id, tmp)
+    tmp.unlink(missing_ok=True)
+    print(json.dumps({"status": "SET", "video": video_id, "suggestion": which,
+                      "bytes": len(sugg[which]),
+                      "url": f"https://www.youtube.com/watch?v={video_id}"}))
+    return 0
+
+
 def cmd_prepare(key):
     """Ensure a bound broadcast exists and is READY - do not wait for it to go live.
 
@@ -956,9 +1024,15 @@ def main():
             return cmd_verify(sys.argv[2] if len(sys.argv) > 2 else None)
         if cmd == "thumbnail":
             return cmd_thumbnail(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd == "pick-thumbnail":
+            if len(sys.argv) < 3:
+                die("pick-thumbnail needs a video id")
+            return cmd_pick_thumbnail(sys.argv[2],
+                                      which=int(sys.argv[3]) if len(sys.argv) > 3 else 1,
+                                      force="--force" in sys.argv)
         if cmd in ("apply", "enforce"):
             return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail")
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail | pick-thumbnail")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

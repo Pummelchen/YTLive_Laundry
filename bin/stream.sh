@@ -173,6 +173,43 @@ reader_loop() {
 #
 # Hence: the broadcast must exist and be bound BEFORE ffmpeg starts pushing. Every ingest
 # start goes through start_publisher, so this is the one place that guarantees the order.
+# WHEN A BROADCAST BECOMES A VIDEO, YOUTUBE THROWS THE THUMBNAIL AWAY. It falls back to a
+# frame of its own choosing, which is why Studio then offers "pick one of 3" - verified on
+# ufmT_Fjg9aw, whose maxresdefault was byte-identical to YouTube's own maxres1 despite the
+# branded thumbnail having been enforced for the whole eight hours it was live.
+#
+# So about an hour after a cut, once the suggestions exist, adopt the first one. That turns
+# an auto-pick into a real custom thumbnail. Scheduled through a state file rather than a
+# sleeping subshell so it survives a restart of this script.
+schedule_thumbnail() {
+  [[ -n "$1" ]] || return 0
+  print -r -- "$1 $(( $(date +%s) + THUMB_DELAY )) 0" > "$THUMB_PENDING"
+  log "THUMB: will adopt YouTube's first suggestion for $1 in $(( THUMB_DELAY / 60 )) min"
+}
+
+do_pending_thumbnail() {
+  [[ -s "$THUMB_PENDING" ]] || return 0
+  yt_api_ready || return 0
+  local vid due tries out
+  read -r vid due tries < "$THUMB_PENDING"
+  [[ "$due" == <-> ]] || { rm -f "$THUMB_PENDING"; return 0; }
+  [[ "$tries" == <-> ]] || tries=0
+  (( $(date +%s) >= due )) || return 0
+  out=$(yt_api_call pick-thumbnail "$vid")
+  log "THUMB: $out"
+  if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
+    tries=$(( tries + 1 ))
+    if (( tries >= THUMB_MAX_TRIES )); then
+      log "THUMB: giving up on $vid after ${tries} attempts - it never offered a suggestion"
+      rm -f "$THUMB_PENDING"
+    else
+      print -r -- "$vid $(( $(date +%s) + THUMB_RETRY )) $tries" > "$THUMB_PENDING"
+    fi
+  else
+    rm -f "$THUMB_PENDING"      # SET, CUSTOM or ERROR - either way this one is settled
+  fi
+}
+
 # Stamp the saved title/description/tags/category onto a new broadcast. Runs only AFTER the
 # channel is live and swallows every failure: being on air matters more than being tagged,
 # so nothing in here may ever be a reason the stream is down.
@@ -271,6 +308,10 @@ ROTATE_LABEL="${ROTATE_HOURS:-8}h$( (( ${ROTATE_MINUTES:-0} > 0 )) && print -n "
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
 BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
 VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", one line per broadcast
+THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
+: ${THUMB_DELAY:=3600}                 # wait an hour after a cut before adopting a suggestion
+: ${THUMB_RETRY:=900}                   # if the video is still processing, look again in 15 min
+: ${THUMB_MAX_TRIES:=8}                 # give up after this many, rather than retry forever
 LAST_ROTATE=0
 
 # The rotation clock has to track the BROADCAST, not this script. It was set to "now" at
@@ -548,6 +589,7 @@ rotate_broadcast() {
   verify_pending_vods
 
   old_id=$(yt_live_id)
+  schedule_thumbnail "$old_id"
   # Snapshot what is configured on the outgoing broadcast BEFORE ending it, so anything
   # edited in Studio carries to the next one. A new video inherits the channel's default
   # description and category but NOT its tags, and on this channel that is 35 local search
@@ -609,6 +651,7 @@ while true; do
     check_monitor
     refresh_broadcast_clock
     enforce_drift
+    do_pending_thumbnail
   fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue
