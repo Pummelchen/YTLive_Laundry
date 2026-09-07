@@ -198,7 +198,10 @@ do_pending_thumbnail() {
   [[ "$tries" == <-> ]] || tries=0
   [[ "$cut" == <-> ]] || cut=$due
   now=$(date +%s)
-  (( now >= due )) || return 0
+  # Proceed when a retry is due OR the give-up deadline has passed. Gating only on the
+  # retry slot rounds the deadline up to the next one: with retries 15 min apart, a 2h
+  # window became 2h11m in practice tonight.
+  (( now >= due || now - cut >= THUMB_GIVEUP )) || return 0
 
   # Past the window, stop waiting for YouTube and take a frame ourselves. An 8h video can
   # go hours without producing suggestions, and a video left on the auto-pick is worse than
