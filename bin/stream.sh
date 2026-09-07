@@ -25,16 +25,7 @@ YT_OAUTH="$BASE/conf/yt_oauth.json"
 # key never has on this channel (see yt_api.py). It switches itself on as soon as
 # conf/yt_oauth.json exists, so the streamer keeps working unconfigured - just without the
 # ability to bring the channel live on its own.
-yt_api_ready() { [[ -s "$YT_OAUTH" && -x "$YT_API" ]] }
-# conf/stream.env is sourced, not exported, so settings there are invisible to a subprocess
-# unless passed explicitly. Route every API call through here so none of them get forgotten.
-yt_api_call() {
-  BASE="$BASE" \
-  YT_TITLE_FMT="${YT_TITLE_FMT:-}" \
-  YT_PRIVACY="${YT_PRIVACY:-public}" \
-  YT_LATENCY="${YT_LATENCY:-normal}" \
-  python3 "$YT_API" "$@" 2>&1
-}
+source "$BASE/bin/lib.sh"      # yt_api_ready(), yt_api_call() - shared with yt_monitor.sh
 FF="$HOME/.local/bin/ffmpeg"
 source "$CONF"
 
@@ -427,9 +418,36 @@ broadcast_closed() {
 # $2 = "rotation" for a real 8h rotation, "start" for a cold start or publisher restart.
 #      Only rotations are written to the rotation history: mixing restarts into it would
 #      corrupt the very record we are keeping to decide whether native rotation works.
+# Only ONE await_broadcast may be in flight. A rotation spawns one, and a publisher restart
+# landing inside the same window spawns another; both then poll YouTube and both enforce
+# settings on the same video. Observed on 2026-09-06 at 07:33:21 - two SETTINGS lines in
+# the same second, two concurrent videos.update on one broadcast. Harmless only because
+# enforcement happens to be idempotent, which is not a property to rely on.
+#
+# mkdir is the atomic primitive here: it either creates the directory or it does not, with
+# no window between the check and the create that a test-then-touch would leave open.
+: ${AWAIT_LOCK_TTL:=900}          # a lock older than this belonged to a killed subshell
+AWAIT_LOCK="$BASE/log/await.lock"
+await_lock() {
+  local now=$(date +%s) at
+  if mkdir "$AWAIT_LOCK" 2>/dev/null; then print -r -- "$now" > "$AWAIT_LOCK/at"; return 0; fi
+  at=$(<"$AWAIT_LOCK/at" 2>/dev/null); [[ "$at" == <-> ]] || at=0
+  if (( now - at > AWAIT_LOCK_TTL )); then
+    log "AWAIT: taking a lock left behind $(( now - at ))s ago"
+    print -r -- "$now" > "$AWAIT_LOCK/at"; return 0
+  fi
+  return 1
+}
+await_unlock() { rm -f "$AWAIT_LOCK/at" 2>/dev/null; rmdir "$AWAIT_LOCK" 2>/dev/null; }
+
 await_broadcast() {
   local old_id="${1:-}" ctx="${2:-start}"
   ( local n out took started deadline
+    if ! await_lock; then
+      log "AWAIT ($ctx): another await_broadcast is already watching - not starting a second"
+      exit 0
+    fi
+    trap 'await_unlock' EXIT INT TERM
     started=$(date +%s)
     # NATIVE FIRST - just wait and see. Do not call the API here: doing so was what hid the
     # fact that YouTube creates the broadcast perfectly well on its own, and it made a

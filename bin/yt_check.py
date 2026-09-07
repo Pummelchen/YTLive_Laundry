@@ -98,6 +98,32 @@ def gray(path, w=64, h=36):
                        capture_output=True, timeout=30)
     return list(r.stdout)
 
+
+GOLDCACHE = BASE / "log/golden_gray.cache"
+
+
+def gray_golden():
+    """The reference frame's greyscale, cached against its mtime.
+
+    This is recomputed from the same file on every cycle otherwise - one ffmpeg spawn every
+    ~14 seconds, 6100 times a day, to re-derive 2304 bytes that only change when the
+    publisher restarts. The monitor runs on a box with no CPU headroom; this is free.
+    """
+    try:
+        stamp = str(int(GOLD.stat().st_mtime))
+        if GOLDCACHE.exists():
+            head, _, body = GOLDCACHE.read_bytes().partition(b"\n")
+            if head.decode() == stamp and body:
+                return list(body)
+    except Exception:
+        pass
+    g = gray(GOLD)
+    try:
+        GOLDCACHE.write_bytes(str(int(GOLD.stat().st_mtime)).encode() + b"\n" + bytes(g))
+    except Exception:
+        pass
+    return g
+
 def corr(a, b):
     """Pearson correlation - brightness/contrast invariant, so day/night is fine."""
     if len(a) != len(b) or not a: return 0.0
@@ -130,7 +156,7 @@ def main():
             print(json.dumps({"status":"FETCHFAIL","vid":vid,"msg":"could not pull a frame"}))
             return 2
 
-    cur = gray(LAST); gold = gray(GOLD)
+    cur = gray(LAST); gold = gray_golden()
     if not cur:
         print(json.dumps({"status":"FETCHFAIL","msg":"frame unreadable"})); return 2
 

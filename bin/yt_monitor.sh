@@ -31,12 +31,7 @@ mlog() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$MLOG"; }
 # The API is what makes this loop able to FIX things rather than just complain. conf/stream.env
 # is sourced, not exported, so every call has to pass its settings explicitly.
 YT_API="$BASE/bin/yt_api.py"
-yt_api_ready() { [[ -s "$BASE/conf/yt_oauth.json" && -x "$YT_API" ]] }
-yt_api_call() {
-  BASE="$BASE" YT_TITLE_FMT="${YT_TITLE_FMT:-}" YT_PRIVACY="${YT_PRIVACY:-public}" \
-  YT_LATENCY="${YT_LATENCY:-normal}" \
-  python3 "$YT_API" "$@" 2>&1
-}
+source "$BASE/bin/lib.sh"      # yt_api_ready(), yt_api_call() - shared with stream.sh
 
 # One line of ground truth for status.sh and for stream.sh's are-you-still-alive check.
 # Silence in monitor.log means "all checks passed", which is indistinguishable from "the

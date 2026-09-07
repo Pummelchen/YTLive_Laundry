@@ -330,7 +330,7 @@ def cmd_ensure_live(key):
     return _await_live(token, stream["id"], bid, action, swept)
 
 
-def _create_and_bind(token, stream_id):
+def _create_and_bind(token, stream_id, dry_run=False):
     t = load_template()
     # The reference's title first - it is what Studio last showed. Then YT_TITLE_FMT, then
     # a dated fallback. `or` not a get() default: an empty YT_TITLE_FMT would otherwise
@@ -363,9 +363,7 @@ def _create_and_bind(token, stream_id):
     content["enableAutoStop"] = True
     if os.environ.get("YT_LATENCY"):
         content["latencyPreference"] = os.environ["YT_LATENCY"]
-    created = api("POST", "liveBroadcasts", token,
-                  {"part": "snippet,status,contentDetails"},
-                  {
+    body = {
                       "snippet": {
                           "title": title,
                           "scheduledStartTime": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -377,7 +375,16 @@ def _create_and_bind(token, stream_id):
                               ref_st.get("selfDeclaredMadeForKids", False)),
                       },
                       "contentDetails": content,
-                  })
+                  }
+    if dry_run:
+        # Everything above this line is the code that broke on 2026-09-07 - a name used
+        # before assignment, in the one function that only runs when a broadcast has to be
+        # CREATED, i.e. once every 8 hours. Building the request without sending it
+        # exercises all of it in a second, which is what a smoke test is for.
+        print(json.dumps({"status": "DRY-RUN", "would_create": body}, indent=2))
+        return None
+    created = api("POST", "liveBroadcasts", token,
+                  {"part": "snippet,status,contentDetails"}, body)
     bid = created["id"]
     api("POST", "liveBroadcasts/bind", token,
         {"part": "id,contentDetails", "id": bid, "streamId": stream_id})
@@ -936,6 +943,12 @@ def main():
         if cmd == "token":
             return cmd_token()
         if cmd == "prepare":
+            if "--dry-run" in sys.argv:
+                tok = access_token(); st = stream_for_key(tok, read_key())
+                if not st:
+                    die("no liveStream uses the configured YT_KEY")
+                _create_and_bind(tok, st["id"], dry_run=True)
+                return 0
             return cmd_prepare(read_key())
         if cmd == "capture":
             return cmd_capture(sys.argv[2] if len(sys.argv) > 2 else None)
