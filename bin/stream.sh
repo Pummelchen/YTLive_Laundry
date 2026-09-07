@@ -183,28 +183,42 @@ reader_loop() {
 # sleeping subshell so it survives a restart of this script.
 schedule_thumbnail() {
   [[ -n "$1" ]] || return 0
-  print -r -- "$1 $(( $(date +%s) + THUMB_DELAY )) 0" > "$THUMB_PENDING"
-  log "THUMB: will adopt YouTube's first suggestion for $1 in $(( THUMB_DELAY / 60 )) min"
+  # cut time is recorded so the give-up deadline is measured from the CUT, not from however
+  # many retries have happened - restarts and slow attempts cannot extend the window.
+  print -r -- "$1 $(( $(date +%s) + THUMB_DELAY )) 0 $(date +%s)" > "$THUMB_PENDING"
+  log "THUMB: will adopt YouTube's first suggestion for $1 in $(( THUMB_DELAY / 60 )) min, falling back to the ${THUMB_FRAME_AT} frame after $(( THUMB_GIVEUP / 60 )) min"
 }
 
 do_pending_thumbnail() {
   [[ -s "$THUMB_PENDING" ]] || return 0
   yt_api_ready || return 0
-  local vid due tries out
-  read -r vid due tries < "$THUMB_PENDING"
+  local vid due tries cut out now
+  read -r vid due tries cut < "$THUMB_PENDING"
   [[ "$due" == <-> ]] || { rm -f "$THUMB_PENDING"; return 0; }
   [[ "$tries" == <-> ]] || tries=0
-  (( $(date +%s) >= due )) || return 0
+  [[ "$cut" == <-> ]] || cut=$due
+  now=$(date +%s)
+  (( now >= due )) || return 0
+
+  # Past the window, stop waiting for YouTube and take a frame ourselves. An 8h video can
+  # go hours without producing suggestions, and a video left on the auto-pick is worse than
+  # one showing a real frame from its own content.
+  if (( now - cut >= THUMB_GIVEUP )); then
+    log "THUMB: no suggestion for $vid after $(( (now - cut) / 60 )) min - taking the ${THUMB_FRAME_AT} frame instead"
+    out=$(yt_api_call frame-thumbnail "$vid" "$THUMB_FRAME_AT")
+    log "THUMB: $out"
+    if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
+      print -r -- "$vid $(( now + THUMB_RETRY )) $tries $cut" > "$THUMB_PENDING"
+    else
+      rm -f "$THUMB_PENDING"
+    fi
+    return 0
+  fi
+
   out=$(yt_api_call pick-thumbnail "$vid")
   log "THUMB: $out"
   if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
-    tries=$(( tries + 1 ))
-    if (( tries >= THUMB_MAX_TRIES )); then
-      log "THUMB: giving up on $vid after ${tries} attempts - it never offered a suggestion"
-      rm -f "$THUMB_PENDING"
-    else
-      print -r -- "$vid $(( $(date +%s) + THUMB_RETRY )) $tries" > "$THUMB_PENDING"
-    fi
+    print -r -- "$vid $(( now + THUMB_RETRY )) $(( tries + 1 )) $cut" > "$THUMB_PENDING"
   else
     rm -f "$THUMB_PENDING"      # SET, CUSTOM or ERROR - either way this one is settled
   fi
@@ -311,7 +325,9 @@ VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", 
 THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
 : ${THUMB_DELAY:=3600}                 # wait an hour after a cut before adopting a suggestion
 : ${THUMB_RETRY:=900}                   # if the video is still processing, look again in 15 min
-: ${THUMB_MAX_TRIES:=8}                 # give up after this many, rather than retry forever
+: ${THUMB_GIVEUP:=7200}                 # after this long, stop waiting for YouTube's own
+                                        # suggestions and take a frame from the video instead
+: ${THUMB_FRAME_AT:="01:00:00"}         # which moment to grab if it comes to that
 LAST_ROTATE=0
 
 # The rotation clock has to track the BROADCAST, not this script. It was set to "now" at
@@ -371,13 +387,31 @@ record_rotation() {
 #
 # Checked one rotation late, on purpose: an 8h stream needs time to process, and by the
 # next rotation it has had ~8 hours of it.
-vod_duration() {          # prints seconds if a playable recording exists, else fails
-  local out
+# 0 = a playable recording exists (seconds printed)
+# 1 = YouTube says the recording is GONE - the real failure worth shouting about
+# 2 = cannot tell yet: still processing (duration "NA"), or the lookup itself failed
+#
+# Collapsing 2 into 1 is how a perfectly good 8h recording got logged as "cannot be
+# reviewed" six minutes after it had been confirmed at 8.054h - YouTube simply had not
+# finished processing it and yt-dlp reported NA. Same mistake as reporting a failed
+# lookup as OFFLINE, which yt_check.py already had to be cured of.
+vod_duration() {
+  local out err
+  err=$(mktemp -t vodchk)
   out=$("$YTDLP" --no-warnings --skip-download --print "%(duration)s" \
-        "https://www.youtube.com/watch?v=$1" 2>/dev/null | head -1)
+        "https://www.youtube.com/watch?v=$1" 2>"$err" | head -1)
   out=${out%%.*}
-  [[ "$out" == <-> ]] && (( out > 0 )) && { print -r -- "$out"; return 0; }
-  return 1
+  if [[ "$out" == <-> ]] && (( out > 0 )); then
+    rm -f "$err"; print -r -- "$out"; return 0
+  fi
+  # Matched against what yt-dlp ACTUALLY prints, checked rather than guessed: a lost
+  # 81h stream reports "Video unavailable", not the "recording is not available" wording
+  # this originally looked for - so a genuinely lost recording was being filed as "not
+  # known yet" and would have been retried forever instead of flagged.
+  if grep -qiE "recording is not available|video unavailable|has been removed|private video|removed by the uploader" "$err"; then
+    rm -f "$err"; return 1
+  fi
+  rm -f "$err"; return 2          # NA, or the lookup broke - ask again later
 }
 
 verify_pending_vods() {
@@ -389,13 +423,14 @@ verify_pending_vods() {
     # only settled verdicts are final; a MISSING one is re-checked in case it was still
     # processing when we last looked
     grep -q "^$id ok " "$VODSTATE" 2>/dev/null && continue
-    if dur=$(vod_duration "$id"); then
-      print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
-      log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)"
-    else
-      print -r -- "$id MISSING $now -" >> "$VODSTATE.new"
-      log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late."
-    fi
+    dur=$(vod_duration "$id"); local rc=$?
+    case $rc in
+    0) print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+       log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)" ;;
+    1) print -r -- "$id MISSING $now -" >> "$VODSTATE.new"
+       log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late." ;;
+    *) log "VOD: $id not processed yet - will ask again at the next rotation" ;;
+    esac
   done
   [[ -f "$VODSTATE.new" ]] || return 0
   # one line per broadcast, newest verdict wins, bounded

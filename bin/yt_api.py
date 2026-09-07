@@ -908,6 +908,80 @@ def cmd_pick_thumbnail(video_id, which=1, force=False):
     return 0
 
 
+def _frame_stats(path):
+    """(mean_luma, spread) of a 64x36 grey reduction. A frame that is black, or a flat
+    slate, has a near-zero spread even when its mean is not zero."""
+    import subprocess
+    ff = str(pathlib.Path.home() / ".local/bin/ffmpeg")
+    r = subprocess.run([ff, "-v", "error", "-i", str(path),
+                        "-vf", "scale=64:36,format=gray", "-f", "rawvideo", "-"],
+                       capture_output=True, timeout=60)
+    px = list(r.stdout)
+    if not px:
+        return 0.0, 0.0
+    m = sum(px) / len(px)
+    var = sum((x - m) ** 2 for x in px) / len(px)
+    return m, var ** 0.5
+
+
+def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
+    """Grab a frame from the finished video and set it as the thumbnail.
+
+    The fallback for when YouTube never offers its own suggestions - an 8h video can take
+    hours to produce them, and a video with no thumbnail of its own is worse than one
+    showing a real frame.
+
+    The frame is CHECKED before it is used: a near-black frame, or a flat one with no
+    detail, means the stream was showing filler or had glitched at that moment, and using
+    it would be worse than the auto-pick. Nearby offsets are tried before giving up.
+    """
+    import subprocess
+    token = access_token()
+    ytdlp = str(pathlib.Path.home() / ".local/bin/yt-dlp")
+    ff = str(pathlib.Path.home() / ".local/bin/ffmpeg")
+    r = subprocess.run([ytdlp, "-g", "-f", "bv*[height<=1080]/bv*/best", "--no-warnings",
+                        f"https://www.youtube.com/watch?v={video_id}"],
+                       capture_output=True, text=True, timeout=120)
+    url = (r.stdout.strip().split("\n") or [""])[0]
+    if not url:
+        print(json.dumps({"status": "NOTREADY", "video": video_id,
+                          "msg": "no media URL yet - video still processing"}))
+        return 1
+    # the requested moment first, then nearby, in case that one frame was bad
+    h, m, sec = (int(x) for x in ts.split(":"))
+    base = h * 3600 + m * 60 + sec
+    tried = []
+    out = BASE / "log/.frame_thumb.jpg"
+    for off in (0, 300, -300, 600, -600, 1800):
+        at = base + off
+        if at < 0:
+            continue
+        stamp = f"{at//3600:02d}:{at%3600//60:02d}:{at%60:02d}"
+        g = subprocess.run([ff, "-y", "-v", "error", "-ss", stamp, "-i", url,
+                            "-frames:v", "1", "-q:v", "2", str(out)],
+                           capture_output=True, timeout=180)
+        if not out.exists() or out.stat().st_size == 0:
+            tried.append({"at": stamp, "why": "no frame"})
+            continue
+        luma, spread = _frame_stats(out)
+        if luma < min_luma:
+            tried.append({"at": stamp, "why": f"too dark (luma {luma:.1f})"}); continue
+        if spread < min_spread:
+            tried.append({"at": stamp, "why": f"flat/no detail (spread {spread:.1f})"}); continue
+        set_thumbnail(token, video_id, out)
+        out.unlink(missing_ok=True)
+        print(json.dumps({"status": "SET", "video": video_id, "source": "frame",
+                          "at": stamp, "luma": round(luma, 1), "spread": round(spread, 1),
+                          "rejected": tried,
+                          "url": f"https://www.youtube.com/watch?v={video_id}"}))
+        return 0
+    out.unlink(missing_ok=True)
+    print(json.dumps({"status": "FAILED", "video": video_id,
+                      "msg": "every candidate frame was black or featureless",
+                      "rejected": tried}))
+    return 1
+
+
 def cmd_prepare(key):
     """Ensure a bound broadcast exists and is READY - do not wait for it to go live.
 
@@ -1024,6 +1098,11 @@ def main():
             return cmd_verify(sys.argv[2] if len(sys.argv) > 2 else None)
         if cmd == "thumbnail":
             return cmd_thumbnail(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd == "frame-thumbnail":
+            if len(sys.argv) < 3:
+                die("frame-thumbnail needs a video id")
+            return cmd_frame_thumbnail(sys.argv[2],
+                                       sys.argv[3] if len(sys.argv) > 3 else "01:00:00")
         if cmd == "pick-thumbnail":
             if len(sys.argv) < 3:
                 die("pick-thumbnail needs a video id")
@@ -1032,7 +1111,7 @@ def main():
                                       force="--force" in sys.argv)
         if cmd in ("apply", "enforce"):
             return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail | pick-thumbnail")
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:
