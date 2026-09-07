@@ -57,16 +57,6 @@ beat_sleep() {
   done
 }
 
-# stream.sh records every rotation and whether it needed the API. If native rotation has
-# been carrying the stream on its own, an expiring token costs the spare wheel, not the
-# stream - and is not worth interrupting anyone about.
-ROTATE_HISTORY="$BASE/log/rotation_history.log"
-: ${NATIVE_PROOF:=3}
-native_is_proven() {
-  [[ -s "$ROTATE_HISTORY" ]] || return 1
-  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c '') == NATIVE_PROOF )) || return 1
-  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c 'mode=native') == NATIVE_PROOF ))
-}
 
 # stream.sh writes an epoch deadline into log/rotating while it is rotating and during the
 # warm-up after. A deadline (not a bare marker) means a crashed streamer cannot mute us forever.
@@ -106,10 +96,6 @@ check_token() {
   out=$(yt_api_call token); rc=$?
   (( rc == 0 )) && return
   mlog "TOKEN WARNING: $out"
-  if native_is_proven; then
-    mlog "        Not alerting: the last $NATIVE_PROOF rotations were native, so the API is only a spare."
-    return
-  fi
 }
 
 if [[ -z "${YT_CHANNEL:-}" && -z "${YT_WATCH_URL:-}" ]]; then

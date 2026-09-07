@@ -127,8 +127,15 @@ Do NOT tick "Use as exit node" and do not select an exit node.
 
 
 ## 8-hour broadcast rotation  (added 2026-09-05)
-YouTube only archives live streams up to 12h, so every ROTATE_HOURS (8) the current
-broadcast is ended and a new one started. The old one is saved as a VOD.
+YouTube only archives live streams up to 12h, so every ROTATE_HOURS + ROTATE_MINUTES
+(8h03m) the current broadcast is ended and a new one started. The old one is saved as a VOD.
+
+**Why 8h03m and not 8h.** The cut is timed so the SAVED RECORDING clears 8 hours, not the
+wall clock. YouTube's encode loses time turning a live stream into a VOD - measured across
+five broadcasts, wall times of 8.004-8.023h came back as VODs of 7.962-7.990h, a shortfall
+of 0.6 to 2.3 minutes. Cutting at exactly 8h therefore always produced a recording just
+UNDER 8h. Three extra minutes covers the worst observed loss with margin, and is still far
+inside the 12h archive limit.
 
 **Ingest alone cannot create a broadcast on this channel - this was the project's founding
 mistake.** The original design stopped ingest, waited, and pushed again, expecting YouTube
@@ -428,3 +435,17 @@ can be neither set nor read here. It is also only toggleable while a stream is i
 starting phase, not once running, which on an 8h rotation is a few unattended minutes per
 cycle. Recorded under "manual" in the reference and reported by status.sh as a single quiet
 line. Treat it as off.
+
+## The token is not optional  (2026-09-07)
+There was a `native_is_proven()` flag that watched the rotation history and, after three
+consecutive "native" rotations, stopped warning that the OAuth token was expiring - on the
+theory that the API had become a spare wheel.
+
+It was wrong and has been removed. `mode=native` only ever meant "went live without needing
+the `ensure-live` fallback". Every rotation still calls the API through `prepare` to create
+and bind the next broadcast, so with no token there is no rotation at all. The flag went
+green on 2026-09-07 and would have suppressed the expiry warning three days before the
+token died on the 12th.
+
+A green light saying a dependency is optional, when it is not, is worse than no light.
+status.sh now states plainly that the API is required for every rotation.

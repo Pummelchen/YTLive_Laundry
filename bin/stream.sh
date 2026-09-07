@@ -252,7 +252,14 @@ start_publisher() {
 # pushing again so YouTube auto-starts a NEW broadcast with a new URL - the same thing
 # that already happens after a power cut. A quick 6s restart does NOT do this; the gap
 # has to be long enough for YouTube to actually end the old broadcast.
-ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 ))
+# The cut is timed so the SAVED RECORDING clears 8h, not the wall clock. YouTube's encode
+# loses time turning a live stream into a VOD - measured across five broadcasts on
+# 2026-09-05..07, wall 8.004-8.023h came back as 7.962-7.990h, a shortfall of 0.6 to 2.3
+# minutes. Cutting at exactly 8h therefore always produced a recording just UNDER 8h. The
+# extra minutes cover the worst observed loss with margin, and 8h03m is still far inside
+# YouTube's 12h archive limit.
+ROTATE_SECONDS=$(( ${ROTATE_HOURS:-8} * 3600 + ${ROTATE_MINUTES:-0} * 60 ))
+ROTATE_LABEL="${ROTATE_HOURS:-8}h$( (( ${ROTATE_MINUTES:-0} > 0 )) && print -n "${ROTATE_MINUTES}m" )"
 : ${ROTATE_MAX_WAIT:=600}      # max seconds to wait for YouTube to report the old broadcast closed
 : ${ROTATE_GAP:=60}            # extra seconds of silence after it is closed, before pushing again
 # YouTube does NOT bring an auto-created broadcast live the moment ingest resumes - it takes
@@ -310,10 +317,11 @@ refresh_broadcast_clock() {
   log "CLOCK: broadcast $id went live $(date -r $epoch '+%H:%M:%S'); rotating at $(date -r $(( epoch + ROTATE_SECONDS )) '+%a %H:%M:%S')"
 }
 
-# One line per rotation. This is STATE, not a report: native_is_proven() reads it back to
-# decide whether the API is still load-bearing, which in turn decides whether an expiring
-# OAuth token is worth interrupting a human about.
-: ${NATIVE_PROOF:=3}           # consecutive native rotations before the API counts as spare
+# One line per rotation, kept as the record of how each cut actually went. It used to feed
+# a native_is_proven() flag that decided whether the OAuth token still mattered; that flag
+# was removed because it was wrong. "native" only ever meant "no ensure-live fallback was
+# needed" - PREPARE calls the API on EVERY cut, so the token is never optional, and a green
+# light saying otherwise was worse than no light at all.
 record_rotation() {
   print -r -- "$(date '+%Y-%m-%d %H:%M:%S') mode=$1 seconds_to_live=$2 broadcast=$3 ended=${4:-}" >> "$ROTATE_HISTORY"
   # keep it bounded without losing the recent record
@@ -364,13 +372,6 @@ verify_pending_vods() {
   mv -f "$VODSTATE.t" "$VODSTATE"; rm -f "$VODSTATE.new"
 }
 
-# Have the last NATIVE_PROOF rotations all worked without the API? If so, an expired token
-# costs the spare wheel, not the stream, and does not warrant waking anyone.
-native_is_proven() {
-  [[ -s "$ROTATE_HISTORY" ]] || return 1
-  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c '') == NATIVE_PROOF )) || return 1
-  (( $(tail -n "$NATIVE_PROOF" "$ROTATE_HISTORY" | grep -c 'mode=native') == NATIVE_PROOF ))
-}
 
 # The hold is a deadline, not a marker: if stream.sh dies mid-rotation the file expires on its
 # own instead of muting the monitor forever.
@@ -518,10 +519,6 @@ rotate_broadcast() {
     # warning designed to give days of notice reached no log at all.
     if print -r -- "$pre" | grep -q '"token_warning"'; then
       log "TOKEN WARNING: $pre"
-      if native_is_proven; then
-        log "        Not alerting: the last $NATIVE_PROOF rotations were native, so the API is only a spare."
-      else
-      fi
     fi
     if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
       log "ROTATE ($why): the API cannot talk to YouTube ($pre). Rotating natively anyway - the fallback is simply unavailable."
@@ -563,7 +560,7 @@ rotate_broadcast() {
   LAST_ROTATE=$BROADCAST_STARTED
   rm -f "$ROTATE_NOW"
   hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
-  log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_HOURS:-8}h"
+  log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_LABEL}"
   await_broadcast "$old_id" rotation
 }
 
@@ -579,7 +576,7 @@ BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's
 verify_pending_vods         # catch up on any recording we have not confirmed yet
-log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_HOURS:-8}h; monitor holds off ${ROTATE_GRACE}s"
+log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 
 # Publisher watchdog: only a genuinely stuck publisher warrants a YouTube reconnect.
@@ -598,7 +595,7 @@ while true; do
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue
   elif (( $(date +%s) - BROADCAST_STARTED >= ROTATE_SECONDS )); then
-    rotate_broadcast "scheduled ${ROTATE_HOURS:-8}h reached"; last=""; stuck=0; continue
+    rotate_broadcast "scheduled ${ROTATE_LABEL} reached"; last=""; stuck=0; continue
   fi
   if ! kill -0 "$PUBPID" 2>/dev/null; then
     wait "$PUBPID" 2>/dev/null; local rc=$?

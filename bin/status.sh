@@ -74,14 +74,20 @@ print "\n=== disk ==="
 print "  log/ $(du -sh "$BASE/log" 2>/dev/null | cut -f1)   repo $(du -sh "$BASE/.git" 2>/dev/null | cut -f1)"
 du -h "$BASE/log"/*(.N) 2>/dev/null | sort -rh | head -4 | sed 's/^/  /'
 
-print "\n=== rotations (the project's own record of whether it needs the API) ==="
+print "\n=== rotation history ==="
 RH="$BASE/log/rotation_history.log"
 if [[ -s "$RH" ]]; then
   tail -5 "$RH" | sed 's/^/  /'
   n=$(grep -c 'mode=native' "$RH"); a=$(grep -c 'mode=api-fallback' "$RH"); f=$(grep -c 'mode=failed' "$RH")
-  print "  totals: ${n} native, ${a} needed the API, ${f} failed"
-  (( a == 0 && f == 0 && n >= 3 )) && ok "native rotation is carrying it - the OAuth token is only a spare" \
-                                    || warn "the API is still load-bearing - keep the token alive"
+  print "  all time: ${n} native, ${a} needed the API, ${f} failed"
+  # Judge on the RECENT window, not all time. A failure that was diagnosed and fixed days
+  # ago should not keep the indicator red forever - a light that is always red gets ignored
+  # exactly like one that is always green.
+  rf=$(tail -10 "$RH" | grep -c 'mode=failed'); rr=$(tail -10 "$RH" | grep -c '')
+  (( rf == 0 )) && ok "last ${rr} rotations: all succeeded" \
+                || bad "last ${rr} rotations: ${rf} failed"
+  print "  note: the API is required for EVERY rotation - PREPARE creates and binds the broadcast,"
+  print "        so the OAuth token is never optional regardless of what 'native' means here."
 else
   print "  (no rotation has run yet)"
 fi
