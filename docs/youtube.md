@@ -165,11 +165,21 @@ There is no local file-size check. YouTube documents a 2 MB limit but does not e
 a 2.29 MB PNG uploaded fine. Refusing a file the service would accept is not validation.
 
 ## Suggested thumbnail for the finished video  (added 2026-09-07)
-**YouTube throws the thumbnail away when a broadcast becomes a video.** It falls back to a
-frame of its own choosing, which is why Studio then offers "pick one of 3". Verified on
-ufmT_Fjg9aw: `maxresdefault.jpg` was byte-identical to YouTube's own `maxres1.jpg` despite
-the branded thumbnail having been enforced for the whole eight hours it was live. So
-conf/thumbnail.jpg only ever applies while LIVE; every finished VOD reverts.
+**YouTube SOMETIMES throws the thumbnail away when a broadcast becomes a video**, falling
+back to a frame of its own choosing - which is why Studio then offers "pick one of 3".
+It is not consistent, and both outcomes have been observed:
+
+    ufmT_Fjg9aw   lost it   maxresdefault was byte-identical to YouTube's own maxres1,
+                            despite the branded thumbnail having been enforced for the
+                            whole eight hours it was live
+    2LAqYoT1vMU   kept it   maxresdefault correlates +1.000 with conf/thumbnail.jpg and
+                            only +0.16 with any of the three suggestions
+
+The difference appears to be how recently the thumbnail was set before the cut - the one
+that survived had been re-applied ten minutes earlier by a publisher restart, the one that
+did not had last been set eight hours before. That is a plausible explanation from two data
+points, not a proven rule, so the code does not rely on it: it checks what the video
+actually has and acts accordingly.
 
 The three suggestions are fetchable at predictable URLs. `1/2/3.jpg` are only 120x90, far
 under the 640x360 minimum for an upload - but `maxres1/2/3.jpg` are the same frames at
