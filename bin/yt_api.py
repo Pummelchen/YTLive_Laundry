@@ -893,9 +893,27 @@ def cmd_pick_thumbnail(video_id, which=1, force=False):
         return 1
     import hashlib
     h = lambda b: hashlib.md5(b).hexdigest()
-    if not force and h(cur) not in {h(b) for b in sugg.values()}:
+    # WHAT COUNTS AS "STILL THE DEFAULT" - two things, not one:
+    #   1. byte-identical to one of YouTube's suggestions  -> its auto-pick
+    #   2. visually identical to conf/thumbnail.jpg         -> OUR branded still, which is
+    #      the same image on every video and is exactly what a frame from the video is
+    #      meant to replace
+    # Only a thumbnail that is neither - something deliberately chosen - is left alone.
+    # This originally skipped on (1) alone, which meant our own branded still was treated
+    # as a deliberate choice and protected. Backwards: it is the default.
+    replaceable = h(cur) in {h(b) for b in sugg.values()}
+    why = "youtube auto-pick"
+    if not replaceable and _thumb_path().exists():
+        tmpc = BASE / "log/.cur_thumb.jpg"
+        tmpc.parent.mkdir(parents=True, exist_ok=True)
+        tmpc.write_bytes(cur)
+        live = _gray(str(tmpc)); mine = _gray(str(_thumb_path()))
+        tmpc.unlink(missing_ok=True)
+        if live and mine and _corr(live, mine) >= 0.90:
+            replaceable, why = True, "our default branded still"
+    if not force and not replaceable:
         print(json.dumps({"status": "CUSTOM", "video": video_id, "action": "none",
-                          "msg": "already has a custom thumbnail - leaving it alone"}))
+                          "msg": "has a deliberately chosen thumbnail - leaving it alone"}))
         return 0
     tmp = BASE / "log/.suggested_thumb.jpg"
     tmp.parent.mkdir(parents=True, exist_ok=True)
@@ -903,7 +921,7 @@ def cmd_pick_thumbnail(video_id, which=1, force=False):
     set_thumbnail(token, video_id, tmp)
     tmp.unlink(missing_ok=True)
     print(json.dumps({"status": "SET", "video": video_id, "suggestion": which,
-                      "bytes": len(sugg[which]),
+                      "replaced": why, "bytes": len(sugg[which]),
                       "url": f"https://www.youtube.com/watch?v={video_id}"}))
     return 0
 
@@ -976,6 +994,14 @@ def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
                           "url": f"https://www.youtube.com/watch?v={video_id}"}))
         return 0
     out.unlink(missing_ok=True)
+    # "no frame" everywhere means the video is not seekable yet, not that its content is
+    # bad - reporting that as FAILED made the scheduler treat it as settled and give up
+    # permanently on a video that was merely still processing.
+    if tried and all(t["why"] == "no frame" for t in tried):
+        print(json.dumps({"status": "NOTREADY", "video": video_id,
+                          "msg": "video not seekable yet - still processing",
+                          "rejected": tried}))
+        return 1
     print(json.dumps({"status": "FAILED", "video": video_id,
                       "msg": "every candidate frame was black or featureless",
                       "rejected": tried}))

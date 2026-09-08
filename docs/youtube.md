@@ -188,9 +188,16 @@ the auto-pick into a real custom thumbnail.
 
     bin/yt_api.py pick-thumbnail <videoId> [1|2|3] [--force]
 
-It REFUSES when the video already has a custom thumbnail, so a deliberate choice is never
-overwritten. "Custom" is decided by comparing the served thumbnail against the three
-suggestions: byte-identical to one of them means it is still the auto-pick.
+It refuses only when the video has a DELIBERATELY CHOSEN thumbnail. Two things count as
+"still the default" and are replaced:
+
+    byte-identical to one of the three suggestions   YouTube's auto-pick
+    visually identical to conf/thumbnail.jpg          our branded still
+
+The second one matters and was originally missing. conf/thumbnail.jpg is the same image on
+every video - it is the default, and replacing it with a frame from that video's own
+content is the entire point. Treating it as a deliberate choice meant two finished streams
+kept an identical generic still while a third correctly showed its own footage.
 
 stream.sh schedules this at every cut for the outgoing video, THUMB_DELAY (1h) later, via
 log/thumb_pending rather than a sleeping subshell so it survives a restart. The file is
