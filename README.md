@@ -1,5 +1,8 @@
 # YTLive - CCTV to YouTube, 24/7
 
+[![Profile Visitors](https://komarev.com/ghpvc/?username=Pummelchen&label=Profile%20Visitors&color=blueviolet&style=flat-square)](https://github.com/Pummelchen)
+[![Contact](https://img.shields.io/badge/Contact-0xa0b1%40gmail.com-blue?style=flat-square&logo=gmail&logoColor=white)](mailto:0xa0b1@gmail.com)
+
 A shop camera in Bengkong, Batam streamed continuously to YouTube from a Mac mini, cut
 every 8h03m so each segment is archived as a watchable recording rather than lost past
 YouTube's 12h limit.
