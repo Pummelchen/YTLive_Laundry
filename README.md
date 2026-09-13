@@ -46,3 +46,7 @@ See [docs/rotation.md](docs/rotation.md).
 **Run bin/smoke_test.sh before restarting anything.** Both outages this project has had came
 from editing a path and validating everything except that path. See
 [docs/operations.md](docs/operations.md).
+
+## License
+
+MIT — see [LICENSE](LICENSE).
