@@ -33,7 +33,7 @@ RTMP session.
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
   enforced reference), `playlist.txt`, thumbnails, camera XML dumps.
-- `docs/` — 7 design/ops notes. `MP3/` — 25 tracks (328 MB, tracked).
+- `docs/` — 8 design/ops notes. `MP3/` — 25 tracks (328 MB, tracked).
 - `install.sh` at the root. Gitignored at runtime: `log/`, `conf/stream.env`,
   `conf/yt_oauth.json`, `conf/golden.jpg`.
 
