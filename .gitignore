@@ -1,5 +1,6 @@
-# Private repo, so the bulky and machine-specific parts ARE tracked: MP3/, log/,
-# conf/playlist.txt, conf/golden.jpg. Only live credentials are kept out.
+# Public repository. The bulky but shareable parts ARE tracked: MP3/ and
+# conf/playlist.txt. Live credentials and machine-local runtime state are not -
+# the rules below say which, and why.
 
 # The YouTube stream key. Anyone holding it can push to the channel. It was never
 # committed; this rule makes that deliberate rather than merely accidental, so a future
