@@ -188,11 +188,15 @@ Leave previous releases' notes and performance tables alone.
 
 ## YTLive_Laundry — Python, no release yet
 
-- **Identity** semantic version, not yet established.
+- **Identity** semantic version, not yet established. There is no version literal
+  anywhere — every tunable is declared in `conf/stream.env`.
 - **Repository is public.** Its views badge uses the README-embedded static form
-  rather than the endpoint form the other public repositories use; either works,
-  and it is left alone rather than churning the README. Converting it means moving
-  it into the `REPOS` list in `~/bin/traffic-badge-update.sh` and swapping the
-  badge for the endpoint shape.
-- No compiled artifact; see TinyTitan_Datacenter for the shape if a release is
-  warranted.
+  rather than the endpoint form; either works, and it is left alone rather than
+  churning the README. Converting it means moving it into the `REPOS` list in
+  `~/bin/traffic-badge-update.sh` and swapping the badge for the endpoint shape.
+- **No compiled artifact.** A release here would be a source archive of `bin/`,
+  `conf/` and `install.sh` plus its digest — there is nothing to build, and Part 1's
+  macOS packaging sections do not apply.
+- **No CI.** `.github/` does not exist here, so nothing runs `bin/smoke_test.sh`
+  automatically; it is a local gate only, and a green check elsewhere says nothing
+  about this repository.
