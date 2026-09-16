@@ -216,6 +216,18 @@ Leave previous releases' notes and performance tables alone.
   `git rev-parse <tag>:<path>`, then runs the syntax gates and the `tests/` suite *from the
   archive*. It refuses to publish a tag that is not on the remote, because `gh release create`
   would otherwise invent the tag from the default branch.
+- **§1.5's four gates, mapped to this repository.**
+  - *Lint* — the syntax gate: `zsh -n` per shell file and `ast.parse` per Python module. There
+    has never been another linter here, so this is the whole of it.
+  - *Test suite* — `tests/run.sh`, 84 checks, run serially, reporting the count that passed. It
+    was added in 2.0; 1.0 has none, and its notes record that as **not checked** rather than
+    implying a green run.
+  - *Parity / golden* — the archive hash-match: for this project "the output is unchanged" means
+    "every archived file is byte-for-byte the file at the tag".
+  - *Clean scratch build with the log scanned for warnings* — **not applicable.** Nothing is
+    compiled, so there is no build and no warning scan, and claiming one would be theatre.
+- **`bin/smoke_test.sh` is not a release gate.** It requires `conf/yt_oauth.json`, which is
+  gitignored and in no archive, so it cannot pass inside a release. Every release's notes say so.
 - **Dry run by default** (§1.2.6): `./release.sh --version 2.0 --tag v2.0` builds and verifies
   without uploading; `--publish` is required to create the Release. The archive is built once per
   run and the published digest comes from that same file, so §1.8's "never copy a size out of a

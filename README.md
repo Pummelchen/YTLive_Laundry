@@ -41,6 +41,27 @@ failure path retries instead of reporting.
 - [docs/operations.md](docs/operations.md) - Day to day: control, smoke test, disk and logs
 - [docs/machines.md](docs/machines.md) - Installing elsewhere, the SSH mesh, Tailscale
 - [docs/known-issues.md](docs/known-issues.md) - Known issues and open items
+- [wiki](https://github.com/Pummelchen/YTLive_Laundry/wiki) - the operator's guide: install,
+  day-to-day commands, troubleshooting, updating and rollback
+
+## Testing
+
+Two gates, and nothing runs either for you — there is no CI:
+
+    tests/run.sh          84 checks, credential-free: no camera, network, ffmpeg or credentials,
+                          so it is safe to run on the streaming Mac. --list shows what it covers.
+    bin/smoke_test.sh     syntax/AST plus the real API commands and prepare --dry-run. Needs
+                          conf/yt_oauth.json, so it cannot pass on a bare clone.
+
+Run both before restarting anything. `release.sh` runs the syntax gate and the test suite from
+the exported archive before it packs a release.
+
+## Versions
+
+`VERSION` is the only version declaration and `CHANGELOG.md` records what changed. Releases are
+source archives with a `.sha256` beside them, built from a tag by `release.sh` — which refuses to
+build when `VERSION` and the tag disagree. Nothing is compiled, so there is no binary and nothing
+to notarize. The full standard is [RELEASE.md](RELEASE.md).
 
 ## The two rules that cost the most to learn
 

@@ -54,8 +54,15 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-bin/smoke_test.sh     # exit 0 = safe to restart
+tests/run.sh          # the credential-free suite: 84 checks, no camera, no credentials
+tests/run.sh --list   # what it covers
+bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
+
+`tests/run.sh` is the gate that always works: it needs no camera, no network, no credentials and
+no `ffmpeg`, runs each case in its own scratch tree under `tests/.tmp/`, and shadows `pkill` with
+a recorder so a mis-scoped test cannot signal the live publisher. Prefer it over
+`bin/smoke_test.sh` when you have no credentials, and run both before restarting anything.
 
 **`smoke_test.sh` fails on a bare clone** (non-zero: exit 2 when `~/Downloads/YTLive`
 does not exist, otherwise exit 1): its 17 syntax checks (9 shell files including
@@ -100,8 +107,16 @@ see the dead-knobs trap below.
 ## Gates
 
 **None automatic.** `.github/` does not exist in the repository — no CI workflow is
-tracked, and only GitHub's dynamic CodeQL default setup is active. `bin/smoke_test.sh`
-is the entire local gate and nothing runs it for you.
+tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
+gate for you, so run them yourself, and always before restarting anything:
+
+    tests/run.sh          # 84 checks, credential-free; fails if the monitor's classification
+                          # or the golden-reference bootstrap regress
+    bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
+                          # needs conf/yt_oauth.json, so it cannot pass on a bare clone
+
+`release.sh` runs the syntax gate and the test suite **from the exported archive** before it
+packs it, so a release cannot ship a tree that fails either.
 
 ## Traps
 
