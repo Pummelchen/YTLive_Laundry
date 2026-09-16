@@ -1,7 +1,8 @@
 # YTLive_Laundry 2.0 — the audit fixes
 
-The fixes from the [2026-09-16 full audit](../AUDIT/2026-09-16-full-audit.md). This is the
-version to deploy.
+The fixes from the 2026-09-16 full audit. This is the
+version to deploy. (The audit report is not kept in the tree — it is archived at
+<https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>.)
 
 - Built from tag `v2.0`
 - Contents: the tagged tree **without `MP3/`** and without `backup/`. The 25-track, 328 MB music

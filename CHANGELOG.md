@@ -10,8 +10,12 @@ to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
 ## 2.0 — 2026-09-16
 
-The fixes from the [2026-09-16 full audit](AUDIT/2026-09-16-full-audit.md). Full notes, with the
+The fixes from the 2026-09-16 full audit. Full notes, with the
 check behind each change: [`docs/release-notes-v2.0.md`](docs/release-notes-v2.0.md).
+
+The audit report itself is **not** kept in the tree, so a later audit cannot mistake a finished one
+for a current one; it is archived by permalink instead:
+<https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>
 
 **Two defects could kill a healthy publisher, and both are fixed.** `bin/yt_monitor.sh` treated
 the `NOGOLDEN`, `NOCONFIG` and `ERROR` statuses as a bad picture and `pkill`ed the publisher every

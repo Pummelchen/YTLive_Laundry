@@ -40,8 +40,14 @@ RTMP session.
   `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
   `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by
-  default. `AUDIT/` holds audit reports, `tests/` the credential-free harness, `backup/` the
-  frozen snapshots of what was deployed (see `backup/README.md`).
+  default. `tests/` is the credential-free harness; `backup/` holds the frozen snapshots of what
+  was deployed (see `backup/README.md`).
+- **Audit reports are not kept in the working tree.** A finished audit is archived by commit
+  permalink and its outcome is recorded permanently in `CHANGELOG.md`, in the release notes and in
+  the wiki project tracker, so the next audit does not read a stale one and mistake it for current.
+  The 2026-09-16 report is at
+  <https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>;
+  recover the tree with `git checkout d603fdc -- AUDIT`.
 - `install.sh` at the root. Gitignored at runtime: `log/`, `conf/stream.env`,
   `conf/yt_oauth.json`, `conf/golden.jpg` and `.release-build/` (transient release scratch).
 

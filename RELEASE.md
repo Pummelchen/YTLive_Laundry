@@ -194,7 +194,10 @@ Leave previous releases' notes and performance tables alone.
   tag disagree (§1.3).
   - `1.0` = `fd8698f`, the code that was live in production on 2026-09-16. Published so a
     rollback is a download. It contains every defect the audit found.
-  - `2.0` = the [2026-09-16 audit](AUDIT/2026-09-16-full-audit.md) fixes.
+  - `2.0` = the 2026-09-16 audit fixes. Audit reports are **not** kept in the working tree, so the
+    next audit cannot read a finished one as current; they are archived by commit permalink. That
+    report is at
+    <https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>.
   - `v1.0` additionally exists as a bare snapshot tag with `backup/1.0/` beside it; the 1.0
     Release was created later, from that tag.
 - **Archive naming** `<project>-<version>-source.tar.gz` — `YTLive_Laundry-1.0-source.tar.gz`.
