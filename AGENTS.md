@@ -17,10 +17,10 @@ macOS-only **operational system, not a reusable library**: zsh scripts plus
 stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h03m broadcast
 rotation, with a second process watching the public stream and repairing it. It is
 in production — the docs record real outages with timestamps and measured
-CPU/bitrate figures. There are **no releases**, so deployment is
-`install.sh` on a Mac. The only tag is `v1.0`, and it is not a release: it marks the
-commit that was live in production on 2026-09-16 and is snapshotted under `backup/1.0/`
-(see `backup/README.md`). The architecture is a deliberate two-process split: a
+CPU/bitrate figures. Deployment is `install.sh` on a Mac, or unpacking a release archive;
+releases are **source** archives (`1.0` = the code that was live on 2026-09-16, `2.0` = the
+audit fixes), built and published by `release.sh`. The architecture is a deliberate
+two-process split: a
 **reader** (camera RTSP → local UDP, restarts freely) and a **publisher** (UDP + MP3
 playlist → YouTube RTMP, runs continuously), so a camera dropout never tears down the
 RTMP session.
@@ -36,9 +36,14 @@ RTMP session.
   `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
   enforced reference), `playlist.txt`, thumbnails, camera XML dumps.
-- `docs/` — 8 design/ops notes. `MP3/` — 25 tracks (328 MB, tracked).
+- `docs/` — 8 design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
+  `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
+- `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
+  `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by
+  default. `AUDIT/` holds audit reports, `tests/` the credential-free harness, `backup/` the
+  frozen snapshots of what was deployed (see `backup/README.md`).
 - `install.sh` at the root. Gitignored at runtime: `log/`, `conf/stream.env`,
-  `conf/yt_oauth.json`, `conf/golden.jpg`.
+  `conf/yt_oauth.json`, `conf/golden.jpg` and `.release-build/` (transient release scratch).
 
 ## Build and test
 
@@ -81,9 +86,9 @@ and binding afterwards leaves the broadcast in `ready` forever.
 
 ## Identity
 
-**No version constant anywhere** — no app version, no releases, and no version literal
-in any script. The single tag, `v1.0`, is a frozen snapshot of the deployed code, not a
-release (see `backup/README.md`). Every tunable is declared in
+**One version declaration, at the root, and nowhere else.** `VERSION` holds a two-component
+`MAJOR.MINOR` version and is authoritative: `release.sh` **fails the build** when it disagrees
+with the tag being released. No script carries a version literal. Every tunable is declared in
 `conf/stream.env` (`ROTATE_HOURS`, `ROTATE_MINUTES`, `MODE`,
 `OUT_FPS`, `CHECK_INTERVAL`, `CORR_MIN`, `FAIL_SECONDS`, `OFFLINE_SECONDS`,
 `BLIND_SECONDS`, `ROTATE_NATIVE_WAIT`, `ROTATE_GRACE`, `ROTATE_MIN_INTERVAL`,
@@ -222,3 +227,9 @@ The non-negotiables:
 - **Dry run first**; publish only on an explicit flag.
 - **Never fetch a model, dataset or dependency to make a gate pass.** A check that
   cannot run is reported *not checked*, and the release notes must name it.
+
+**Part 2 modifies these for this repository, and Part 2 wins.** There is no compiled artifact and
+no `arm64` build to assert: a release here is a **source archive** with a `.sha256` beside it,
+built and published by `release.sh`. So §1.2.5, §1.2.6 and §1.8 apply, while §1.6's macOS binary
+packaging does not. Identity is the two-component `VERSION` at the root, enforced against the tag.
+Archives contain no `MP3/` and no `backup/`.

@@ -184,22 +184,48 @@ Leave previous releases' notes and performance tables alone.
 
 # Part 2 — This repository
 
-## YTLive_Laundry — Python, no release yet
+## YTLive_Laundry — Python, source releases
 
-- **Identity** semantic version, not yet established. There is no version literal
-  anywhere — every tunable is declared in `conf/stream.env`. One tag exists, `v1.0`,
-  and it is deliberately **not** a release: it marks the commit that was live in
-  production on 2026-09-16 (`fd8698f`) so that revision stays recoverable, and it is
-  snapshotted under `backup/1.0/`. It carries no artifacts and has no Release page, so
-  Part 1 §1.2.3 does not apply to it — see `backup/README.md`. Do not treat it as a
-  published version to bump.
+- **Identity** two-component `MAJOR.MINOR`, released as the tags `v1.0` and `v2.0`. This is a
+  deliberate departure from §1.3's "semantic versions (`vX.Y.Z`)" — the scheme is stated here,
+  is used consistently, and should not be mixed with anything else. The authoritative value is
+  the `VERSION` file at the repository root; there are no mirrors and no version literal in any
+  script, so a bump is a single edit. `release.sh` **fails the build** when `VERSION` and the
+  tag disagree (§1.3).
+  - `1.0` = `fd8698f`, the code that was live in production on 2026-09-16. Published so a
+    rollback is a download. It contains every defect the audit found.
+  - `2.0` = the [2026-09-16 audit](AUDIT/2026-09-16-full-audit.md) fixes.
+  - `v1.0` additionally exists as a bare snapshot tag with `backup/1.0/` beside it; the 1.0
+    Release was created later, from that tag.
+- **Archive naming** `<project>-<version>-source.tar.gz` — `YTLive_Laundry-1.0-source.tar.gz`.
+  This is a Part 2 override of §1.6's `-macos-arm64` suffix: the payload is zsh and stdlib
+  Python, it is architecture-independent, and there is no compiled artifact whose platform the
+  name could usefully describe. Every archive ships a `.sha256` beside it (§1.2.5) and a
+  generated `README-ARCHIVE.txt` in place of §1.6's `README-binaries.txt`, saying what the
+  archive is, what it is not, the macOS-only floor, and how to install it.
 - **Repository is public.** Its views badge uses the README-embedded static form
   rather than the endpoint form; either works, and it is left alone rather than
   churning the README. Converting it means moving it into the `REPOS` list in
   `~/bin/traffic-badge-update.sh` and swapping the badge for the endpoint shape.
-- **No compiled artifact.** A release here would be a source archive of `bin/`,
-  `conf/` and `install.sh` plus its digest — there is nothing to build, and Part 1's
-  macOS packaging sections do not apply.
-- **No CI.** `.github/` does not exist here, so nothing runs `bin/smoke_test.sh`
-  automatically; it is a local gate only, and a green check elsewhere says nothing
-  about this repository.
+- **No compiled artifact**, so §1.6's macOS packaging sections do not apply — but three parts of
+  Part 1 do, and are enforced by `release.sh`: the archive must carry `LICENSE`; it must carry a
+  digest (§1.2.5); and it must be accompanied by release notes naming the checks that ran and the
+  checks that did not (§1.2.7, §1.8).
+- **Releases are built from a tag and verified against it.** `release.sh` exports the tagged tree
+  with `git archive`, then requires every archived file to hash-match
+  `git rev-parse <tag>:<path>`, then runs the syntax gates and the `tests/` suite *from the
+  archive*. It refuses to publish a tag that is not on the remote, because `gh release create`
+  would otherwise invent the tag from the default branch.
+- **Dry run by default** (§1.2.6): `./release.sh --version 2.0 --tag v2.0` builds and verifies
+  without uploading; `--publish` is required to create the Release. The archive is built once per
+  run and the published digest comes from that same file, so §1.8's "never copy a size out of a
+  dry run" cannot be violated by a rebuild.
+- **No MP3 in a release.** The 328 MB music library is byte-identical in git at every tag
+  (`git checkout v2.0 -- MP3`) and is not code. `backup/` is excluded too: a release should not
+  contain a copy of another release.
+- **No CI.** `.github/` does not exist here, so nothing runs `bin/smoke_test.sh` or `tests/run.sh`
+  automatically; they are local gates only, and a green check elsewhere says nothing about this
+  repository. CodeQL runs from GitHub's dynamic default setup, outside the repo.
+- **`bin/smoke_test.sh` cannot pass inside a release.** It needs `conf/yt_oauth.json`, which is
+  gitignored and in no archive. Every release's notes therefore record it as **not checked**
+  rather than implying it passed.

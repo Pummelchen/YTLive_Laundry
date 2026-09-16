@@ -35,6 +35,10 @@ conf/golden.jpg
 # again, but an interrupted run can leave one behind - never commit it.
 tests/.tmp/
 
+# Release build scratch: release.sh exports the tagged tree here, packs it and deletes it.
+# An interrupted release can leave one behind; never commit it.
+.release-build/
+
 # Editor/tool backups of the scripts. Git IS the backup.
 bin/*.bak-*
 conf/*.bak-*
