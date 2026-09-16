@@ -46,6 +46,10 @@ esac
 
 BASE="$(cd "$(dirname "$0")" && pwd)"
 cd "$BASE" || die "cannot cd to $BASE"
+# Absolute, because several steps cd into the staging tree and a relative path would then
+# resolve against THAT directory (which is how the first version of this script failed to
+# write its test log).
+ABS_BUILD="$BASE/$BUILD_ROOT/$VERSION"
 
 # --- §1.4 preconditions -------------------------------------------------------------------
 say "preconditions"
@@ -156,12 +160,12 @@ done < <(cd "$STAGE" && find . -name '*.sh' -o -name '*.py' | sed 's|^\./||')
 
 # --- §1.5 gate: the project's own test suite, if this version has one -----------------------
 say "gate: test suite"
-if [[ -x "$STAGE/tests/run.sh" || -f "$STAGE/tests/run.sh" ]]; then
-  if (cd "$STAGE" && /bin/zsh tests/run.sh >"$BUILD_ROOT/$VERSION/tests.log" 2>&1); then
-    note "$(grep -cE 'PASS' "$BUILD_ROOT/$VERSION/tests.log") PASS lines; suite passed"
-    note "log: $BUILD_ROOT/$VERSION/tests.log"
+if [[ -f "$STAGE/tests/run.sh" ]]; then
+  if (cd "$STAGE" && /bin/zsh tests/run.sh >"$ABS_BUILD/tests.log" 2>&1); then
+    note "$(grep -cE 'PASS' "$ABS_BUILD/tests.log") PASS lines; suite passed"
+    note "log: $ABS_BUILD/tests.log"
   else
-    tail -5 "$BUILD_ROOT/$VERSION/tests.log" | sed 's/^/    /'
+    tail -8 "$ABS_BUILD/tests.log" | sed 's/^/    /'
     die "the test suite failed"
   fi
 else
@@ -189,7 +193,7 @@ NOTES="docs/release-notes-v$VERSION.md"
 if ! grep -q 'SHA256_PENDING' "$NOTES" && ! grep -qE '[0-9a-f]{64}' "$NOTES"; then
   die "$NOTES carries neither SHA256_PENDING nor a real digest; §1.8 forbids publishing that"
 fi
-PUB_NOTES="$BUILD_ROOT/$VERSION/notes.md"
+PUB_NOTES="$ABS_BUILD/notes.md"
 sed -e "s/SHA256_PENDING/$DIGEST/g" -e "s/ARCHIVE_BYTES_PENDING/$BYTES/g" "$NOTES" > "$PUB_NOTES"
 say "release notes for the GitHub Release"
 note "$NOTES -> $PUB_NOTES (digest substituted at publish time)"
