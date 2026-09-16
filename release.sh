@@ -212,12 +212,18 @@ gh release create "$TAG" "$ARCHIVE" "$ARCHIVE.sha256" \
 
 # --- §1.9 verify ---------------------------------------------------------------------------
 say "verifying the published release"
-gh release view "$TAG" --repo "$REPO" --json tagName,isLatest,assets \
-  --jq '"    tag \(.tagName)  latest=\(.isLatest)  assets: \([.assets[].name] | join(", "))"' \
+# Note: `gh release view --json` has no isLatest field; the latest marker comes from
+# `gh release list`, which is also what a reader would use.
+gh release view "$TAG" --repo "$REPO" --json tagName,isDraft,isPrerelease,assets \
+  --jq '"    tag \(.tagName)  draft=\(.isDraft)  prerelease=\(.isPrerelease)  assets: \([.assets[].name] | join(", "))"' \
   || die "could not read the release back"
+gh release download "$TAG" --repo "$REPO" --pattern '*.sha256' --output - 2>/dev/null \
+  | grep -q "$DIGEST" || die "the published .sha256 does not carry the digest we built"
+note "the published .sha256 carries the digest"
 gh release view "$TAG" --repo "$REPO" --json body --jq '.body' \
   | grep -q "$DIGEST" || die "the published notes do not quote the digest in the .sha256"
 note "the published notes quote the digest"
+note "latest release is now $(gh release list --repo "$REPO" --limit 1 --json tagName --jq '.[0].tagName')"
 
 [[ "$KEEP" == yes ]] || rm -rf "$BUILD_ROOT/$VERSION"
 say "done: https://github.com/$REPO/releases/tag/$TAG"
