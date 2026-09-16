@@ -47,7 +47,8 @@ RTMP session.
   the wiki project tracker, so the next audit does not read a stale one and mistake it for current.
   The 2026-09-16 report is at
   <https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>;
-  recover the tree with `git checkout d603fdc -- AUDIT`.
+  recover the tree with `git checkout d603fdc -- AUDIT`. `release.sh` excludes `AUDIT/` from every
+  archive as well, so the convention is enforced rather than remembered.
 - `install.sh` at the root. Gitignored at runtime: `log/`, `conf/stream.env`,
   `conf/yt_oauth.json`, `conf/golden.jpg` and `.release-build/` (transient release scratch).
 
@@ -253,4 +254,4 @@ The non-negotiables:
 no `arm64` build to assert: a release here is a **source archive** with a `.sha256` beside it,
 built and published by `release.sh`. So §1.2.5, §1.2.6 and §1.8 apply, while §1.6's macOS binary
 packaging does not. Identity is the two-component `VERSION` at the root, enforced against the tag.
-Archives contain no `MP3/` and no `backup/`.
+Archives contain no `MP3/`, no `backup/` and never an audit report.

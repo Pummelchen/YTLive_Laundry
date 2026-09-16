@@ -83,8 +83,11 @@ ARCHIVE="$BUILD_ROOT/$VERSION/$ARCHIVE_NAME"
 rm -rf "$BUILD_ROOT/$VERSION"
 mkdir -p "$STAGE"
 
-say "exporting $TAG (excluding MP3/ and backup/)"
-git archive "$TAG" -- ':(exclude)MP3' ':(exclude)backup' | tar -x -C "$STAGE" \
+say "exporting $TAG (excluding MP3/, backup/ and AUDIT/)"
+# AUDIT is excluded as well as backup/: audit reports are not kept in the working tree (see
+# AGENTS.md), so excluding the path makes that convention mechanical instead of hopeful - if a
+# later audit leaves a report behind, it still cannot end up inside a release.
+git archive "$TAG" -- ':(exclude)MP3' ':(exclude)backup' ':(exclude)AUDIT' | tar -x -C "$STAGE" \
   || die "git archive failed"
 note "$(find "$STAGE" -type f | wc -l | tr -d ' ') files"
 

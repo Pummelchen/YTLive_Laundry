@@ -14,6 +14,11 @@ REPO_DIR="${TESTS_DIR:h}"
 STUBS="$TESTS_DIR/stubs"
 TMPROOT="$TESTS_DIR/.tmp"
 
+# Leave the checkout exactly as we found it. One test imports bin/yt_api.py through importlib to
+# exercise the countdown logic, and Python writes bin/__pycache__/yt_api.*.pyc for that - harmless
+# (it is gitignored) but it means a clean tree stops being clean just because the suite ran.
+export PYTHONDONTWRITEBYTECODE=1
+
 PASS=0
 FAIL=0
 CURRENT=""

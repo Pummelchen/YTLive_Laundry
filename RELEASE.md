@@ -235,9 +235,11 @@ Leave previous releases' notes and performance tables alone.
   without uploading; `--publish` is required to create the Release. The archive is built once per
   run and the published digest comes from that same file, so §1.8's "never copy a size out of a
   dry run" cannot be violated by a rebuild.
-- **No MP3 in a release.** The 328 MB music library is byte-identical in git at every tag
-  (`git checkout v2.0 -- MP3`) and is not code. `backup/` is excluded too: a release should not
-  contain a copy of another release.
+- **No MP3 in a release, and never an audit report.** The 328 MB music library is byte-identical in
+  git at every tag (`git checkout v2.0 -- MP3`) and is not code. `backup/` is excluded too: a
+  release should not contain a copy of another release. `AUDIT/` is excluded because audit reports
+  are not kept in the working tree at all — `release.sh` enforces all three exclusions, so the
+  conventions are mechanical rather than hopeful.
 - **No CI.** `.github/` does not exist here, so nothing runs `bin/smoke_test.sh` or `tests/run.sh`
   automatically; they are local gates only, and a green check elsewhere says nothing about this
   repository. CodeQL runs from GitHub's dynamic default setup, outside the repo.
