@@ -12,7 +12,7 @@
 > replaces this file for every Zed user.
 <!-- agent-harnesses:end -->
 
-A shop CCTV camera in Batam streamed 24/7 to YouTube from one Mac mini. This is a
+A shop CCTV camera in Batam streamed 24/7 to YouTube from one MacBook. This is a
 macOS-only **operational system, not a reusable library**: zsh scripts plus
 stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h03m broadcast
 rotation, with a second process watching the public stream and repairing it. It is
@@ -25,12 +25,13 @@ RTMP session.
 
 ## Layout
 
-- `bin/` — `stream.sh` (714 lines: reader/publisher, watchdog, rotation, VOD
-  verification), `yt_monitor.sh` (the watchdog loop), `yt_api.py` (1148 lines, the
+- `bin/` — `stream.sh` (774 lines: reader/publisher, watchdog, rotation, VOD
+  verification), `yt_monitor.sh` (the watchdog loop), `yt_api.py` (1250 lines, the
   only thing that can create a broadcast), `yt_check.py` (grades one pulled frame),
   `lib.sh` (shared API helpers), the camera/ONVIF tools (`cam_ip.py`, `camscan.py`,
   `onvif_probe.py`, `cam_config.py`, `cam_reboot.py`), and
-  `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh`.
+  `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
+  `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
   enforced reference), `playlist.txt`, thumbnails, camera XML dumps.
 - `docs/` — 8 design/ops notes. `MP3/` — 25 tracks (328 MB, tracked).
@@ -49,10 +50,12 @@ needs sudo.
 bin/smoke_test.sh     # exit 0 = safe to restart
 ```
 
-**`smoke_test.sh` fails on a bare clone** (exit 1): its 17 syntax/AST checks pass,
-but `yt_api.py prepare --dry-run` needs `conf/yt_oauth.json`. Its read-only API
-checks also "pass" on an `{"status":"ERROR"}` body, because they only grep for
-`"status"`.
+**`smoke_test.sh` fails on a bare clone** (exit 1): its 17 syntax checks (9 shell
+files including `install.sh`, 8 `.py`) pass, but the read-only API commands
+(`token`/`status`/`verify`) and `yt_api.py prepare --dry-run` all need
+`conf/yt_oauth.json`. Each of those is judged on a STATUS that means the command
+answered (`OK`/`LIVE`/`EXPIRING`/`DRIFTED`/`READY`/...): an `{"status":"ERROR"}` body
+now FAILS, where an earlier revision grepped for `"status"` alone and passed it.
 
 ## Run
 
@@ -77,10 +80,12 @@ and binding afterwards leaves the broadcast in `ready` forever.
 
 **No version constant anywhere** — no app version, no tags, no releases. Every
 tunable is declared in `conf/stream.env` (`ROTATE_HOURS`, `ROTATE_MINUTES`, `MODE`,
-`SRC_FPS`/`OUT_FPS`, `CHECK_INTERVAL`, `CORR_MIN`, `FAIL_SECONDS`,
-`OFFLINE_SECONDS`, `BLIND_SECONDS`, `ROTATE_GRACE`, `ROTATE_MIN_INTERVAL`,
-`ENFORCE_EVERY`, `LOG_MAX_BYTES`, `YT_TITLE_FMT`, `YT_LATENCY`), and the
-broadcast's own configuration lives in `conf/broadcast_template.json`.
+`OUT_FPS`, `CHECK_INTERVAL`, `CORR_MIN`, `FAIL_SECONDS`, `OFFLINE_SECONDS`,
+`BLIND_SECONDS`, `ROTATE_NATIVE_WAIT`, `ROTATE_GRACE`, `ROTATE_MIN_INTERVAL`,
+`ROTATE_WITHOUT_API`, `ROTATE_API_RETRY`, `ENFORCE_EVERY`, `LOG_MAX_BYTES`,
+`YT_TITLE_FMT`, `YT_LATENCY`), and the broadcast's own configuration lives in
+`conf/broadcast_template.json`. Some declared names are read by no code at all —
+see the dead-knobs trap below.
 
 ## Gates
 
@@ -90,21 +95,39 @@ is the entire local gate and nothing runs it for you.
 
 ## Traps
 
-- **`CAM_LINK_TIMEOUT="45"` is declared and documented in
-  `conf/stream.env.example` but is never read by any script.** Its comment claims the
-  watchdog watches the camera's TCP session "instead" of the output frame counter;
-  the code only watches `STALL_TIMEOUT` on that counter. With `FILLER="yes"` the
-  counter keeps advancing on a held frame, so **the implemented watchdog cannot see a
-  dead camera**. The only camera liveness check is `cam_ip_watcher`'s
-  `nc -z -G 3 <ip> 554` every 30 s, which re-discovers via ONVIF and rewrites
-  `CAM_URL` — it never restarts the publisher.
-- **The docs contradict the shipped config, and the shipped config wins.**
-  `docs/camera.md` says `CORR_MIN` is 0.35 but `conf/stream.env.example` ships 0.15
-  (and `bin/yt_check.py` defaults to 0.60); `docs/operations.md` says
-  `LOG_MAX_BYTES=2097152` but the example ships 524288 (and `stream.sh` defaults to
-  2097152); `docs/architecture.md` says `aac_at` at 320k while the example sets
-  `AAC_ENC="aac"` at 384k. **Trust `conf/stream.env.example`** — the docs describe an
-  older revision.
+- **`CAM_LINK_TIMEOUT="45"` is declared in `conf/stream.env.example` but read by no
+  script.** It is one of the dead knobs listed below, and its old comment claimed the
+  watchdog watched the camera's TCP session "instead" of the output frame counter -
+  false. The code only watches `STALL_TIMEOUT` on that counter, and the filler base
+  layer is always on, so the counter keeps advancing on a held frame and **the
+  implemented watchdog cannot see a dead camera**. The only camera liveness check is
+  `cam_ip_watcher`'s `nc -z -G 3 <ip> 554` every 30 s, which re-discovers via ONVIF
+  and rewrites `CAM_URL` — it never restarts the publisher.
+- **Several example knobs are read by no code at all.** `FILLER`, `SRC_FPS`,
+  `ENC_FPS`, `FPS_MODE`, `SNAP_INTERVAL` and `CAM_LINK_TIMEOUT` are declared in
+  `conf/stream.env.example` and never read by any script; the example now marks each
+  one. (`MP3_DIR` is read only by `bin/shuffle_playlist.sh`, never by `stream.sh`.)
+  Setting them changes nothing, so do not tune them expecting an effect.
+- **The API is REQUIRED for every rotation.** `stream.sh`'s `prepare_broadcast()` runs
+  inside `start_publisher()` on every publisher start and calls `yt_api.py prepare`,
+  which CREATES and BINDS the next broadcast before any ingest flows. YouTube retired
+  automatic/default broadcast creation in 2020
+  (youtube/v3/live/guides/migration-guide-default-broadcasts); measured here
+  2026-09-05, six minutes of clean ingest against a dark channel produced nothing.
+  What YouTube still does with no API is `enableAutoStop`: stopping ingest closes and
+  archives the broadcast (~9s measured), so the current segment's VOD is saved and only
+  the NEXT rotation fails. `enableAutoStart` starts a broadcast only if it is ALREADY
+  BOUND. So `mode=native` in `log/rotation_history.log` means "autoStart took the
+  already-bound broadcast live without `ensure-live`", never "the API was optional".
+  `rotate_broadcast()` now REFUSES to cut when the API cannot create the successor and
+  stays LIVE (`ROTATE_WITHOUT_API="no"` default; `yes` cuts anyway; `ROTATE_API_RETRY`
+  900 s).
+- **The shipped configuration wins over the docs, and it always did.** The docs were
+  reconciled to `conf/stream.env.example` on 2026-09-16: `CORR_MIN=0.15` (not 0.35;
+  `bin/yt_check.py`'s own default is 0.60), `LOG_MAX_BYTES=524288` (not 2097152;
+  `stream.sh`'s own default is 2097152) and native `aac` at 384k (not `aac_at` at
+  320k; `aac_at` hard-caps at 320k in this chain). When prose and the example
+  disagree, the example is right.
 - **`conf/playlist.txt` is tracked with an absolute path into another machine's
   home** (`/Users/user/Downloads/YTLive/MP3/...`). `stream.sh` regenerates the
   playlist only when it is missing or empty, so a cloned copy is used as-is and the
@@ -116,25 +139,49 @@ is the entire local gate and nothing runs it for you.
   `bin/preflight.sh` hardcodes `$HOME/Downloads/YTLive/...` with no override.
 - `conf/stream.env` is **sourced, not exported**, so any value a subprocess needs
   must be passed explicitly — `lib.sh`'s `yt_api_call` exists to do that in one place.
-- **A fresh clone cannot install or start** until the operator supplies the stream
-  key and OAuth refresh token: `install.sh` dies if `conf/stream.env` is absent, and
-  the example ships `YT_KEY=""`.
+- **A fresh clone installs but cannot start until the operator supplies credentials.**
+  `install.sh` now seeds `conf/stream.env` from the tracked example when it is absent
+  (an absent file used to abort the install before the LaunchAgents and playlist were
+  written). `--start` still refuses while `YT_KEY` is empty or Full Disk Access is not
+  granted, and with no `conf/yt_oauth.json` the stream runs and still saves the
+  current segment, but cannot rotate.
 - **No credentials are committed** — `conf/stream.env` and `conf/yt_oauth.json` are
   gitignored. But the stream key is interpolated into the RTMP URL on ffmpeg's
   command line, so it is visible in `ps`.
-- **One task cannot be automated away:** the OAuth app stays in Google's "Testing"
-  state, so the refresh token dies every 7 days and `bin/yt_api.py auth` must be
-  re-run. With a dead token the stream keeps running but cannot rotate.
+- **Publishing the OAuth app removes the 7-day refresh-token death, and Google
+  verification is NOT required to do it.** While the consent screen's publishing
+  status stays "Testing", Google expires the refresh token after 7 days and
+  `bin/yt_api.py auth` must be re-run. Publishing it to "In production" removes that
+  clock: an unverified published app still works for its owner (one "unverified app"
+  warning to click past, 100-user cap), and `bin/yt_api.py auth` prints the console
+  click-path at step 4. Re-run auth after publishing - tokens issued while Testing
+  keep their 7-day life. If the app must stay in Testing, a dead token still saves the
+  current segment's VOD but cannot create the next broadcast, so `rotate_broadcast()`
+  refuses to cut and stays LIVE until `bin/yt_api.py auth` is re-run.
 - **Destructive commands:** `bin/yt_api.py end` ends the broadcast YouTube is
   currently serving; `ensure-live` creates and deletes broadcasts. `yt_monitor.sh`
   and `stream.sh` use `pkill -9` against `ffmpeg.*rtmp` and `zsh.*yt_monitor.sh`.
-- **Only `set -u`** — no `set -e`, no `pipefail` — in `install.sh` and every script
-  under `bin/`. Failures are handled by explicit checks, never by aborting.
+- **`set -u` only** — no `set -e`, no `pipefail`. It is set in `install.sh` and in
+  every `bin/*.sh` EXCEPT `bin/lib.sh` (which is sourced and inherits the caller's
+  options) and `bin/preflight.sh` (which sets no shell options at all). Failures are
+  handled by explicit checks, never by aborting.
+- **The monitor's `*` case is for the PICTURE only.** `BLACK`, `FROZEN` and `MISMATCH`
+  are the statuses that mean "YouTube is live and showing the wrong thing". Lookup and
+  configuration statuses — `UNKNOWN`, `FETCHFAIL`, `NOSTATUS`, `NOGOLDEN`, `NOCONFIG`,
+  `ERROR`, empty — are handled as never-act: they only start the BLIND timer, and after
+  `BLIND_SECONDS` the YouTube API is asked whether the channel is actually live. They
+  used to fall into `*`, so a missing `conf/golden.jpg` (gitignored, so a fresh install
+  had none) was classified as a bad picture and killed a healthy publisher every
+  `FAIL_SECONDS`, forever.
 - macOS-only: `launchctl`, `/bin/zsh`, `caffeinate`, `stat -f`, `plutil`, `nc -G`,
   `sed -i ''`. There is no Linux path, and `install.sh` warns that the static ffmpeg
   is an Intel build needing Rosetta 2.
-- `install.sh` downloads ffmpeg/ffprobe with `curl -fL --retry 3` and **no hash or
-  signature verification**.
+- `install.sh` downloads ffmpeg/ffprobe with `curl -fL --retry 3` from evermeet.cx as
+  **unpinned "latest" Intel builds**, and verifies nothing unless `FFMPEG_SHA256` /
+  `FFPROBE_SHA256` are set - then it checks the archive digest and refuses a mismatch,
+  and otherwise states in its own output that it verified nothing. That binary is then
+  handed the stream key in argv, so treat the download as a supply-chain exposure. The
+  same is true of the unpinned `pip install --user yt-dlp`.
 - Logs are trimmed **in place, on the same inode** rather than rotated, because
   ffmpeg holds an `O_APPEND` fd on `publisher.log`. `log/progress.txt` is
   deliberately never trimmed — ffmpeg writes it at a fixed offset.

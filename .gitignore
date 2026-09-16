@@ -8,9 +8,9 @@
 conf/stream.env
 conf/stream.env.bak-*
 
-# OAuth refresh token for the Live Streaming API. Never committed even in a private repo:
-# it grants ongoing CONTROL of the channel, not just the ability to push pixels at it, and
-# a refresh token in git history outlives any later decision to share the repo.
+# OAuth refresh token for the Live Streaming API. Never committed - in a public repo most of
+# all: it grants ongoing CONTROL of the channel, not just the ability to push pixels at it,
+# and a refresh token in a public git history is a standing grant to anyone who finds it.
 conf/yt_oauth.json
 
 .DS_Store
@@ -22,10 +22,18 @@ __pycache__/
 # --- runtime state: never track anything the running stream rewrites -----------------
 # log/ and conf/golden.jpg are regenerated constantly (publisher.log is ffmpeg stderr,
 # progress.txt is the frame counter, golden.jpg is re-grabbed at every publisher start).
-# Tracking them meant every commit stored another multi-megabyte copy forever - .git had
-# reached 352 MB. They are machine-local state, not source.
+# Both WERE tracked historically and their blobs are still in the public git history; these
+# rules only stop new copies. Removing the old ones would need a history rewrite and a
+# force-push, a separate and deliberate decision. Do not blame the 353 MB .git on them,
+# though: measured across all of history log/ is 26.6 MB and conf/ is 3.7 MB, while the
+# tracked MP3/ library is 328.4 MB of it. The weight is the music, not the logs.
+# They are machine-local state, not source.
 log/
 conf/golden.jpg
+
+# Test-suite scratch. tests/lib.sh gives every case its own tree under here and removes it
+# again, but an interrupted run can leave one behind - never commit it.
+tests/.tmp/
 
 # Editor/tool backups of the scripts. Git IS the backup.
 bin/*.bak-*

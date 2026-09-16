@@ -67,6 +67,15 @@ housekeep() {
            "$BASE/log/monitor.log" "$HOME/Library/Logs/YTLive/"*.log(N); do
     trim_log "$f"
   done
+  # DISK IS THE ONE FAILURE NOTHING HERE CAN RECOVER FROM, and nothing watched it. A full
+  # volume makes ffmpeg's -progress write fail (so the frame counter stops and the watchdog
+  # restarts the publisher every 30s), takes yt-dlp down with it, and leaves a dark channel with
+  # no diagnosis. Report it while there is still time to act; never act on it automatically.
+  local avail_mb
+  avail_mb=$(df -k "$BASE" 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+  if [[ "$avail_mb" == <-> ]] && (( avail_mb < 200 )); then
+    log "HOUSEKEEP: WARNING - only ${avail_mb} MB free on the volume holding $BASE. A full disk stops the frame counter, the recording and yt-dlp."
+  fi
 }
 
 # Watchdog for the watchdog. launchd KeepAlive restarts a monitor that EXITS, but not one
@@ -125,8 +134,15 @@ cam_ip_watcher() {
     newip=$(python3 "$BASE/bin/find_cam.py" 2>/dev/null)
     if [[ -n "$newip" && "$newip" != "$cur" ]]; then
       print -r -- "$newip" > "$CAMIP_FILE"
-      log "CAM-WATCH: camera moved $cur -> $newip (reader will follow)"
-      /usr/bin/sed -i '' "s|^CAM_URL=\"rtsp://[0-9.]*/|CAM_URL=\"rtsp://${newip}/|" "$CONF" 2>/dev/null
+      # The reader follows log/cam_ip, but start_publisher's snapshot grab uses $CAM_URL, which
+      # was only ever read from conf/stream.env when the process started. Leaving it stale meant
+      # the per-start still-grab failed after a DHCP move and the filler fell back to a plain
+      # colour frame until someone restarted stream.sh. Update the in-memory copy as well.
+      CAM_URL="rtsp://${newip}/${CAM_PATH}"
+      CAM_HOST="$newip"
+      log "CAM-WATCH: camera moved $cur -> $newip (reader and snapshot follow)"
+      /usr/bin/sed -i '' "s|^CAM_URL=\"rtsp://[0-9.]*/|CAM_URL=\"rtsp://${newip}/|" "$CONF" 2>/dev/null \
+        || log "CAM-WATCH: WARNING - could not rewrite CAM_URL in $CONF; the reader still follows log/cam_ip but the file is now stale"
     elif [[ -n "$newip" ]]; then
       log "CAM-WATCH: discovery still reports $newip - camera itself is down"
     else
@@ -256,8 +272,28 @@ enforce_drift() {
   log "DRIFT: $(yt_api_call enforce)"
 }
 
+# Is the credential actually usable? This mints a real access token, so it is the truth rather
+# than a countdown. The exit status of `token` is deliberately not used: it is also non-zero for
+# an EXPIRING token, and an expiring token still works perfectly well.
+api_usable() {
+  yt_api_ready || { print -r -- "no API credentials at $YT_OAUTH"; return 1 }
+  local out
+  out=$(yt_api_call token)
+  if print -r -- "$out" | grep -q '"probe": *"LIVE"'; then
+    print -r -- yes
+    return 0
+  fi
+  print -r -- "the OAuth credential is not usable: $(print -r -- "$out" | tr '\n' ' ')"
+  return 1
+}
+
 prepare_broadcast() {
-  yt_api_ready || { log "PREPARE: no API credentials - relying on YouTube to create a broadcast by itself"; return 0; }
+  # THE API IS REQUIRED FOR EVERY ROTATION. This creates and binds the next broadcast BEFORE
+  # any ingest starts. With no broadcast bound, ingest arrives at a bare stream key and YouTube
+  # does nothing at all: automatic/default broadcast creation was retired in 2020, and it was
+  # proven here on 2026-09-05, when six minutes of clean ingest against a dark channel produced
+  # nothing. An earlier comment in this file claimed YouTube created one by itself. It does not.
+  yt_api_ready || { log "PREPARE: no API credentials at $YT_OAUTH - nothing can create the next broadcast, so the channel will go dark at the next cut. Run: bin/yt_api.py auth"; return 0; }
   log "PREPARE: $(yt_api_call prepare)"
 }
 
@@ -314,14 +350,23 @@ ROTATE_LABEL="${ROTATE_HOURS:-8}h$( (( ${ROTATE_MINUTES:-0} > 0 )) && print -n "
 # ROTATE_GRACE must stay comfortably above the monitor's OFFLINE_SECONDS for that reason.
 : ${ROTATE_GRACE:=420}         # monitor stands down this long after ANY publisher start
 : ${ROTATE_MIN_INTERVAL:=900}  # hard floor between unscheduled rotations - the livelock backstop
-# NATIVE ROTATION. This channel's own broadcasts carry autoStart=true AND autoStop=true, so
-# stopping ingest makes YouTube close and archive the broadcast by itself (measured: 9s), and
-# resuming ingest makes it create and start the next one by itself (measured: a roll-over on
-# 2026-09-03 was created 14s after the previous ended and was live 2m16s later, with no API
-# in existence). That is how this stream ran for weeks. The API is a FALLBACK now, not the
-# mechanism - which also means an expired token costs the safety net, not the stream.
+# WHAT YOUTUBE DOES, AND WHAT IT DOES NOT. Every broadcast we create carries autoStart=true AND
+# autoStop=true, so stopping ingest makes YouTube close and archive the broadcast by itself
+# (measured: 9s). That half needs no API at all. The other half does: autoStart only starts a
+# broadcast that is ALREADY BOUND, and YouTube does not create one when ingest arrives at a bare
+# stream key - automatic/default broadcast creation was retired in 2020
+# (youtube/v3/live/guides/migration-guide-default-broadcasts). Measured here on 2026-09-05: six
+# minutes of clean ingest against a dark channel produced nothing. start_publisher()'s
+# prepare_broadcast() is therefore LOAD-BEARING on every single cut, and the "native" rotation
+# mode below means only "YouTube's autoStart took the broadcast we had already created live,
+# without needing the ensure-live fallback". Commit 9a8d458 corrected an earlier claim in this
+# very comment that the API was a spare wheel. The correction is the accurate one.
 : ${ROTATE_NATIVE_WAIT:=360}   # how long to let YouTube produce the next broadcast on its own
 : ${ROTATE_END_PATIENCE:=60}   # if YouTube has not closed the old broadcast by now, end it via API
+: ${ROTATE_WITHOUT_API:=no}    # yes = cut even when the API cannot create a successor. That goes
+                               # dark the moment the old broadcast closes, so the default is no.
+: ${ROTATE_API_RETRY:=900}     # when a cut is refused for that reason, try again this often
+ROTATE_BLOCKED_UNTIL=0         # set by a refused rotation; the main loop will not retry before it
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
 BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
 VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", one line per broadcast
@@ -603,23 +648,37 @@ rotate_broadcast() {
       return
     fi
   fi
-  # PREFLIGHT. This used to REFUSE to rotate without API credentials, on the belief that
-  # only the API could create the next broadcast. That belief was wrong - YouTube does it
-  # itself - so a missing or expired token no longer blocks a rotation. It only costs the
-  # fallback, which is reported rather than fatal.
-  local pre
-  if ! yt_api_ready; then
-    log "ROTATE ($why): no API credentials - rotating natively, with no fallback if YouTube does not create the next broadcast."
+  # PREFLIGHT: CAN WE ACTUALLY CREATE THE NEXT BROADCAST?
+  #
+  # Cutting without a usable credential is the one thing that turns a healthy channel dark. The
+  # cut itself still saves this segment's VOD - YouTube's autoStop does that without any API -
+  # but nothing can create the successor, and YouTube will not invent one. Measured on
+  # 2026-09-05: after a rotation ended a healthy 8h broadcast, the channel stayed dark 5 hours.
+  #
+  # Staying LIVE is strictly the better failure. The audience keeps the stream, and the moment a
+  # human re-runs `bin/yt_api.py auth` the next attempt succeeds by itself. The cost is that this
+  # one segment runs past 12h and is not archived - but a lost recording beats a dark channel,
+  # because darkness needs a human anyway. ROTATE_WITHOUT_API=yes restores the old behaviour.
+  local usable pre
+  pre=$(yt_api_call token)
+  # The countdown is advisory and is reported whether or not the probe succeeds.
+  if print -r -- "$pre" | grep -q '"token_warning"'; then
+    log "TOKEN WARNING: $pre"
+  fi
+  if print -r -- "$pre" | grep -q '"probe": *"LIVE"'; then
+    usable=yes
   else
-    pre=$(yt_api_call status)
-    # The token countdown lives in this output and used to be thrown away here, so the one
-    # warning designed to give days of notice reached no log at all.
-    if print -r -- "$pre" | grep -q '"token_warning"'; then
-      log "TOKEN WARNING: $pre"
-    fi
-    if print -r -- "$pre" | grep -q '"status": *"ERROR"'; then
-      log "ROTATE ($why): the API cannot talk to YouTube ($pre). Rotating natively anyway - the fallback is simply unavailable."
-    fi
+    usable=no
+  fi
+  if [[ "$usable" != yes && "$ROTATE_WITHOUT_API" != yes ]]; then
+    rm -f "$ROTATE_NOW"
+    ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
+    LAST_ROTATE=$now
+    log "ROTATE ($why): REFUSED - the API cannot create the next broadcast ($pre). Staying LIVE rather than cutting to darkness; this segment will NOT be archived. Fix with: bin/yt_api.py auth. Next attempt in ${ROTATE_API_RETRY}s."
+    return
+  fi
+  if [[ "$usable" != yes ]]; then
+    log "ROTATE ($why): API unusable ($pre) but ROTATE_WITHOUT_API=yes - cutting anyway; the channel will go dark until credentials return."
   fi
 
   # Before cutting again, confirm the recording the LAST cut was supposed to produce
@@ -693,7 +752,8 @@ while true; do
   fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue
-  elif (( $(date +%s) - BROADCAST_STARTED >= ROTATE_SECONDS )); then
+  elif (( $(date +%s) - BROADCAST_STARTED >= ROTATE_SECONDS )) \
+       && (( $(date +%s) >= ROTATE_BLOCKED_UNTIL )); then
     rotate_broadcast "scheduled ${ROTATE_LABEL} reached"; last=""; stuck=0; continue
   fi
   if ! kill -0 "$PUBPID" 2>/dev/null; then

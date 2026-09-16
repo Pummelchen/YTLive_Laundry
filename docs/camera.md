@@ -1,9 +1,9 @@
 # The camera
 
 ## Camera
-192.168.1.2 - ONVIF (macro-video-soft / XiongMai OEM, fw 2.4), ONVIF svc on :8899, no auth.
-- `rtsp://192.168.1.2/live/ch00_0`  1920x3240  <- used
-- `rtsp://192.168.1.2/live/ch00_1`, `ch00_2`   640x1080 (same layout, lower res)
+192.168.1.3 - ONVIF (macro-video-soft / XiongMai OEM, fw 2.4), ONVIF svc on :8899, no auth.
+- `rtsp://192.168.1.3/live/ch00_0`  1920x3240  <- used
+- `rtsp://192.168.1.3/live/ch00_1`, `ch00_2`   640x1080 (same layout, lower res)
 
 **ch00_0 is a COMPOSITE of three 1920x1080 views stacked vertically.**
 Only the TOP panel carries the date/time OSD overlay.
@@ -42,7 +42,8 @@ talks to the wrong device: cam_config.py still pointed at 192.168.1.2 a week lat
 
 `bin/cam_ip.py` resolves it, cheapest first, and every candidate must actually answer:
 
-    1. --host / CAM_HOST      explicit override
+    1. CAM_HOST               explicit override, environment variable only - there is no
+                              --host flag (cam_ip.py parses only -v/--verbose and --onvif)
     2. log/cam_ip             runtime truth, maintained by stream.sh's cam_ip_watcher
     3. CAM_URL in conf/stream.env
     4. ONVIF WS-Discovery     slow, definitive
@@ -52,6 +53,11 @@ cam_config.py and cam_reboot.py both use it; neither holds an address any more.
 
 ## Monitor golden reference
 The monitor refreshes conf/golden.jpg from log/basefill.jpg whenever that is newer (i.e.
-after every publisher start / rotation), so the reference never goes stale. CORR_MIN is
-0.35: a 5-day-old golden measured only 0.52-0.64 against a perfectly healthy stream,
-while black is ~0.01 and garbage ~-0.2.
+after every publisher start / rotation), so the reference never goes stale. `CORR_MIN` ships
+at **0.15** in conf/stream.env.example; `bin/yt_check.py`'s own default is 0.60, but the
+monitor passes the configured value explicitly. It was lowered from 0.35 on 2026-09-08 after
+that threshold caused the first picture-triggered restart in the project's history on a
+completely healthy stream: correlation runs ~0.98 just after golden is refreshed and decays
+to 0.32-0.42 within 25 minutes as people move things around the shop, so 0.35 had no margin
+and the restart itself refreshed golden, cycling all night. Black scores ~0.01 and garbage
+~-0.2, so 0.15 still catches every failure the check exists for.

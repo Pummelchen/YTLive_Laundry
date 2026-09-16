@@ -51,13 +51,25 @@ else
   bad "no heartbeat file - the watchdog has not run since this was installed"
 fi
 
-print "\n=== OAuth token (Testing apps expire every 7 days) ==="
-tok=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" token 2>&1); trc=$?
+print "\n=== OAuth token: can this installation still talk to YouTube? ==="
+# `token` PROBES the credential by minting a real access token, so it is authoritative; the day
+# countdown is only advisory and is wrong once the OAuth app is published (a published app's
+# refresh token does not expire on a clock). --no-net must not lose that distinction silently, so
+# it asks for the offline countdown explicitly and says so.
+TOKFLAG=(); [[ "$NET" == no ]] && TOKFLAG=(--offline)
+tok=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" token $TOKFLAG 2>&1); trc=$?
 case $trc in
   0) ok   "$tok" ;;
   1) warn "$tok" ;;
-  *) bad  "$tok  ->  $BASE/bin/yt_api.py auth" ;;
+  *)
+     if print -r -- "$tok" | grep -q '"probe": *"UNKNOWN"'; then
+       warn "$tok  (could not confirm - the token endpoint was unreachable)"
+     else
+       bad  "$tok  ->  $BASE/bin/yt_api.py auth"
+     fi ;;
 esac
+print "  the API is required for EVERY rotation: prepare creates and binds the next broadcast,"
+print "  and a cut with no usable credential is refused rather than taken dark (ROTATE_WITHOUT_API)."
 
 if [[ "$NET" == yes ]]; then
   print "\n=== YouTube says ==="
@@ -71,6 +83,15 @@ host=${host%%/*}; host=${host%%:*}
 nc -z -G 3 "$host" 554 2>/dev/null && ok "$host:554 reachable" || bad "$host:554 UNREACHABLE (stream shows the filler still)"
 
 print "\n=== disk ==="
+# Free space, not just usage: a full volume is the one failure this project cannot recover from
+# (ffmpeg's -progress write fails, the frame counter stalls and the watchdog restarts the
+# publisher every 30s). The health page is where a human would look, so say it here.
+avail_mb=$(df -k "$BASE" 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+if [[ "$avail_mb" == <-> ]]; then
+  if   (( avail_mb < 200 ));  then bad  "only ${avail_mb} MB free - a full disk stops the frame counter, the recording and yt-dlp"
+  elif (( avail_mb < 1000 )); then warn "${avail_mb} MB free on the volume holding $BASE"
+  else                             ok   "${avail_mb} MB free"; fi
+fi
 print "  log/ $(du -sh "$BASE/log" 2>/dev/null | cut -f1)   repo $(du -sh "$BASE/.git" 2>/dev/null | cut -f1)"
 du -h "$BASE/log"/*(.N) 2>/dev/null | sort -rh | head -4 | sed 's/^/  /'
 

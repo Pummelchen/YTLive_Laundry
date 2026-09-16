@@ -1,0 +1,8 @@
+#!/bin/zsh
+# Test stub: the monitor/streamer ask for %(id)s|%(is_live)s and for -g media URLs.
+case "$*" in
+  *"%\(id\)s|%\(is_live\)s"*) print -- "TESTVID|True"; exit 0 ;;
+  *-g*) print -- "https://example.invalid/media"; exit 0 ;;
+  *duration*) print -- "28800"; exit 0 ;;
+esac
+exit 0

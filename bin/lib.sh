@@ -19,5 +19,7 @@ yt_api_call() {
   YT_TITLE_FMT="${YT_TITLE_FMT:-}" \
   YT_PRIVACY="${YT_PRIVACY:-public}" \
   YT_LATENCY="${YT_LATENCY:-normal}" \
+  YT_TOKEN_TTL_DAYS="${YT_TOKEN_TTL_DAYS:-7}" \
+  YT_TOKEN_WARN_DAYS="${YT_TOKEN_WARN_DAYS:-2}" \
   python3 "$YT_API" "$@" 2>&1
 }

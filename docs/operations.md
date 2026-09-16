@@ -37,27 +37,39 @@ Verified against the actual bug: reintroduced in a copy, the test fails twice ov
 statically and at runtime with the genuine UnboundLocalError.
 
 ## Modes (conf/stream.env)
-    MODE="crop"    crop one panel + HW encode. Current. ~50% of one core.
-    MODE="copy"    passthrough the whole 3-up stack, lowest CPU (no crop possible).
+    MODE="crop"    cut the one timestamped panel and HW-encode it. Current. ~50% of one core.
     MODE="encode"  letterbox the whole tall stack into 16:9.
+
+There is no `MODE="copy"` case in stream.sh - its `case` has only `crop` and `encode`. The
+publisher ALWAYS re-encodes with `h264_videotoolbox`, so there is no passthrough mode even
+in principle.
 
 ## Disk and logs  (added 2026-09-05)
 Nothing bounded the logs before, and `log/` was tracked in git - so every commit stored
-another copy of a multi-megabyte `publisher.log`, and `.git` reached 352 MB.
+another copy of a multi-megabyte `publisher.log`. `.git` is 353 MB, but the logs are not why:
+measured across the whole history, `log/` accounts for 26.6 MB and `conf/` for 3.7 MB, while
+the tracked `MP3/` library is **328.4 MB** of it. The weight is the music. Both are gitignored
+now, which stops new copies but does not remove the blobs already in the public history (see
+T-21 in the wiki tracker).
 
-    LOG_MAX_BYTES=2097152     2 MB cap per log file
+    LOG_MAX_BYTES=524288      512 KB cap per log file (the shipped conf/stream.env.example)
     HOUSEKEEP_EVERY=300       stream.sh trims every 5 min, and once at startup
 
-Trimming rewrites the SAME inode (keeping the last 1 MB) rather than renaming the file.
-That matters: ffmpeg holds an `O_APPEND` fd on `publisher.log`, so a rename would leave it
-writing to an unlinked inode forever, invisibly. Verified with a live append-mode writer -
-it kept appending correctly across a trim, with no offset corruption.
+stream.sh's own built-in default is 2097152 (2 MB), but the shipped example sets 524288, and
+the shipped config wins.
+
+Trimming rewrites the SAME inode, keeping the last `LOG_MAX_BYTES/2` = 256 KB, rather than
+renaming the file. That matters: ffmpeg holds an `O_APPEND` fd on `publisher.log`, so a
+rename would leave it writing to an unlinked inode forever, invisibly. Verified with a live
+append-mode writer - it kept appending correctly across a trim, with no offset corruption.
 
 `log/progress.txt` is deliberately NOT trimmed: ffmpeg writes it at a fixed offset, so
 rewriting it underneath would corrupt the frame counter the publisher watchdog reads. It is
 truncated at every publisher start instead, which bounds it to one rotation's worth (~12 MB).
 
 Runtime state is gitignored, not tracked: `log/` and `conf/golden.jpg` (re-grabbed at every
-publisher start). `MP3/` stays tracked - it is write-once, so it does not grow the repo.
-The 352 MB already in history is untouched; shrinking that needs a history rewrite and a
-force-push, which is a separate, deliberate decision.
+publisher start). `MP3/` stays tracked: it is write-once, so it does not grow - but at 328.4 MB
+it is nearly the whole 353 MB `.git`, so it is also not a rounding error. The blobs already in
+public history (the MP3 library, plus the `log/` and `conf/golden.jpg` copies that were tracked
+until 2026-09-05) are untouched; removing any of them needs a history rewrite and a force-push,
+which is a separate, deliberate decision - see T-21 in the wiki tracker.

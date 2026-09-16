@@ -83,9 +83,32 @@ def load_creds():
         die(f"{CREDS} is not valid JSON: {e}")
 
 
+def try_load_creds():
+    """Creds dict, or None. Never prints and never exits - for health checks.
+
+    load_creds() is for commands that cannot proceed; it dies loudly. A health check has to
+    be able to say "no credentials" as its own answer, and it must not emit a second JSON
+    object (or a spurious ERROR) on its way there.
+    """
+    if not CREDS.exists():
+        return None
+    try:
+        return json.loads(CREDS.read_text())
+    except Exception:
+        return None
+
+
 def save_creds(d):
     CREDS.parent.mkdir(parents=True, exist_ok=True)
-    CREDS.write_text(json.dumps(d, indent=2))
+    # Create with 0600 from the first byte. write_text() creates at the umask default (0644)
+    # and only the chmod afterwards closed it, so the client_secret and the refresh token -
+    # which together grant CONTROL of the channel, not just the ability to push - were briefly
+    # world-readable, and permanently so if the chmod or the process died in between.
+    tmp = CREDS.with_name(CREDS.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(json.dumps(d, indent=2))
+    os.replace(tmp, CREDS)
     CREDS.chmod(0o600)
 
 
@@ -114,6 +137,40 @@ def access_token():
             die("refresh token rejected (revoked, expired, or the channel changed). "
                 "Re-run: bin/yt_api.py auth")
         die(f"token refresh failed: HTTP {e.code} {detail}")
+
+
+def probe_refresh_token():
+    """Try to mint an access token. (state, detail) with state LIVE / DEAD / UNKNOWN.
+
+    This is the AUTHORITATIVE answer to "can this installation still talk to YouTube?".
+    A day countdown is only a guess about Google's rules: refresh tokens issued to an
+    External app whose publishing status is "Testing" expire after 7 days, but tokens for a
+    PUBLISHED app (verified or not - an unverified app shows a warning screen and still
+    works) do not expire on a clock at all. Reporting "EXPIRED" from the countdown alone
+    after publishing would be a false alarm that fires forever.
+
+    Costs no API quota: the OAuth token endpoint is not the YouTube Data API.
+    """
+    c = try_load_creds()
+    if c is None:
+        return "UNKNOWN", f"{CREDS} is missing or unreadable - run: bin/yt_api.py auth"
+    missing = [k for k in ("client_id", "client_secret", "refresh_token") if not c.get(k)]
+    if missing:
+        return "DEAD", f"{CREDS} is missing {', '.join(missing)} - run: bin/yt_api.py auth"
+    try:
+        post_form(OAUTH, {
+            "client_id": c["client_id"], "client_secret": c["client_secret"],
+            "refresh_token": c["refresh_token"], "grant_type": "refresh_token",
+        })
+        return "LIVE", "Google accepted the refresh token"
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "replace")[:300]
+        if e.code in (400, 401, 403):
+            return "DEAD", (f"Google rejected the refresh token (HTTP {e.code}: {detail.strip()}) "
+                            f"- run: bin/yt_api.py auth")
+        return "UNKNOWN", f"token endpoint returned HTTP {e.code}: {detail.strip()}"
+    except Exception as e:
+        return "UNKNOWN", f"could not reach the token endpoint: {e}"
 
 
 def api(method, path, token, params=None, body=None):
@@ -237,27 +294,33 @@ def pending_broadcasts(token, stream_id):
 
 def token_age():
     """(age_days, days_left) for the refresh token, or (None, None) if unknowable."""
-    try:
-        t = load_creds().get("authorised_at")
-    except SystemExit:
-        return None, None
+    t = (try_load_creds() or {}).get("authorised_at")
     if not t:
         return None, None
     age = (time.time() - t) / 86400.0
     return age, TOKEN_TTL_DAYS - age
 
 
-def token_age_warning():
-    """Google expires refresh tokens after 7 days while the OAuth app is in 'Testing'.
-    That failure is silent and looks like nothing at all until a rotation needs the API,
-    so surface the countdown long before it bites."""
+def token_age_warning(probe_state=None):
+    """ADVISORY countdown for an app still in 'Testing'. Never the authoritative state.
+
+    probe_refresh_token() decides whether the credential actually works. This only predicts,
+    and its prediction is only valid while the OAuth app is in Testing: a published app keeps
+    its refresh token indefinitely. So a countdown that has run out while the token demonstrably
+    still works is reported as what it is - noise - and not as an outage.
+    """
+    if TOKEN_TTL_DAYS <= 0:
+        return None
     age, left = token_age()
     if age is None:
         return None
     if left <= 0:
-        return (f"refresh token is {age:.1f} days old and has EXPIRED (Testing apps get "
-                f"{TOKEN_TTL_DAYS:.0f} days). Rotation and self-healing are dead until you "
-                f"re-run: bin/yt_api.py auth")
+        if probe_state == "LIVE":
+            return (f"the {TOKEN_TTL_DAYS:.0f}-day Testing countdown has passed ({age:.1f} days "
+                    f"old) but Google still accepts the token - the OAuth app is probably "
+                    f"published now. Set YT_TOKEN_TTL_DAYS=0 to silence this.")
+        return (f"refresh token is {age:.1f} days old and the {TOKEN_TTL_DAYS:.0f}-day Testing "
+                f"limit has passed. Run: bin/yt_api.py auth")
     if left <= TOKEN_WARN_DAYS:
         return (f"refresh token expires in {left:.1f} days ({age:.1f} days old, Testing apps "
                 f"get {TOKEN_TTL_DAYS:.0f}). Re-run bin/yt_api.py auth before then or the "
@@ -288,8 +351,12 @@ def cmd_status(token=None, key=None):
     age, left = token_age()
     if age is not None:
         out["token_age_days"] = round(age, 2)
-        out["token_days_left"] = round(left, 2)
-    w = token_age_warning()
+        # Reaching this line means access_token() just succeeded, so the credential is
+        # provably alive - tell the advisory countdown so an elapsed Testing countdown on a
+        # published app is not reported as an outage.
+        if TOKEN_TTL_DAYS > 0:
+            out["token_days_left"] = round(left, 2)
+    w = token_age_warning("LIVE")
     if w:
         out["token_warning"] = w
     print(json.dumps(out))
@@ -1064,25 +1131,60 @@ def cmd_end():
     return 0
 
 
-def cmd_token():
-    """Token expiry check that touches no network - cheap enough to run on a schedule.
+def cmd_token(offline=False):
+    """Can this installation still talk to YouTube? Exit 0 fine, 1 expiring, 2 dead/unknown.
 
-    Exit 0 fine, 1 expiring soon, 2 expired or unknown. The monitor calls this daily so a
-    dying token is noticed days before it takes rotation and self-healing down with it.
+    The answer comes from actually attempting a refresh (probe_refresh_token), because a day
+    countdown is a guess about Google's Testing-mode rule and is simply wrong once the app is
+    published. `--offline` keeps the old network-free behaviour for status.sh --no-net and for
+    hosts with no connectivity; it can only report the countdown, so it is never authoritative.
     """
+    if offline:
+        age, left = token_age()
+        if TOKEN_TTL_DAYS <= 0:
+            # Countdown disabled: the operator has declared the app published. Nothing can be
+            # said offline about a token that has no scheduled expiry.
+            print(json.dumps({"status": "OK", "offline": True, "age_days":
+                              None if age is None else round(age, 2),
+                              "msg": "offline check with no countdown configured "
+                                     "(YT_TOKEN_TTL_DAYS=0) - run without --offline to probe"}))
+            return 0
+        if age is None:
+            print(json.dumps({"status": "UNKNOWN", "offline": True,
+                              "msg": f"{CREDS} has no authorised_at - run: bin/yt_api.py auth"}))
+            return 2
+        state = "EXPIRED" if left <= 0 else ("EXPIRING" if left <= TOKEN_WARN_DAYS else "OK")
+        print(json.dumps({"status": state, "offline": True,
+                          "age_days": round(age, 2), "days_left": round(left, 2),
+                          "msg": token_age_warning() or ""}))
+        return {"OK": 0, "EXPIRING": 1, "EXPIRED": 2}[state]
+
+    state, detail = probe_refresh_token()
     age, left = token_age()
-    if age is None:
-        print(json.dumps({"status": "UNKNOWN",
-                          "msg": f"{CREDS} has no authorised_at - re-run bin/yt_api.py auth "
-                                 f"to stamp it"}))
+    out = {"status": "OK", "probe": state, "msg": detail}
+    if age is not None:
+        out["age_days"] = round(age, 2)
+        if TOKEN_TTL_DAYS > 0:
+            out["days_left"] = round(left, 2)
+    if state == "DEAD":
+        out["status"] = "EXPIRED"
+        out["action"] = "bin/yt_api.py auth"
+        print(json.dumps(out))
         return 2
-    state = "EXPIRED" if left <= 0 else ("EXPIRING" if left <= TOKEN_WARN_DAYS else "OK")
-    print(json.dumps({"status": state,
-                      "age_days": round(age, 2), "days_left": round(left, 2),
-                      "expires": time.strftime("%Y-%m-%d %H:%M",
-                                               time.localtime(time.time() + left * 86400)),
-                      "msg": token_age_warning() or ""}))
-    return {"OK": 0, "EXPIRING": 1, "EXPIRED": 2}[state]
+    if state == "UNKNOWN":
+        # The lookup failed, which is not the same as a dead credential. Say so, but keep the
+        # old contract of exiting non-zero: a health check that cannot confirm must not report OK.
+        out["status"] = "UNKNOWN"
+        print(json.dumps(out))
+        return 2
+    warn = token_age_warning("LIVE")
+    if warn:
+        out["token_warning"] = warn
+        out["status"] = "EXPIRING"
+        print(json.dumps(out))
+        return 1
+    print(json.dumps(out))
+    return 0
 
 
 def read_key():
@@ -1109,7 +1211,7 @@ def main():
         if cmd == "end":
             return cmd_end()
         if cmd == "token":
-            return cmd_token()
+            return cmd_token(offline="--offline" in sys.argv)
         if cmd == "prepare":
             if "--dry-run" in sys.argv:
                 tok = access_token(); st = stream_for_key(tok, read_key())

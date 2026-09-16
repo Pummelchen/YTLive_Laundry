@@ -44,10 +44,21 @@ sys.exit(1 if bad else 0)
 PY
 
 print "\n=== read-only API commands ==="
+# These must be judged on the STATUS, not on the mere presence of a "status" key. Grepping for
+# '"status"' alone passes on {"status": "ERROR"} - and on OFFLINE, NOREF, UNKNOWN and PENDING -
+# so a completely broken API reported a clean bill of health. Only a status that means "this
+# command answered" passes; anything else fails, and the body is shown.
 for c in token status verify; do
   out=$(BASE="$BASE" python3 bin/yt_api.py $c 2>&1)
-  print -r -- "$out" | grep -q '"status"' && ok "yt_api.py $c -> $(print -r -- "$out" | cut -c1-60)" \
-                                          || bad "yt_api.py $c -> $out"
+  st=$(print -r -- "$out" | sed -n 's/.*"status": *"\([A-Z-]*\)".*/\1/p' | head -1)
+  case "$st" in
+    OK|LIVE|EXPIRING|DRIFTED|READY|ENDED|CAPTURED|PENDING)
+      ok "yt_api.py $c -> $st" ;;
+    "")
+      bad "yt_api.py $c produced no status: $(print -r -- "$out" | head -2 | tr '\n' ' ' | cut -c1-140)" ;;
+    *)
+      bad "yt_api.py $c -> $st ($(print -r -- "$out" | cut -c1-140))" ;;
+  esac
 done
 
 print "\n=== THE CREATION PATH, without creating anything ==="

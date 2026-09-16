@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Test stub: records and does nothing.
+print -r -- "caffeinate $*" >> "${BASE:-/nonexistent}/log/stub_caffeinate.calls" 2>/dev/null
+exit 0

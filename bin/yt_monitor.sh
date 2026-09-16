@@ -120,7 +120,11 @@ while true; do
   # Keep the golden reference fresh: basefill.jpg is a real camera frame grabbed at every
   # publisher start (so at least every rotation). A days-old golden drifts as the shop
   # changes and drags correlation toward the alert line for no reason.
-  if [[ "$BASE/log/basefill.jpg" -nt "$BASE/conf/golden.jpg" && -s "$BASE/log/basefill.jpg" ]]; then
+  # zsh's -nt is FALSE when the right-hand file does not exist, so the old test could never
+  # bootstrap a missing reference - and conf/golden.jpg is gitignored, so a fresh install had
+  # none. That made every check report NOGOLDEN, which the case below then treated as a bad
+  # picture and killed the publisher for, forever. Create it when it is absent.
+  if [[ -s "$BASE/log/basefill.jpg" ]] && [[ ! -e "$BASE/conf/golden.jpg" || "$BASE/log/basefill.jpg" -nt "$BASE/conf/golden.jpg" ]]; then
     cp "$BASE/log/basefill.jpg" "$BASE/conf/golden.jpg" && mlog "golden reference refreshed from latest publisher start frame"
   fi
 
@@ -136,9 +140,15 @@ while true; do
     bad_since=0; off_since=0; blind_since=0
     ;;
 
-  UNKNOWN|FETCHFAIL|NOSTATUS|"")
-    # The lookup failed, not the stream. NEVER act on this - acting on it is how a yt-dlp
-    # rate limit turns into a rotation that takes a perfectly healthy channel off air.
+  UNKNOWN|FETCHFAIL|NOSTATUS|NOGOLDEN|NOCONFIG|ERROR|"")
+    # The lookup or our own reference failed, not the stream. NEVER act on this - acting on it
+    # is how a yt-dlp rate limit turns into a rotation that takes a perfectly healthy channel
+    # off air. NOGOLDEN/NOCONFIG are configuration faults and ERROR is any yt_check.py
+    # exception: none of them is evidence about the picture, and restarting ingest cannot fix
+    # any of them. They reach here instead of the `*` arm below, which is for BLACK, FROZEN
+    # and MISMATCH only - the statuses that do mean "YouTube is live and showing the wrong
+    # thing". A catch-all there classified a missing golden reference as a bad picture and
+    # killed a healthy publisher every FAIL_SECONDS indefinitely.
     (( blind_since == 0 )) && { blind_since=$now; mlog "lookup failing (not acting): $out"; }
     if (( now - blind_since >= BLIND_SECONDS )); then
       # Blind for a while. yt-dlp cannot tell us, so ask YouTube itself - the API knows

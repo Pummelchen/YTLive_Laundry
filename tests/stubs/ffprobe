@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Test stub: a stable duration so playlist maths is deterministic.
+print -- "3600.0"
+exit 0

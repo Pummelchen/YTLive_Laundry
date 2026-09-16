@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Test stub: records and does nothing.
+print -r -- "launchctl $*" >> "${BASE:-/nonexistent}/log/stub_launchctl.calls" 2>/dev/null
+exit 0

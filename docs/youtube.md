@@ -8,7 +8,10 @@ The only thing that can create a broadcast. Stdlib only, no pip installs.
     bin/yt_api.py prepare       create + bind a broadcast, ready for ingest to start it
     bin/yt_api.py ensure-live   idempotent: if nothing is live, create + bind + go live
     bin/yt_api.py end           end the active broadcast so YouTube saves the VOD
-    bin/yt_api.py token         refresh-token expiry, offline (0 ok, 1 soon, 2 expired)
+    bin/yt_api.py token         can this installation still talk to YouTube? Probes the
+                                credential (real refresh attempt) -> JSON "probe":
+                                LIVE|DEAD|UNKNOWN. Exit 0 fine / 1 expiring / 2 dead|unknown.
+    bin/yt_api.py token --offline   network-free countdown only, never authoritative
     bin/yt_api.py capture [id]  snapshot the configuration into the reference
     bin/yt_api.py verify [id]   compare a broadcast against the reference (0 match, 1 drift)
     bin/yt_api.py enforce [id]  apply the reference and retry until it matches
@@ -20,21 +23,50 @@ One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Dat
 auth` and paste the id and secret. It prints a short code to enter at google.com/device.
 No browser is needed on the streaming Mac, so this works fine over SSH.
 
-**The OAuth app stays in "Testing", so the token expires every 7 days.** Branding review is
-not being pursued, so this is permanent: Google kills the refresh token after 7 days and
-`bin/yt_api.py auth` has to be re-run. That is normal maintenance for this project, not an
-edge case, and it is the one failure nothing else here can recover from - with a dead token
-the stream keeps running but cannot rotate, and a channel that goes dark stays dark.
+**The 7-day expiry is a "Testing" behaviour, not a fact of life.** A refresh token issued
+to an External OAuth app whose publishing status is "Testing" dies after 7 days. Publishing
+the app to **"In production"** removes that clock. Google verification is NOT required to
+escape it: an unverified published app still works for its owner - you click past one
+"Google hasn't verified this app -> Advanced -> Go to <app> (unsafe)" screen - and a
+100-user cap applies. Approval is only needed to remove that warning for *other* users.
 
-Three things make sure it never surprises you:
+    console.cloud.google.com -> APIs & Services -> OAuth consent screen (Google Auth
+    Platform) -> Audience -> User type: External -> Publishing status: "In production"
+    -> Publish app
+    Keep the existing "TVs and Limited Input devices" client. Do NOT submit for
+    verification. Then re-run: bin/yt_api.py auth
+    Tokens issued while the app was Testing keep their 7-day life, so publishing without a
+    fresh auth changes nothing.
 
-    bin/yt_api.py token       offline check: 0 = fine, 1 = expiring, 2 = expired
-    bin/status.sh             shows days remaining every time you look
+`bin/yt_api.py auth` prints this same advice at its step 4, so the operator sees it at the
+moment it matters.
+
+This installation is deliberately hardened for the case where the owner cannot publish, so
+a dead token cannot silently take the channel dark:
+
+    bin/yt_api.py token       PROBES the credential (probe_refresh_token: a real refresh
+                              attempt, JSON "probe": LIVE|DEAD|UNKNOWN) instead of trusting
+                              a day countdown. 0 = fine, 1 = expiring, 2 = dead or unknown.
+    bin/yt_api.py token --offline   keeps the old network-free countdown behaviour; it can
+                              only predict, so it is never authoritative. `bin/status.sh
+                              --no-net` passes this flag explicitly, so a no-network health
+                              check still gets the countdown and is told it is not the probe.
+    YT_TOKEN_TTL_DAYS         the countdown is now ADVISORY only and 0 silences it. An
+                              elapsed countdown on a token Google still accepts is reported
+                              as noise from a published app, not as an outage.
+    status.sh                 shows the probe result every time you look
     yt_monitor.sh             re-checks every TOKEN_CHECK_EVERY (6h) and logs a loud
-                              warning from 2 days out; stream.sh logs it at every rotation
+                              warning; stream.sh logs it at every rotation
 
 The countdown existed before but was written into a variable the rotation preflight threw
 away, so it reached no log at all. Now it reaches three.
+
+**A dead token no longer cuts the stream into the dark.** `stream.sh`'s `rotate_broadcast()`
+checks the API before cutting: if it cannot create the successor it REFUSES the rotation and
+stays LIVE. The segment then runs past 12h and is not archived, but a lost recording beats a
+dark channel, which needs a human either way. `ROTATE_WITHOUT_API="no"` is the default;
+`yes` restores the old cut-anyway behaviour. `ROTATE_API_RETRY` (900s) sets the re-check
+deadline so a refused cut is not retried every 5 seconds.
 
 **Verified end to end on 2026-09-05 15:01-15:03** - a forced rotation ran the whole path:
 
@@ -49,28 +81,35 @@ away, so it reached no log at all. Now it reaches three.
 printed "0s" because it could not tell "offline" from "the lookup failed".
 
 Everything switches on automatically once `conf/yt_oauth.json` exists:
-- **stream.sh** calls `ensure-live` after every publisher start (cold start, watchdog
-  restart, rotation), and `end` when rotating, so the VOD is saved properly.
-- **yt_monitor.sh** calls `ensure-live` when it sees the channel OFFLINE, instead of asking
-  for a rotation that cannot help.
+- **stream.sh** calls `prepare_broadcast()` inside `start_publisher()`, so `prepare` runs on
+  every publisher start (cold start, watchdog restart, rotation) and creates+binds the next
+  broadcast BEFORE ffmpeg pushes. It calls `end` only as a fallback, when YouTube has not
+  closed the outgoing broadcast within `ROTATE_END_PATIENCE` (autoStop normally does it).
+- **yt_monitor.sh** calls `ensure-live` first when it sees the channel OFFLINE, and only asks
+  stream.sh for a rotation as a fallback if the API cannot bring it live.
 - **ensure-live reuses a broadcast it already created** rather than minting a new one on
   every retry, and deletes the abandoned ones. Without that, a spell of "channel dark and
   ingest broken" left a fresh orphaned broadcast on the channel every retry, at 100 quota
   units each. It only ever touches broadcasts bound to our own stream key - a broadcast
   scheduled by hand in Studio is left alone.
-Without the file both fall back to the old yt-dlp polling and say plainly that only Studio
-can bring the channel live.
+Without the file the stream still runs and the current segment is still saved (YouTube's
+autoStop closes it when ingest stops), but nothing can create a successor: `prepare_broadcast`
+logs that the channel will go dark at the next cut, `rotate_broadcast` refuses to cut at all
+unless `ROTATE_WITHOUT_API=yes`, and the monitor asks for a rotation it cannot satisfy. Only
+`bin/yt_api.py auth` recovers it.
 
-`enableAutoStart: true` on the created broadcast is the setting the stream-key approach was
-always missing - with it YouTube puts the broadcast live by itself as soon as ingest lands.
-`enableAutoStop` is left OFF so a brief ingest blip cannot end the broadcast.
+`enableAutoStart: true` on the created broadcast is what puts it live as soon as ingest
+ARRIVES at the stream it is ALREADY BOUND to. It does not create a broadcast, so it cannot
+help when ingest arrives at a bare stream key - that is what `prepare` is for.
+`enableAutoStop: true` is forced on too: stopping ingest makes YouTube close and archive the
+broadcast by itself (measured ~9s), which is the half of the rotation that needs no API.
 
 Set YT_TITLE_FMT in conf/stream.env or every rotation loses the channel's hashtags -
 conf/stream.env is *sourced*, not exported, so stream.sh passes it through explicitly via
 yt_api_call(). YT_PRIVACY defaults to public.
 
-conf/yt_oauth.json is gitignored even though the repo is private: a refresh token grants
-ongoing control of the channel and would outlive any later decision to share the repo.
+conf/yt_oauth.json is gitignored even though the repo is public: a refresh token grants
+ongoing control of the channel and would outlive any later decision to change that.
 conf/stream.env is gitignored for the same reason - it holds the stream key.
 
 ## The token is not optional  (2026-09-07)
@@ -83,6 +122,17 @@ the `ensure-live` fallback". Every rotation still calls the API through `prepare
 and bind the next broadcast, so with no token there is no rotation at all. The flag went
 green on 2026-09-07 and would have suppressed the expiry warning three days before the
 token died on the 12th.
+
+Why "native" cannot mean "no API needed": YouTube retired automatic/default broadcast
+creation in 2020
+(developers.google.com/youtube/v3/live/guides/migration-guide-default-broadcasts). Pushing
+RTMP at a bare stream key does nothing; with no broadcast bound, `enableAutoStart` has
+nothing to start. Measured here 2026-09-05: six minutes of clean ingest against a dark
+channel produced nothing. What YouTube DOES handle with no API is the other end of the cut -
+`enableAutoStop` closes and archives the broadcast when ingest stops (~9s measured) - so a
+dead token still saves the CURRENT segment's VOD; it just cannot create the next broadcast,
+and the channel goes dark until a human runs `bin/yt_api.py auth`. That is the documented
+2026-09-05 five-hour outage.
 
 A green light saying a dependency is optional, when it is not, is worse than no light.
 status.sh now states plainly that the API is required for every rotation.
