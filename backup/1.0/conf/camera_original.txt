@@ -1,0 +1,2 @@
+  V_ENC_000: 1920x3240 fps=15 interval=50 bitrate=1500kbps quality=4 gov=0
+  V_ENC_001: 640x1080 fps=15 interval=50 bitrate=1500kbps quality=4 gov=0

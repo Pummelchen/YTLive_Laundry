@@ -1,0 +1,54 @@
+# How it works
+
+## Video processing
+Camera delivers ~14fps at 1920x1080 (after crop - already full HD, no upscaling).
+Output to YouTube is a CONSTANT 30fps, 4500k.
+
+    crop=1920:1080:0:0      top panel (the one with the timestamp)
+    hqdn3d=3:2:4:4          denoise - targets H.264 blocking/mosquito, not sensor grain
+    unsharp=5:5:0.7:5:5:0   gentle sharpen
+    eq=saturation=1.05      +5% colour
+    fps=30                  constant 30fps (applied LAST: filtering at 14fps is ~2x cheaper)
+
+**Frame interpolation:** true motion-compensated interpolation (`minterpolate`) was
+benchmarked on this machine at **0.04x realtime - about 25x too slow**. It is not usable.
+`fps=30` duplicates frames instead: motion judder is unchanged from the 14fps source, but
+the stream is genuine CFR 30 and duplicated frames cost almost no bitrate. Set
+FPS_MODE="blend" for the `framerate` filter, which blends neighbours into synthetic
+frames - marginally smoother motion, but it ghosts moving people and wastes bitrate.
+
+**Why eq instead of vibrance:** the `vibrance` filter only accepts RGB, forcing a
+yuv420p->rgb24->yuv420p round-trip that measured ~3x slower. `eq=saturation` works
+natively in YUV. Same visual goal, near-zero cost.
+
+Measured: ~106% CPU of 400% available (4 logical cores) = comfortable headroom.
+
+## Audio
+CCTV microphone audio is **never streamed** (privacy) - ffmpeg maps `0:v:0` and `1:a:0`
+only, so the camera's audio track is simply not connected to the output.
+
+Music comes from `MP3/` (25 tracks, all 48kHz stereo 320k, 2.39h total), in a randomized
+order saved to `conf/playlist.txt`, looped forever with `-stream_loop -1`.
+Encoded with Apple's AudioToolbox AAC (`aac_at`) at 320k/48kHz stereo - `aac_at` refuses
+384k and silently drops to 320k, so 320k IS its stereo ceiling and best quality.
+`alimiter=limit=0.95` guards against clipping (the bass-boosted files already hit 0.0 dBFS).
+
+## Watchdog
+ffmpeg does NOT exit when the camera's RTSP feed dies - it keeps running and streams music
+over dead video, which neither launchd KeepAlive nor the reconnect loop would notice.
+(Seen live: RTSP socket CLOSED while the YouTube socket stayed ESTABLISHED.)
+stream.sh runs ffmpeg with -progress and a watchdog that kills it if the video frame
+counter stalls for STALL_TIMEOUT seconds (default 30), so the reconnect loop recovers.
+
+## Concurrency and shared code
+`await_broadcast` is serialised behind an atomic `mkdir` lock (log/await.lock). A rotation
+spawns one and a publisher restart inside the same window spawns another; both then poll
+YouTube and both enforce settings on the same video - observed 2026-09-06 07:33:21, two
+SETTINGS lines in one second. A lock older than AWAIT_LOCK_TTL is taken, so a killed
+subshell cannot block rotations forever.
+
+`yt_api_ready()` and `yt_api_call()` live in bin/lib.sh. They were defined in both
+stream.sh and yt_monitor.sh and had already drifted - YT_LATENCY added to each by hand, and
+the two `yt_api_ready()` bodies testing different paths for the same file. conf/stream.env
+is SOURCED rather than exported, so anything a subprocess needs must be passed explicitly;
+doing that in two places is how the channel silently lost its hashtags for a day.

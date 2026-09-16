@@ -1,0 +1,88 @@
+{
+  "video": {
+    "title": "Live CCTV Batam - Ternak Laundry Bengkong #live #livestream #cctv #batam #indonesia",
+    "description": "Ternak Laundry Bengkong adalah laundry self-service yang buka 24 jam setiap hari di Bengkong, Batam.\n\nWhatsApp: \n+62 877 8787 7783\nhttps://wa.me/+6287787877783\n\nTikTok:\nhttps://www.tiktok.com/@ternaklaundry.bengkong\n\n✅ Buka 24 Jam Nonstop\n✅ Mesin Cuci & Pengering Modern\n✅ Tempat Bersih, Nyaman, dan Aman\n✅ Cocok untuk Pakaian, Selimut, Bed Cover, Boneka, dan lainnya\n✅ Layanan Ramah dan Siap Membantu\n\n📍 Alamat: Ruko Cahaya Garden Residence Blok AC No 46, Bengkong\nhttps://maps.app.goo.gl/j6kqH8xh76yrc9Ua9\n\nJangan lupa Subscribe, Like, dan Aktifkan Notifikasi agar tidak ketinggalan video terbaru, promo menarik, dan berbagai tips bermanfaat.",
+    "tags": [
+      "24jam",
+      "alfamart",
+      "apotik",
+      "batam",
+      "batamcenter",
+      "bengkong",
+      "bengkongkolam",
+      "bengkongsadai",
+      "cctv",
+      "coinlaundry",
+      "cuci",
+      "cucibaju",
+      "cucibedcover",
+      "cuciboneka",
+      "cuciseprei",
+      "dutamas",
+      "hotways",
+      "indomaret",
+      "indomart",
+      "indonesia",
+      "jayapratama",
+      "kering",
+      "kimiafarma",
+      "laundry",
+      "lipat",
+      "live",
+      "livestream",
+      "matcha",
+      "nagoya",
+      "ocarinabatam",
+      "selfservice",
+      "serasasambal",
+      "service",
+      "seterika",
+      "setiaphari",
+      "sungaipanas",
+      "tianlala",
+      "top100"
+    ],
+    "categoryId": "24",
+    "defaultLanguage": "id",
+    "defaultAudioLanguage": "id"
+  },
+  "video_status": {
+    "privacyStatus": "public",
+    "license": "youtube",
+    "embeddable": true,
+    "publicStatsViewable": true,
+    "selfDeclaredMadeForKids": false
+  },
+  "broadcast": {
+    "latencyPreference": "normal",
+    "enableDvr": true,
+    "enableEmbed": true,
+    "recordFromStart": true,
+    "enableAutoStart": true,
+    "enableAutoStop": true,
+    "enableContentEncryption": false,
+    "closedCaptionsType": "closedCaptionsDisabled",
+    "projection": "rectangular",
+    "enableMonitorStream": false
+  },
+  "localizations": {
+    "id": {
+      "title": "Live CCTV Batam - Ternak Laundry Bengkong #live #livestream #cctv #batam #indonesia",
+      "description": "Ternak Laundry Bengkong adalah laundry self-service yang buka 24 jam setiap hari di Bengkong, Batam.\n\nWhatsApp: \n+62 877 8787 7783\nhttps://wa.me/+6287787877783\n\nTikTok:\nhttps://www.tiktok.com/@ternaklaundry.bengkong\n\n✅ Buka 24 Jam Nonstop\n✅ Mesin Cuci & Pengering Modern\n✅ Tempat Bersih, Nyaman, dan Aman\n✅ Cocok untuk Pakaian, Selimut, Bed Cover, Boneka, dan lainnya\n✅ Layanan Ramah dan Siap Membantu\n\n📍 Alamat: Ruko Cahaya Garden Residence Blok AC No 46, Bengkong\nhttps://maps.app.goo.gl/j6kqH8xh76yrc9Ua9\n\nJangan lupa Subscribe, Like, dan Aktifkan Notifikasi agar tidak ketinggalan video terbaru, promo menarik, dan berbagai tips bermanfaat."
+    }
+  },
+  "_captured_from": "GTfkFafPF7o",
+  "_captured_at": "2026-09-08 16:10:47",
+  "manual": {
+    "dualStream": {
+      "desired": true,
+      "severity": "soft",
+      "settable_via_api": false,
+      "verifiable_via_api": false,
+      "where": "YouTube Studio > Stream settings > Dual stream toggle",
+      "note": "Soft issue, not worth chasing. No field for it exists anywhere in youtube/v3 (checked against the discovery document and every part of liveBroadcasts and liveStreams), so it can be neither set nor read here. It is also only toggleable while a stream is in its starting phase, not once running - which on an 8h rotation means a few unattended minutes every cycle. Treat it as off and move on."
+    }
+  },
+  "_note": "Reference configuration for every new broadcast. stream.sh captures from the outgoing broadcast at each rotation and enforces this onto the new one. Anything under 'manual' cannot be automated - see each note.",
+  "_source": "given explicitly by the user 2026-09-06"
+}

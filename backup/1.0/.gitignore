@@ -1,0 +1,32 @@
+# Public repository. The bulky but shareable parts ARE tracked: MP3/ and
+# conf/playlist.txt. Live credentials and machine-local runtime state are not -
+# the rules below say which, and why.
+
+# The YouTube stream key. Anyone holding it can push to the channel. It was never
+# committed; this rule makes that deliberate rather than merely accidental, so a future
+# `git add -A` cannot sweep it in. conf/stream.env.example is the tracked template.
+conf/stream.env
+conf/stream.env.bak-*
+
+# OAuth refresh token for the Live Streaming API. Never committed even in a private repo:
+# it grants ongoing CONTROL of the channel, not just the ability to push pixels at it, and
+# a refresh token in git history outlives any later decision to share the repo.
+conf/yt_oauth.json
+
+.DS_Store
+
+# Python bytecode from running the scripts
+__pycache__/
+*.pyc
+
+# --- runtime state: never track anything the running stream rewrites -----------------
+# log/ and conf/golden.jpg are regenerated constantly (publisher.log is ffmpeg stderr,
+# progress.txt is the frame counter, golden.jpg is re-grabbed at every publisher start).
+# Tracking them meant every commit stored another multi-megabyte copy forever - .git had
+# reached 352 MB. They are machine-local state, not source.
+log/
+conf/golden.jpg
+
+# Editor/tool backups of the scripts. Git IS the backup.
+bin/*.bak-*
+conf/*.bak-*

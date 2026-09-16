@@ -17,8 +17,10 @@ macOS-only **operational system, not a reusable library**: zsh scripts plus
 stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h03m broadcast
 rotation, with a second process watching the public stream and repairing it. It is
 in production — the docs record real outages with timestamps and measured
-CPU/bitrate figures. There are **no releases and no tags**, so deployment is
-`install.sh` on a Mac. The architecture is a deliberate two-process split: a
+CPU/bitrate figures. There are **no releases**, so deployment is
+`install.sh` on a Mac. The only tag is `v1.0`, and it is not a release: it marks the
+commit that was live in production on 2026-09-16 and is snapshotted under `backup/1.0/`
+(see `backup/README.md`). The architecture is a deliberate two-process split: a
 **reader** (camera RTSP → local UDP, restarts freely) and a **publisher** (UDP + MP3
 playlist → YouTube RTMP, runs continuously), so a camera dropout never tears down the
 RTMP session.
@@ -79,8 +81,10 @@ and binding afterwards leaves the broadcast in `ready` forever.
 
 ## Identity
 
-**No version constant anywhere** — no app version, no tags, no releases. Every
-tunable is declared in `conf/stream.env` (`ROTATE_HOURS`, `ROTATE_MINUTES`, `MODE`,
+**No version constant anywhere** — no app version, no releases, and no version literal
+in any script. The single tag, `v1.0`, is a frozen snapshot of the deployed code, not a
+release (see `backup/README.md`). Every tunable is declared in
+`conf/stream.env` (`ROTATE_HOURS`, `ROTATE_MINUTES`, `MODE`,
 `OUT_FPS`, `CHECK_INTERVAL`, `CORR_MIN`, `FAIL_SECONDS`, `OFFLINE_SECONDS`,
 `BLIND_SECONDS`, `ROTATE_NATIVE_WAIT`, `ROTATE_GRACE`, `ROTATE_MIN_INTERVAL`,
 `ROTATE_WITHOUT_API`, `ROTATE_API_RETRY`, `ENFORCE_EVERY`, `LOG_MAX_BYTES`,

@@ -187,12 +187,7 @@ Leave previous releases' notes and performance tables alone.
 ## YTLive_Laundry — Python, no release yet
 
 - **Identity** semantic version, not yet established. There is no version literal
-  anywhere — every tunable is declared in `conf/stream.env`. One tag exists, `v1.0`,
-  and it is deliberately **not** a release: it marks the commit that was live in
-  production on 2026-09-16 (`fd8698f`) so that revision stays recoverable, and it is
-  snapshotted under `backup/1.0/`. It carries no artifacts and has no Release page, so
-  Part 1 §1.2.3 does not apply to it — see `backup/README.md`. Do not treat it as a
-  published version to bump.
+  anywhere — every tunable is declared in `conf/stream.env`.
 - **Repository is public.** Its views badge uses the README-embedded static form
   rather than the endpoint form; either works, and it is left alone rather than
   churning the README. Converting it means moving it into the `REPOS` list in
