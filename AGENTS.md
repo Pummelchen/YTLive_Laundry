@@ -50,12 +50,13 @@ needs sudo.
 bin/smoke_test.sh     # exit 0 = safe to restart
 ```
 
-**`smoke_test.sh` fails on a bare clone** (exit 1): its 17 syntax checks (9 shell
-files including `install.sh`, 8 `.py`) pass, but the read-only API commands
-(`token`/`status`/`verify`) and `yt_api.py prepare --dry-run` all need
-`conf/yt_oauth.json`. Each of those is judged on a STATUS that means the command
-answered (`OK`/`LIVE`/`EXPIRING`/`DRIFTED`/`READY`/...): an `{"status":"ERROR"}` body
-now FAILS, where an earlier revision grepped for `"status"` alone and passed it.
+**`smoke_test.sh` fails on a bare clone** (non-zero: exit 2 when `~/Downloads/YTLive`
+does not exist, otherwise exit 1): its 17 syntax checks (9 shell files including
+`install.sh`, 8 `.py`) pass, but the read-only API commands (`token`/`status`/`verify`)
+and `yt_api.py prepare --dry-run` all need `conf/yt_oauth.json`. Each of those is judged
+on a STATUS that means the command answered (`OK`/`LIVE`/`EXPIRING`/`DRIFTED`/`READY`/...):
+an `{"status":"ERROR"}` body now FAILS, where an earlier revision grepped for `"status"`
+alone and passed it.
 
 ## Run
 
