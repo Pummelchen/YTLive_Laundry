@@ -151,12 +151,11 @@ is the entire local gate and nothing runs it for you.
   **ignores them** — the delivered stream stayed at ~2.3 Mbit/s and 14 fps through
   bitrate settings of 8192, 12288, 16384 and 20480.
 
-<!-- release-rules:begin -->
 ## Releasing
 
-**Read [`RELEASE.md`](RELEASE.md) before cutting a release.** It carries the
-generic rules every Pummelchen repository follows, plus this repository's own
-section. Do not improvise a release.
+**Read [`RELEASE.md`](RELEASE.md) before cutting a release.** It is this repository's
+own release standard — edited here, not deployed from anywhere — and it carries both
+the general rules and this repository's own section. Do not improvise a release.
 
 The non-negotiables:
 
@@ -171,4 +170,3 @@ The non-negotiables:
 - **Dry run first**; publish only on an explicit flag.
 - **Never fetch a model, dataset or dependency to make a gate pass.** A check that
   cannot run is reported *not checked*, and the release notes must name it.
-<!-- release-rules:end -->
