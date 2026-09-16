@@ -13,6 +13,28 @@ start until FDA is granted. Only ONE machine may push to a given YouTube key at 
 It produces no bundle or archive: the rsync above is the transfer, and `git clone` is the
 other way to reproduce a checkout.
 
+## Who can ssh into the streamer  (star, verified 2026-09-16)
+Every machine below holds a key in `user@ternak-macbook:~/.ssh/authorized_keys`. Each was
+verified by running `ssh <machine> 'ssh user@100.75.83.5 hostname'` **from that machine**,
+not by inspecting the file:
+
+    node1@node1               key comment node1@Node1.local      (this checkout's machine)
+    node2@node2               key comment node2@Node2.local
+    node3@node3               key comment node3@Node3.local
+    node4@node4               key comment node4@deltasona
+    andreborchert@macbook-ab  key comment andre@pummelchen-mac
+    claude-code@Maria-MacBook, ytlive                            (pre-existing, left in place)
+
+This is a **star, not a mesh**: those five machines can reach the streamer, and the streamer
+cannot reach them. `bin/ssh_mesh.sh` builds a *full* mesh instead — do not run it with these
+hosts unless you genuinely want node1..node4 to ssh into each other too.
+
+**Blast radius.** These keys are unrestricted. A shell on any one of those five machines is
+anything-as-`user` on the box that controls the YouTube channel: it can read the stream key out
+of `ps` and the OAuth refresh token out of `conf/yt_oauth.json`. Password authentication is also
+still enabled on the streamer, so the account is additionally guarded only by its password. See
+**T-23** in the wiki tracker.
+
 ## Machines / SSH mesh  (2026-09-05)
 Full key mesh verified, all 6 directions:
     user@ternak-macbook      100.75.83.5     Intel, macOS 12   (the streamer)
