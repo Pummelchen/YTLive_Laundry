@@ -1,6 +1,6 @@
 # YTLive - CCTV to YouTube, 24/7
 
-[![Views (14d)](https://img.shields.io/badge/Views_(14d)-20-blueviolet)](https://github.com/Pummelchen/YTLive_Laundry)
+[![Views (14d)](https://img.shields.io/badge/Views_(14d)-22-blueviolet)](https://github.com/Pummelchen/YTLive_Laundry)
 [![Contact](https://img.shields.io/badge/Contact-0xa0b1%40gmail.com-blue?style=flat-square&logo=gmail&logoColor=white)](mailto:0xa0b1@gmail.com)
 
 A shop camera in Bengkong, Batam streamed continuously to YouTube from a MacBook, cut
