@@ -86,18 +86,116 @@ fi
   || say "WARNING: h264_videotoolbox not reported by this ffmpeg - hardware encode may be unavailable"
 
 # --- 2. yt-dlp ---------------------------------------------------------------
-PY=$(command -v python3) || die "python3 not found (install Xcode Command Line Tools: xcode-select --install)"
-if ! "$PY" -m yt_dlp --version >/dev/null 2>&1; then
-  say "installing yt-dlp for $PY"
-  "$PY" -m pip install --user --quiet --disable-pip-version-check yt-dlp || die "pip install yt-dlp failed"
-fi
-YTB=$("$PY" -c 'import sysconfig;print(sysconfig.get_path("scripts","posix_user"))' 2>/dev/null)
-if [[ -x "$YTB/yt-dlp" ]]; then ln -sf "$YTB/yt-dlp" "$BIN/yt-dlp"
+# Choose the interpreter deliberately. Do NOT trust PATH order, and do NOT overwrite a
+# working yt-dlp with a worse one.
+#
+# What this replaces, and why: `PY=$(command -v python3)` took whatever came first on PATH.
+# On 2026-09-17 that was /usr/bin/python3 - the Xcode Command Line Tools 3.9.6 - while a
+# current python.org 3.14 was installed alongside it. pip therefore resolved yt-dlp to the
+# last release that still supports 3.9 (2025.10.14), which can no longer parse YouTube's live
+# page, and the `ln -sf` below put that stale build on top of a working ~/.local/bin/yt-dlp
+# (2026.08.19 via 3.14). The monitor went blind, and because the damage was outside the
+# project tree the deploy's rollback reported success while leaving it broken.
+py_ver()   { "$1" -c 'import sys;print("%d%02d" % sys.version_info[:2])' 2>/dev/null; }
+has_ytdlp() { "$1" -m yt_dlp --version >/dev/null 2>&1; }
+
+# Search PATH *plus* the places a python.org or Homebrew install actually lands. PATH alone is
+# not enough: a launchd or ssh shell often has a bare PATH that does not include /usr/local/bin,
+# which is exactly where the usable interpreter lives on this machine. YT_PY_SEARCH overrides the
+# whole list (colon-separated) to force one interpreter.
+typeset -a SEARCH; SEARCH=()
+if [[ -n "${YT_PY_SEARCH:-}" ]]; then
+  SEARCH=(${(s.:.)YT_PY_SEARCH})
 else
-  # fallback wrapper if the console script is elsewhere
-  printf '#!/bin/zsh\nexec "%s" -m yt_dlp "$@"\n' "$PY" > "$BIN/yt-dlp"; chmod +x "$BIN/yt-dlp"
+  SEARCH=(${(s.:.)PATH})
+  SEARCH+=(/usr/local/bin /opt/homebrew/bin "$HOME/.local/bin" /usr/bin)
+  SEARCH+=(/Library/Frameworks/Python.framework/Versions/*/bin(N))
 fi
-say "yt-dlp $("$BIN/yt-dlp" --version 2>/dev/null)"
+SEARCH=(${(u)SEARCH})
+
+typeset -a CAND; CAND=()
+for d in "${SEARCH[@]}"; do
+  [[ -n "$d" ]] || continue
+  for n in python3 python3.14 python3.13 python3.12 python3.11 python3.10; do
+    [[ -x "$d/$n" ]] && CAND+=("$d/$n")
+  done
+done
+CAND=(${(u)CAND})
+[[ ${#CAND} -eq 0 ]] && die "no python3 found - install the Xcode Command Line Tools, or python.org 3.10+"
+
+BEST_PY=""; BEST_VER=0; FALLBACK_PY=""; FALLBACK_VER=0
+for p in "${CAND[@]}"; do
+  v=$(py_ver "$p"); [[ "$v" == <-> ]] || continue
+  (( v > FALLBACK_VER )) && { FALLBACK_PY="$p"; FALLBACK_VER=$v; }
+  if has_ytdlp "$p"; then
+    (( v > BEST_VER )) && { BEST_PY="$p"; BEST_VER=$v; }
+  fi
+done
+
+if [[ -z "$BEST_PY" ]]; then
+  # Nothing has yt_dlp yet. Try the NEWEST interpreters first, and fall THROUGH on refusal:
+  # pip on 3.9 resolves to an old yt-dlp, and a Homebrew python rejects --user installs
+  # outright (PEP 668: "externally-managed-environment"). Stopping at the first refusal would
+  # fail on a machine that has a perfectly good python.org interpreter sitting next to it.
+  pairs=""
+  for p in "${CAND[@]}"; do
+    v=$(py_ver "$p"); [[ "$v" == <-> ]] || continue
+    (( v >= 310 )) || continue
+    pairs+="$v $p"$'\n'
+  done
+  for line in ${(f)"$(print -r -- "$pairs" | sort -rn)"}; do
+    [[ -z "$line" ]] && continue
+    cand="${line#* }"
+    [[ -x "$cand" ]] || continue
+    say "installing yt-dlp for $cand"
+    if "$cand" -m pip install --user --quiet --disable-pip-version-check yt-dlp 2>/dev/null; then
+      BEST_PY="$cand"; break
+    fi
+    say "  pip refused for $cand - trying the next interpreter"
+  done
+  if [[ -z "$BEST_PY" ]]; then
+    # Last resort - and say plainly what it costs, rather than quietly handing the monitor
+    # something that will never answer. A 3.9 yt-dlp can no longer parse YouTube's live page.
+    BEST_PY="$FALLBACK_PY"
+    say "WARNING: no Python >= 3.10 could install yt-dlp. Falling back to $("$BEST_PY" -V 2>&1)."
+    say "         pip on 3.9 installs an OLD yt-dlp that CANNOT parse YouTube, so the monitor"
+    say "         will report UNKNOWN and suspend picture checking. The stream itself is fine."
+    say "         Fix it by installing python.org 3.12+ and re-running this installer."
+    "$BEST_PY" -m pip install --user --quiet --disable-pip-version-check yt-dlp \
+      || die "pip install yt-dlp failed for every interpreter tried"
+  fi
+fi
+PY="$BEST_PY"
+say "using python: $PY ($("$PY" -V 2>&1))"
+
+YTB=$("$PY" -c 'import sysconfig;print(sysconfig.get_path("scripts","posix_user"))' 2>/dev/null)
+NEWTARGET="${YTB:-/nonexistent}/yt-dlp"
+new_ver=""; [[ -x "$NEWTARGET" ]] && new_ver=$("$NEWTARGET" --version 2>/dev/null)
+old_ver=""; [[ -x "$BIN/yt-dlp" ]] && old_ver=$("$BIN/yt-dlp" --version 2>/dev/null)
+
+# yt-dlp versions are zero-padded dates (2026.08.19), so a string compare orders them correctly.
+if [[ -n "$old_ver" ]] && { [[ -z "$new_ver" ]] || [[ "$old_ver" > "$new_ver" ]]; }; then
+  say "keeping the existing $BIN/yt-dlp $old_ver (this python offers ${new_ver:-nothing better})"
+else
+  [[ -e "$BIN/yt-dlp" ]] && cp -P "$BIN/yt-dlp" "$BIN/yt-dlp.old" 2>/dev/null
+  if [[ -x "$NEWTARGET" ]]; then
+    ln -sf "$NEWTARGET" "$BIN/yt-dlp"
+  else
+    # fallback wrapper if the console script is elsewhere
+    printf '#!/bin/zsh\nexec "%s" -m yt_dlp "$@"\n' "$PY" > "$BIN/yt-dlp"; chmod +x "$BIN/yt-dlp"
+  fi
+  got=$("$BIN/yt-dlp" --version 2>/dev/null || true)
+  if [[ -z "$got" ]]; then
+    if [[ -e "$BIN/yt-dlp.old" ]]; then
+      say "WARNING: the new yt-dlp does not run - restoring the previous one ($old_ver)"
+      mv -f "$BIN/yt-dlp.old" "$BIN/yt-dlp"
+    else
+      die "yt-dlp at $BIN/yt-dlp does not run, and there was nothing to fall back to"
+    fi
+  else
+    say "yt-dlp $got"
+  fi
+fi
 
 # --- 3. PATH -----------------------------------------------------------------
 grep -q '\.local/bin' "$HOME/.zshrc" 2>/dev/null || {
@@ -143,7 +241,17 @@ YT_EMPTY=no
 
 # --- 5. LaunchAgents (written fresh with this user's HOME) ----------------------
 write_plist() {
-  local label="$1" script="$2" ptype="$3" throttle="$4" out="$LA/$label.plist"
+  # One `local` per line, deliberately. A shell expands ALL of a command's arguments before
+  # the command runs, so `local label="$1" ... out="$LA/$label.plist"` reads $label while it is
+  # still unset - and under `set -u` that aborts the whole install with
+  # "write_plist:1: label: parameter not set". This bit the 2026-09-17 deploy: install.sh could
+  # never complete, and the release gate never noticed because the test suite only syntax-checks
+  # this file. Verified: splitting the declaration fixes it in both zsh and bash.
+  local label="$1"
+  local script="$2"
+  local ptype="$3"
+  local throttle="$4"
+  local out="$LA/$label.plist"
   cat > "$out" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

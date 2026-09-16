@@ -1,12 +1,45 @@
 # Changelog
 
-The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0` and `v2.0`. The
+The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0` and `v2.1`. The
 authoritative version is the `VERSION` file at the repository root; a release refuses to build
 when `VERSION` and the tag disagree. There is no version literal in any script: the streamer's
 tunables live in `conf/stream.env`.
 
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
+
+## 2.1 — 2026-09-17
+
+**The installer could never complete, and it installed the wrong `yt-dlp`.** Full notes with the
+evidence: [`docs/release-notes-v2.1.md`](docs/release-notes-v2.1.md).
+
+Both defects were found by running the 2.0 deploy for real on 2026-09-17. It failed at
+`install.sh` and rolled back — and the rollback then reported success while leaving the machine's
+`yt-dlp` broken and the monitor blind, because the damage was outside the project tree. Three
+fixes, and a gate so this class of bug cannot ship again:
+
+- **`install.sh` could not run at all.** `write_plist()` declared five variables in one `local`,
+  and a shell expands *all* of a command's arguments before `local` executes — so `$label` was read
+  while still unset and, under `set -u`, the shell exited: `write_plist:1: label: parameter not
+  set`. Each declaration is now on its own line.
+- **It picked the wrong Python.** `PY=$(command -v python3)` trusted PATH order and chose the
+  Xcode Command Line Tools **3.9.6** instead of the python.org **3.14** on the same machine. pip
+  then resolved `yt-dlp` to the last release supporting 3.9 (`2025.10.14`), which can no longer
+  parse YouTube's live page, and `ln -sf` put that stale build **over a working
+  `~/.local/bin/yt-dlp`** (`2026.08.19`), blinding the monitor. The installer now scans PATH *and*
+  the usual install locations, prefers an interpreter that already has `yt_dlp`, and falls through
+  to the next candidate when pip refuses (`PEP 668` on Homebrew Python).
+- **It no longer clobbers a working `yt-dlp` with a worse one.** The existing binary is compared
+  first and kept if it is newer; if a replacement is written and does not run, the previous one is
+  restored automatically.
+- **`bin/deploy-release.sh`** replaces the ad-hoc deploy. Its backup covers what `install.sh`
+  actually writes — `~/.local/bin`, `~/Library/LaunchAgents`, `~/Library/Logs/YTLive` — not just
+  the project tree, it refuses a downgrade, and it verifies the *result* (including that `yt-dlp`
+  still resolves the live page) rather than trusting an exit code.
+- **`tests/t06_install.sh`** actually **runs** `install.sh` in a sandbox with fake interpreters.
+  The suite only syntax-checked it, which is exactly how a fatal runtime abort passed the release
+  gate. The new test fails **16 of 21** checks against the released 2.0 installer and passes 21/21
+  against this one.
 
 ## 2.0 — 2026-09-16
 
