@@ -91,6 +91,32 @@ The service must **not** be started before `test-alert` succeeds. A running watc
 alerts silently fail is worse than no watchdog, for the same reason `install.sh` refuses to
 start the streamer until it is safe.
 
+### What the installer guarantees
+
+It has been run on the real host, and each of these is a bug it had first (2026-09-19):
+
+- **It is POSIX `sh`, not zsh.** The watchdog host is usually Linux and Debian ships no zsh; the
+  zsh version died there with `cannot execute: required file not found` (exit 127).
+- **It never picks the macOS system python.** `/usr/bin/python3` is the Xcode Command Line Tools
+  build — measured at 3.9.6, against 3.14.7 in `/opt/homebrew/bin` — and choosing by PATH order is
+  what broke the 2026-09-17 deploy. The newest interpreter wins; `WATCHDOG_PY_SEARCH` overrides
+  the search list.
+- **It gives the job a `PATH`.** A launchd job gets `/usr/bin:/bin:/usr/sbin:/sbin` (`launchctl
+  getenv PATH` is unset), and `yt-dlp` normally lives in `~/.local/bin`. Without this the watchdog
+  would start and then report `UNKNOWN` forever — indistinguishable from a dark channel, and the
+  worst possible failure for the thing whose job is to notice one. `WATCHDOG_EXTRA_PATH` prepends
+  a directory.
+- **It will not `--start` when `yt-dlp` is invisible to the job**, for the same reason.
+- **`--dry-run`** resolves the interpreter, the job `PATH` and both tools, and writes nothing. Run
+  it on a live host before reinstalling anything.
+- **A failed render cannot damage the live unit.** The unit is rendered to a temp file, checked
+  non-empty, and only then moved into place; the template is resolved *before* anything is
+  written. The first version did `sed > $UNIT`, which truncated the destination before `sed` even
+  ran — a missing template zeroed the installed unit and systemd reported it as **masked**,
+  silently removing the watchdog's boot survival.
+- **Re-running it is safe**, including from the installed copy: it skips copying the program onto
+  itself and keeps an existing `conf/watchdog.env` (which holds the mail secret) untouched.
+
 ### Email delivery
 
 Gmail enforces SPF or DKIM on every sender. Unauthenticated direct-to-MX from a VPS is

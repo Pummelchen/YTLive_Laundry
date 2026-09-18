@@ -253,5 +253,100 @@ out=$(run_once); rc=$?
 t_assert_eq 2 $rc "once: an unreadable channel exits 2, not 1"
 t_assert_contains "$out" '"channel": "unknown"' "once: reports unknown rather than offline"
 
+# --- the installer must not use the macOS system python, and must give the job a PATH -------
+# /usr/bin/python3 is the Xcode Command Line Tools build - 3.9.6, measured on this project's
+# machines on 2026-09-19 - and trusting it is exactly what broke the 2026-09-17 deploy. For a
+# WATCHDOG it is worse than merely untidy: a launchd job gets PATH=/usr/bin:/bin:/usr/sbin:/sbin,
+# yt-dlp normally lives in ~/.local/bin, so a launchd-installed watchdog would report UNKNOWN
+# forever - indistinguishable from a dark channel, which is the one thing it must never confuse.
+INST="$REPO_DIR/bin/watchdog-install.sh"
+if grep -q '<string>/usr/bin/python3</string>' "$INST"; then
+  t_bad "the installer hardcodes /usr/bin/python3 in the LaunchAgent (the 2.1-era mistake)"
+else
+  t_ok "the installer does not hardcode the macOS system python"
+fi
+# It installs onto a Linux host, and Debian has no zsh: the zsh version died with
+# "cannot execute: required file not found" (exit 127) on the real watchdog host.
+if /bin/sh -n "$INST" 2>/dev/null; then
+  t_ok "the installer is valid POSIX sh (it must run on a host with no zsh)"
+else
+  t_bad "the installer is not valid POSIX sh"
+fi
+
+# The Linux branch cannot be exercised without root and systemd, but the two sed expressions
+# that decide the unit's paths and interpreter can be - and those are the part that breaks.
+UNITSRC="$REPO_DIR/conf/ytlive-watchdog.service"
+sub=$(sed -e "s#/var/ytlive-watchdog#/PFX#g" -e "s#^ExecStart=/usr/bin/python3#ExecStart=/SOME/PY#" "$UNITSRC")
+t_assert_contains "$sub" "ExecStart=/SOME/PY /PFX/bin/yt_watchdog.py run" "the systemd substitution rewrites the interpreter and the prefix"
+t_assert_contains "$sub" "EnvironmentFile=/PFX/conf/watchdog.env" "and points at the config the installer seeds"
+
+# NEVER render straight onto the live unit path. `sed > $UNIT` truncates the destination before
+# sed runs, so a missing template zeroed /etc/systemd/system/ytlive-watchdog.service and systemd
+# reported the unit as "masked" - silently removing the watchdog's boot survival, which is the
+# exact failure it exists to report. Found by running the installer on the real host 2026-09-19.
+if grep -q '> "$UNIT.new"' "$INST" && grep -q 'mv "$UNIT.new" "$UNIT"' "$INST" && grep -q '! -s "$UNIT.new"' "$INST"; then
+  t_ok "the installer renders the unit through a temp file and refuses an empty one"
+else
+  t_bad "the installer can write an empty unit straight onto the live path"
+fi
+if grep -qE '>[[:space:]]*"\$(UNIT|PLIST)"[[:space:]]' "$INST"; then
+  t_bad "the installer redirects straight onto the live unit/plist path (a failed render would truncate it)"
+else
+  t_ok "nothing redirects straight onto the live unit or plist path"
+fi
+if grep -q 'UNIT_TEMPLATE' "$INST" && grep -q 'nothing has been changed' "$INST"; then
+  t_ok "the unit template is resolved before anything is written"
+else
+  t_bad "the installer does not resolve its template before writing"
+fi
+
+# Two fake interpreters, deliberately listed OLDEST FIRST: the choice must be by version, not by
+# position, because PATH order is what made the original bug possible.
+mkdir -p "$T_BASE/fakepy/old" "$T_BASE/fakepy/new"
+cat > "$T_BASE/fakepy/old/python3" <<'PY'
+#!/bin/zsh
+case "$*" in
+  *%d%02d%02d*) print -- 30906 ;;
+  *)             print -- 3.9.6 ;;
+esac
+PY
+cat > "$T_BASE/fakepy/new/python3" <<'PY'
+#!/bin/zsh
+case "$*" in
+  *%d%02d%02d*) print -- 31407 ;;
+  *)             print -- 3.14.7 ;;
+esac
+PY
+chmod +x "$T_BASE/fakepy/old/python3" "$T_BASE/fakepy/new/python3"
+
+WDPREFIX="$T_BASE/wd"
+out=$(HOME="$T_BASE/home" PATH="$STUBS:$PATH" \
+      WATCHDOG_PY_SEARCH="$T_BASE/fakepy/old/python3 $T_BASE/fakepy/new/python3" \
+      /bin/sh "$INST" --prefix "$WDPREFIX" 2>&1); rc=$?
+t_assert_eq 0 $rc "the watchdog installer runs in a sandbox"
+t_assert_contains "$out" "python   : $T_BASE/fakepy/new/python3" "and picks the NEWEST interpreter, not the first on the list"
+t_assert_contains "$out" "not started" "and does not start the service by itself"
+
+PLIST="$T_BASE/home/Library/LaunchAgents/com.user.ytlive-watchdog.plist"
+t_assert_file "$PLIST" "the LaunchAgent plist is written"
+if [[ -f "$PLIST" ]]; then
+  t_assert_contains "$(cat "$PLIST")" "<string>$T_BASE/fakepy/new/python3</string>" "the plist runs the newest interpreter"
+  t_assert_contains "$(cat "$PLIST")" "<key>PATH</key>" "the plist sets a PATH for the job"
+  t_assert_contains "$(cat "$PLIST")" "$T_BASE/home/.local/bin" "and it includes the per-user bin dir where yt-dlp lives"
+  if plutil -lint "$PLIST" >/dev/null 2>&1; then
+    t_ok "the generated plist passes plutil -lint"
+  else
+    t_bad "the generated plist is invalid"
+  fi
+fi
+
+# A dry run must be safe to run on the live host: it resolves and reports, and writes nothing.
+out=$(HOME="$T_BASE/home" PATH="$STUBS:$PATH" WATCHDOG_PY_SEARCH="$T_BASE/fakepy/new/python3" \
+      /bin/sh "$INST" --prefix "$T_BASE/wd-dry" --dry-run 2>&1); rc=$?
+t_assert_eq 0 $rc "the installer has a dry run"
+t_assert_contains "$out" "DRY RUN" "and it says so"
+t_assert_contains "$out" "python   : $T_BASE/fakepy/new/python3" "and reports the interpreter it would use"
+t_assert_no_file "$T_BASE/wd-dry/bin/yt_watchdog.py" "the dry run writes nothing at all"
+
 t_teardown
 t_summary
