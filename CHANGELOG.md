@@ -1,13 +1,48 @@
 # Changelog
 
-The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1` and `v2.2`.
-The
+The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1`, `v2.2` and
+`v2.3`. The
 authoritative version is the `VERSION` file at the repository root; a release refuses to build
 when `VERSION` and the tag disagree. There is no version literal in any script: the streamer's
 tunables live in `conf/stream.env`.
 
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
+
+## 2.3 — 2026-09-19
+
+**Two commands for the two things that went wrong: one to find out why a host died, and one to
+stop it happening again.** The host hardening that `docs/known-issues.md` had recorded as
+still-wanted is now applied *and verified* by a script, and the evidence for a host-level outage
+is gathered by one read-only command. Full notes:
+[`docs/release-notes-v2.3.md`](docs/release-notes-v2.3.md).
+
+Released while the 2026-09-18 outage was still open — the streamer is offline and needs physical
+access — because these two tools are what the recovery itself needs.
+
+- **`bin/harden-host.sh`** — applies `pmset -a autorestart 1` and `pmset -c sleep 0
+  disablesleep 1`, then verifies them. Dry run by default, `--go` to apply, `--check` to verify
+  only. This is what closes T-29, and it cannot close it on a guess: `SleepDisabled` and
+  `autorestart` are reported by `pmset` **only when they are enabled**, so an absent key is
+  treated as a failure rather than as an unknown.
+- **`bin/forensics.sh`** — read-only evidence for a host-level outage, run **before** a reboot
+  because that is what destroys the in-memory half. It answers the four questions that are
+  indistinguishable from outside, all of which look like "powered on, wifi fine, Tailscale
+  offline": did it sleep and when, did it hang (load and swap), did it panic or lose power
+  (panic reports and the previous shutdown cause), or did it reboot to a login window where the
+  user LaunchAgents never start? Then it prints how to read its own output.
+- **`tests/t08_hosttools.sh`** — 27 checks against a `pmset` stub that reports its two keys only
+  when enabled, which is how macOS actually behaves, plus the safety properties of a script that
+  changes how a production Mac behaves with the lid shut: the dry run issues no write at all,
+  `--check` passes only when both settings are on, half-hardened is still a failure, and `--go`
+  refuses without root and changes nothing. The suite is now **199 checks**.
+- **The mechanism, recorded because it is not the obvious one.** The MacBook's lid is always shut
+  and it had streamed that way for days, because `stream.sh`'s `caffeinate -s` prevents system
+  sleep — but only **on AC power**, and lid-close (clamshell) sleep is a separate assertion that
+  none of those flags touch. So losing mains for an instant is enough: on battery with the lid
+  shut the Mac sleeps at once, and nothing wakes a closed-lid Mac — wake-on-LAN is LAN-only, and
+  `autorestart` does not apply to a machine that is merely asleep. `disablesleep 1` is the flag
+  that covers it.
 
 ## 2.2 — 2026-09-19
 

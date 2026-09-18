@@ -20,7 +20,8 @@ in production — the docs record real outages with timestamps and measured
 CPU/bitrate figures. Deployment is `install.sh` on a Mac, or unpacking a release archive;
 releases are **source** archives (`1.0` = the code that was live on 2026-09-16, `2.0` = the
 audit fixes, `2.1` = the installer fixes on 2026-09-17, `2.2` = the external watchdog and host
-hardening on 2026-09-19), built and published by `release.sh`. The architecture is a deliberate
+hardening on 2026-09-19, `2.3` = the host forensics and the verified `pmset` hardening), built and
+published by `release.sh`. The architecture is a deliberate
 two-process split: a
 **reader** (camera RTSP → local UDP, restarts freely) and a **publisher** (UDP + MP3
 playlist → YouTube RTMP, runs continuously), so a camera dropout never tears down the
