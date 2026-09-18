@@ -35,7 +35,8 @@ RTMP session.
   the only code allowed to notify), `watchdog-install.sh` (installs that watchdog on an
   always-on host as a systemd unit or a LaunchAgent), `lib.sh` (shared API helpers), the
   camera/ONVIF tools (`cam_ip.py`, `camscan.py`, `onvif_probe.py`, `cam_config.py`,
-  `cam_reboot.py`), and
+  `cam_reboot.py`), `forensics.sh` (read-only evidence collector for a host-level outage),
+  `harden-host.sh` (applies and verifies the `pmset` host hardening; dry run by default), and
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
   `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
@@ -68,7 +69,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 168 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 199 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -124,7 +125,7 @@ see the dead-knobs trap below.
 tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
 gate for you, so run them yourself, and always before restarting anything:
 
-    tests/run.sh          # 168 checks, credential-free; fails if the monitor's classification
+    tests/run.sh          # 199 checks, credential-free; fails if the monitor's classification
                           # or the golden-reference bootstrap regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone

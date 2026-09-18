@@ -23,6 +23,9 @@
                              when the channel goes dark (the only code allowed to notify)
     bin/watchdog-install.sh  install that watchdog on an always-on host (systemd or launchd)
     bin/deploy-release.sh    deploy a tag with a rollback that covers what install.sh writes
+    bin/forensics.sh         read-only evidence for a HOST-level outage - sleep, hang, panic or
+                             a reboot to a login window; run it BEFORE rebooting
+    bin/harden-host.sh       applies and verifies the pmset host hardening (dry run by default)
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
     conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,

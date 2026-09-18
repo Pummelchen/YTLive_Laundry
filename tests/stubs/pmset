@@ -1,0 +1,57 @@
+#!/bin/zsh
+# Test stub for pmset.
+#
+# The host-hardening script reads two keys that macOS reports ONLY when they are enabled -
+# `SleepDisabled` and `autorestart` - so "absent" means "off", not "unknown". This stub models
+# that exactly, which is the whole point: a stub that always printed the keys would let a wrong
+# reading pass the test.
+#
+# State lives under $BASE/log/fake_pmset/ : sleepdisabled, autorestart (each 0 or 1), and
+# calls.log, which records every WRITE so a test can assert that a dry run wrote nothing.
+STATE_DIR="${BASE:-/nonexistent}/log/fake_pmset"
+SD="$STATE_DIR/sleepdisabled"
+AR="$STATE_DIR/autorestart"
+CALLS="$STATE_DIR/calls.log"
+mkdir -p "$STATE_DIR" 2>/dev/null
+sd=$(cat "$SD" 2>/dev/null); [[ -n "$sd" ]] || sd=0
+ar=$(cat "$AR" 2>/dev/null); [[ -n "$ar" ]] || ar=0
+
+case "${1:-}" in
+  -g)
+    case "${2:-}" in
+      custom)
+        print -- "Battery Power:"
+        [[ "$ar" == 1 ]] && print -- " autorestart          1"
+        print -- " sleep                1"
+        print -- ""
+        print -- "AC Power:"
+        [[ "$ar" == 1 ]] && print -- " autorestart          1"
+        print -- " sleep                0"
+        ;;
+      log)
+        # Real sleep history is noisy; the collector filters it. Keep this minimal but of the
+        # same shape so the filter is exercised.
+        print -- "2026-09-18 17:19:56 +0700 Sleep                 Entering Sleep state due to 'Clamshell Sleep'"
+        print -- "2026-09-18 17:19:56 +0700 Assertions            PID 570(powerd) PreventUserIdleSystemSleep"
+        ;;
+      *)
+        print -- "System-wide power settings:"
+        print -- "Currently in use:"
+        [[ "$sd" == 1 ]] && print -- " SleepDisabled        1"
+        print -- " sleep                0"
+        print -- " hibernatemode        3"
+        ;;
+    esac
+    ;;
+  *)
+    # Anything else is a write. Record it, and apply it so a later verify can pass.
+    print -r -- "$*" >> "$CALLS"
+    case "$*" in
+      *disablesleep*) print -- 1 > "$SD" ;;
+    esac
+    case "$*" in
+      *autorestart*) print -- 1 > "$AR" ;;
+    esac
+    ;;
+esac
+exit 0
