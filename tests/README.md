@@ -36,6 +36,8 @@ live publisher. The stub logs the call and exits 1. Only a test that explicitly 
 | `t03_files.sh` | The golden-reference refresh fires when `conf/golden.jpg` is **missing** (zsh's `-nt` is false against a missing file), and the in-place log trim keeps the same inode while never touching `log/progress.txt`. |
 | `t04_token.sh` | The `yt_api.py token` contract: one JSON line, `probe` = `LIVE`/`DEAD`/`UNKNOWN`, `--offline` behaviour, an elapsed countdown that never overrides a working token, and `save_creds()` writing 0600 from the first byte. |
 | `t05_rotation_gate.sh` | `prepare_broadcast()` runs **before** the publisher ffmpeg starts (the bind-before-ingest invariant), the rotation refuses to cut without a usable API, and the refusal backs off instead of retrying every 5 seconds. |
+| `t06_install.sh` | `install.sh` is executed **end to end** in a sandbox with its own `HOME`, `PATH` and fake interpreters, so the `set -u` abort that broke the 2026-09-17 deploy can never ship syntax-checked again. |
+| `t07_watchdog.sh` | The external watchdog (`bin/yt_watchdog.py`) and its alert policy, as a pure function of time and two stubbed signals: a short rotation gap must not alert, `UNKNOWN` is never treated as darkness, an undeliverable alert is spooled rather than dropped, and the channel and host signals stay independent. |
 
 The suite prints one line per check and exits non-zero if any failed. It is not wired to CI —
 there is no `.github/` in this repository — so run it yourself before pushing, and always before

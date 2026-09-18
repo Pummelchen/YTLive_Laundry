@@ -54,3 +54,11 @@ password once:   ssh-copy-id USER@macbook-maria   (or macbook-ab)
 Installer downloaded to ~/Downloads/Tailscale-1.102.3-macos.pkg (signed by Tailscale Inc.,
 notarized, declares min macOS 11.0 so Monterey is fine). Install + sign-in are yours to do.
 Do NOT tick "Use as exit node" and do not select an exit node.
+
+## The external watchdog runs on its own host
+The external watchdog (docs/watchdog.md, `bin/yt_watchdog.py`) is the one component that does
+**not** run on the streamer. It lives on an always-on host that can see the tailnet and reach
+YouTube - the Intel VPS today, Tailscale name `vpn-germany` - installed there with
+`bin/watchdog-install.sh`. It must **never** be installed on the streamer: a watchdog that dies
+with the thing it watches is not a watchdog, and the 2026-09-18 outage (the channel dark 10 h
+23 m with nothing reporting it) is exactly the case it exists to catch.

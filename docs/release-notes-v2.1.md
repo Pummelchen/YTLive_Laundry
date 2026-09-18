@@ -86,12 +86,14 @@ and restore it automatically if a replacement does not run.
 | The new installer test against the **released 2.0** code | **checked** — fails 16/21, proving it guards the bug |
 | The installer, end to end, on the real streamer in a throwaway `HOME` | **checked** — exit 0, both plists valid, real `~/.local/bin` untouched |
 | Interpreter selection on the real streamer | **checked** — resolves 3.14.7 with a working `yt-dlp`; no pip install |
-| Deploy actually performed on the streamer | **not checked** — this is the next step, in a maintenance window |
+| Deploy actually performed on the streamer | **checked after release** — 2.1 was deployed on 2026-09-17 04:00 WIB and verified; the wiki Project-Tracker records both. |
 
 ## Deploying this does not happen by itself
 
-The production streamer runs **1.0** and is live. Nothing in this repository pushes to it. Use
-`bin/deploy-release.sh --tag v2.1` on the machine, and read
+The production streamer now runs **2.1** - deployed on 2026-09-17 04:00 WIB and verified, as the
+wiki Project-Tracker records - so a fresh deploy is a re-install, not a pending step. Nothing in
+this repository pushes to the streamer by itself. Use
+`bin/deploy-release.sh --tag v2.1` on the machine when a redeploy is needed, and read
 [Updating and rollback](https://github.com/Pummelchen/YTLive_Laundry/wiki/Updating-and-Rollback)
 first — it now begins with an environment pre-flight, and a rollback that covers the machine.
 

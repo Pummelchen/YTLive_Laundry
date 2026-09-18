@@ -57,6 +57,29 @@ over dead video, which neither launchd KeepAlive nor the reconnect loop would no
 stream.sh runs ffmpeg with -progress and a watchdog that kills it if the video frame
 counter stalls for STALL_TIMEOUT seconds (default 30), so the reconnect loop recovers.
 
+## The external watchdog: the one thing not on the streamer
+The two processes above both live on the Mac, and every retry in them assumes the Mac is
+running. On 2026-09-18 it was not: the streamer dropped off the network at 10:19:54Z (a shop
+power/router loss, after which the Mac ran on battery and slept), and the publisher watchdog,
+the monitor, `stream.sh`'s retry loops and launchd's `KeepAlive` all behaved correctly and all
+were useless. A process that is not running cannot retry, and launchd cannot revive a machine
+that is off. The channel stayed dark 10 h 23 m and nothing said so, because the design rule was
+"no notifications; every failure path retries" - a rule that is right for everything the
+streamer can retry and inapplicable to the host itself.
+
+`bin/yt_watchdog.py` is the deliberate exception, and it is **not** a third process in the
+reader/publisher split: it is not part of the streamer at all. It runs on an always-on host off
+the streamer (the Intel VPS today), watches two independent signals - the channel via `yt-dlp`
+and the streamer's presence in the tailnet via `tailscale status --json` - and emails a human
+when the channel goes dark. It is the only component here allowed to notify, and for the same
+reason it must never be installed on the streamer: a watchdog that dies with the thing it
+watches is not a watchdog.
+
+What it does **not** do: it cannot repair anything (recovery still needs the streamer), it does
+not judge the picture (that is `bin/yt_check.py` with the golden reference, on the streamer), and
+a lookup it cannot complete is reported `UNKNOWN`, never as an outage. Full design, thresholds
+and the 2026-09-18 evidence are in docs/watchdog.md; the implementation is bin/yt_watchdog.py.
+
 ## Concurrency and shared code
 `await_broadcast` is serialised behind an atomic `mkdir` lock (log/await.lock). A rotation
 spawns one and a publisher restart inside the same window spawns another; both then poll

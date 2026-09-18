@@ -8,6 +8,13 @@
 conf/stream.env
 conf/stream.env.bak-*
 
+# The external watchdog's config. Unlike stream.env this one holds a Gmail app password
+# (the SMTP submission credential), so it must never be committed. The tracked template is
+# conf/watchdog.env.example. The watchdog is the one component that runs OFF the streamer;
+# see docs/watchdog.md.
+conf/watchdog.env
+conf/watchdog.env.bak-*
+
 # OAuth refresh token for the Live Streaming API. Never committed - in a public repo most of
 # all: it grants ongoing CONTROL of the channel, not just the ability to push pixels at it,
 # and a refresh token in a public git history is a standing grant to anyone who finds it.

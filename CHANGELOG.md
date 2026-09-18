@@ -1,12 +1,69 @@
 # Changelog
 
-The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0` and `v2.1`. The
+The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1` and `v2.2`.
+The
 authoritative version is the `VERSION` file at the repository root; a release refuses to build
 when `VERSION` and the tag disagree. There is no version literal in any script: the streamer's
 tunables live in `conf/stream.env`.
 
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
+
+## 2.2 — 2026-09-19
+
+**The streamer died and nothing said so for 10h23m. The one class of failure the retry-only design
+cannot cover now has a watchdog outside the box, and the pmset fix that was already written down
+is a runbook instead of a note.** Full notes:
+[`docs/release-notes-v2.2.md`](docs/release-notes-v2.2.md).
+
+On 2026-09-18 the streamer `ternak-macbook` dropped off the network mid-segment. The evidence is
+unusually clean: the last broadcast `3Cnxr6fTrWk` stopped receiving ingest at **10:19:54Z**, and
+Tailscale's last contact with the host was **10:20:00Z** — the same second. The segment was 5h14m
+into an 8h03m window, so this was not a rotation. Everything before it was flawless: four
+consecutive 8.05h segments with 4.5–5.2 min gaps. The shop's own uplink stayed up — its public
+egress IP answered ICMP 10/10 at ~5 ms — while the Mac answered nothing, so the failure was the
+host, not the line. The most likely mechanism is a shop power/router loss, after which the Mac ran
+on battery and slept, and never restarted because `autorestart` is off and lid-closed sleep is not
+disabled.
+
+Every existing failure path behaved correctly and none of them could help: a process that is not
+running cannot retry, and launchd cannot revive a machine that is off. The channel stayed dark for
+over ten hours because the design rule is "no notifications — every failure path retries", which
+is right for the streamer and inapplicable to the streamer being gone.
+
+- **`bin/yt_watchdog.py`** — the first component here designed to run OFF the streamer, and the
+  only one allowed to notify a human. Two independent signals: the channel via `yt-dlp` (the
+  `live`/`offline`/`unknown` split and `OFFLINE_SIGNS` are copied from `yt_check.py`, so a rate
+  limit cannot page anyone) and the streamer's Tailscale presence, which cannot be blinded by a
+  YouTube change. A dark channel alerts after 15 min — above the measured ~5 min rotation gap —
+  reminds every 6 h, and sends one recovery mail. `UNKNOWN` never alerts; 45 min blind is reported
+  as blind. An undeliverable alert is spooled and retried, never dropped. Stdlib-only, portable,
+  and it never writes into the repository.
+- **`bin/watchdog-install.sh`** — installs it as a systemd unit on Linux or a LaunchAgent on macOS,
+  seeds `conf/watchdog.env` at 0600, and refuses to imply that starting is safe: run `test-alert`
+  first. A running watchdog whose alerts silently fail is worse than no watchdog.
+- **`tests/t07_watchdog.sh`** — 49 checks driving the alerting policy as a pure function of time,
+  so a 6-hour rule is tested in microseconds with no clock and no network. The suite is now
+  **168 checks**.
+- **`conf/watchdog.env.example`, `conf/ytlive-watchdog.service`, `docs/watchdog.md`** — the config
+  template, the unit, and the design and operator runbook.
+- **Deployed and running** on the Intel VPS under systemd (`ytlive-watchdog`), watching both
+  signals. Email goes out over authenticated Gmail submission; unauthenticated direct-to-MX is
+  rejected (`550 5.7.26`), which is why the app password exists.
+- **Host hardening is a runbook now.** `docs/operations.md` gained the pmset section:
+  `sudo pmset -a autorestart 1` and `sudo pmset -c sleep 0 disablesleep 1`, with the honest limit
+  that neither survives losing power entirely — that needs a UPS on the Mac *and* the router. Not
+  yet applied: the streamer needs physical access.
+- **Three bugs found by actually testing it.** The `yt-dlp` test stub had never matched anything —
+  a quoted `"\(...\)"` in a zsh `case` pattern keeps its backslashes, so it fell through to an
+  empty `exit 0`, and no earlier test had exercised its stdout. `decide()` used `x or now`, which
+  treats the legitimate timestamp 0 as unset. And `status` crashed on the real host because
+  Tailscale reports `LastSeen` as an RFC3339 string while `human_time()` assumed an epoch: `once`
+  was fine, `status` died. All three are regression-guarded.
+- **Documentation drift corrected**, including the test count (documented as 84 in eight places,
+  actually 168), `RELEASE.md` and `AGENTS.md` still stopping at v2.0, `bin/deploy-release.sh`
+  missing from the file inventory, and `docs/release-notes-v2.1.md` still claiming production ran
+  1.0.
 
 ## 2.1 — 2026-09-17
 

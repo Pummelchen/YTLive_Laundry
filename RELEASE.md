@@ -186,7 +186,7 @@ Leave previous releases' notes and performance tables alone.
 
 ## YTLive_Laundry — Python, source releases
 
-- **Identity** two-component `MAJOR.MINOR`, released as the tags `v1.0` and `v2.0`. This is a
+- **Identity** two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1` and `v2.2`. This is a
   deliberate departure from §1.3's "semantic versions (`vX.Y.Z`)" — the scheme is stated here,
   is used consistently, and should not be mixed with anything else. The authoritative value is
   the `VERSION` file at the repository root; there are no mirrors and no version literal in any
@@ -198,6 +198,11 @@ Leave previous releases' notes and performance tables alone.
     next audit cannot read a finished one as current; they are archived by commit permalink. That
     report is at
     <https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>.
+  - `2.1` = the 2026-09-17 installer fixes — `install.sh` could not complete on any machine and the
+    2.0 deploy rolled back on it. Detail in `docs/release-notes-v2.1.md`.
+  - `2.2` = the 2026-09-19 external watchdog and host hardening — `bin/yt_watchdog.py`, the one
+    component that runs off the streamer, plus the `pmset` runbook. Detail in
+    `docs/release-notes-v2.2.md`.
   - `v1.0` additionally exists as a bare snapshot tag with `backup/1.0/` beside it; the 1.0
     Release was created later, from that tag.
 - **Archive naming** `<project>-<version>-source.tar.gz` — `YTLive_Laundry-1.0-source.tar.gz`.
@@ -222,7 +227,7 @@ Leave previous releases' notes and performance tables alone.
 - **§1.5's four gates, mapped to this repository.**
   - *Lint* — the syntax gate: `zsh -n` per shell file and `ast.parse` per Python module. There
     has never been another linter here, so this is the whole of it.
-  - *Test suite* — `tests/run.sh`, 84 checks, run serially, reporting the count that passed. It
+  - *Test suite* — `tests/run.sh`, 168 checks, run serially, reporting the count that passed. It
     was added in 2.0; 1.0 has none, and its notes record that as **not checked** rather than
     implying a green run.
   - *Parity / golden* — the archive hash-match: for this project "the output is unchanged" means
@@ -231,7 +236,7 @@ Leave previous releases' notes and performance tables alone.
     compiled, so there is no build and no warning scan, and claiming one would be theatre.
 - **`bin/smoke_test.sh` is not a release gate.** It requires `conf/yt_oauth.json`, which is
   gitignored and in no archive, so it cannot pass inside a release. Every release's notes say so.
-- **Dry run by default** (§1.2.6): `./release.sh --version 2.0 --tag v2.0` builds and verifies
+- **Dry run by default** (§1.2.6): `./release.sh --version 2.2 --tag v2.2` builds and verifies
   without uploading; `--publish` is required to create the Release. The archive is built once per
   run and the published digest comes from that same file, so §1.8's "never copy a size out of a
   dry run" cannot be violated by a rebuild.

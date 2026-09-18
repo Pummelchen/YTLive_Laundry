@@ -1,0 +1,27 @@
+[Unit]
+Description=YTLive external watchdog (YouTube channel + streamer host presence)
+Documentation=https://github.com/Pummelchen/YTLive_Laundry/blob/main/docs/watchdog.md
+# This unit deliberately does NOT live on the streamer. Its whole purpose is to notice that
+# the streamer is gone, so co-locating it would defeat it (2026-09-18 outage).
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/ytlive-watchdog
+EnvironmentFile=/var/ytlive-watchdog/conf/watchdog.env
+ExecStart=/usr/bin/python3 /var/ytlive-watchdog/bin/yt_watchdog.py run
+# The watchdog is only useful if it survives things; it must never be the reason nobody
+# was told. It also never exits on error - this is belt and braces.
+Restart=always
+RestartSec=30
+# State, logs and the undeliverable-alert spool all live under /var/ytlive-watchdog.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ytlive-watchdog
+
+# Without this section `systemctl enable` reports the unit as "static" and creates no boot
+# symlink: the watchdog would run until the first reboot and then silently never come back,
+# which is the exact failure it exists to report. Caught on the real host 2026-09-18.
+[Install]
+WantedBy=multi-user.target

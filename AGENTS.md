@@ -19,7 +19,8 @@ rotation, with a second process watching the public stream and repairing it. It 
 in production — the docs record real outages with timestamps and measured
 CPU/bitrate figures. Deployment is `install.sh` on a Mac, or unpacking a release archive;
 releases are **source** archives (`1.0` = the code that was live on 2026-09-16, `2.0` = the
-audit fixes), built and published by `release.sh`. The architecture is a deliberate
+audit fixes, `2.1` = the installer fixes on 2026-09-17, `2.2` = the external watchdog and host
+hardening on 2026-09-19), built and published by `release.sh`. The architecture is a deliberate
 two-process split: a
 **reader** (camera RTSP → local UDP, restarts freely) and a **publisher** (UDP + MP3
 playlist → YouTube RTMP, runs continuously), so a camera dropout never tears down the
@@ -30,13 +31,19 @@ RTMP session.
 - `bin/` — `stream.sh` (774 lines: reader/publisher, watchdog, rotation, VOD
   verification), `yt_monitor.sh` (the watchdog loop), `yt_api.py` (1250 lines, the
   only thing that can create a broadcast), `yt_check.py` (grades one pulled frame),
-  `lib.sh` (shared API helpers), the camera/ONVIF tools (`cam_ip.py`, `camscan.py`,
-  `onvif_probe.py`, `cam_config.py`, `cam_reboot.py`), and
+  `yt_watchdog.py` (the EXTERNAL watchdog: the one thing that runs off the streamer and
+  the only code allowed to notify), `watchdog-install.sh` (installs that watchdog on an
+  always-on host as a systemd unit or a LaunchAgent), `lib.sh` (shared API helpers), the
+  camera/ONVIF tools (`cam_ip.py`, `camscan.py`, `onvif_probe.py`, `cam_config.py`,
+  `cam_reboot.py`), and
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
   `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
-  enforced reference), `playlist.txt`, thumbnails, camera XML dumps.
-- `docs/` — 8 design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
+  enforced reference), `playlist.txt`, thumbnails, camera XML dumps, and the external
+  watchdog's `watchdog.env.example` (the tracked template; the live `conf/watchdog.env`
+  holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
+  unit for the always-on host).
+- `docs/` — 9 design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
   `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
   `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by
@@ -61,7 +68,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 84 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 168 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -72,8 +79,8 @@ a recorder so a mis-scoped test cannot signal the live publisher. Prefer it over
 `bin/smoke_test.sh` when you have no credentials, and run both before restarting anything.
 
 **`smoke_test.sh` fails on a bare clone** (non-zero: exit 2 when `~/Downloads/YTLive`
-does not exist, otherwise exit 1): its 17 syntax checks (9 shell files including
-`install.sh`, 8 `.py`) pass, but the read-only API commands (`token`/`status`/`verify`)
+does not exist, otherwise exit 1): its 20 syntax checks (11 shell files including
+`install.sh`, 9 `.py`) pass, but the read-only API commands (`token`/`status`/`verify`)
 and `yt_api.py prepare --dry-run` all need `conf/yt_oauth.json`. Each of those is judged
 on a STATUS that means the command answered (`OK`/`LIVE`/`EXPIRING`/`DRIFTED`/`READY`/...):
 an `{"status":"ERROR"}` body now FAILS, where an earlier revision grepped for `"status"`
@@ -117,7 +124,7 @@ see the dead-knobs trap below.
 tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
 gate for you, so run them yourself, and always before restarting anything:
 
-    tests/run.sh          # 84 checks, credential-free; fails if the monitor's classification
+    tests/run.sh          # 168 checks, credential-free; fails if the monitor's classification
                           # or the golden-reference bootstrap regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -206,8 +213,11 @@ packs it, so a release cannot ship a tree that fails either.
   had none) was classified as a bad picture and killed a healthy publisher every
   `FAIL_SECONDS`, forever.
 - macOS-only: `launchctl`, `/bin/zsh`, `caffeinate`, `stat -f`, `plutil`, `nc -G`,
-  `sed -i ''`. There is no Linux path, and `install.sh` warns that the static ffmpeg
-  is an Intel build needing Rosetta 2.
+  `sed -i ''`. There is no Linux path for the streamer, and `install.sh` warns that the
+  static ffmpeg is an Intel build needing Rosetta 2. The one documented exception is
+  `bin/yt_watchdog.py`: it is deliberately portable, stdlib-only Python, with both a
+  systemd unit and a LaunchAgent, because it must not live on the streamer and may run on
+  a Linux host (`bin/watchdog-install.sh` picks the service manager from `uname -s`).
 - `install.sh` downloads ffmpeg/ffprobe with `curl -fL --retry 3` from evermeet.cx as
   **unpinned "latest" Intel builds**, and verifies nothing unless `FFMPEG_SHA256` /
   `FFPROBE_SHA256` are set - then it checks the archive digest and refuses a mismatch,
@@ -225,6 +235,16 @@ packs it, so a release cannot ship a tree that fails either.
   must not become a rotation that takes a healthy channel off air. The design rule is
   that nothing may depend on a human noticing: there are no notifications, and every
   failure path retries.
+- **The streamer is a single point of failure, and nothing on it can report its own
+  death.** On 2026-09-18 the MacBook lost power and slept at `10:19:54Z` — Tailscale's
+  last contact with it is the same second — and the publisher's watchdog, the monitor,
+  `stream.sh`'s retry loops and launchd's `KeepAlive` all behaved correctly and all were
+  useless: a process that is not running cannot retry, and launchd cannot revive a Mac that
+  is off. The channel stayed dark **10 h 23 m** and nothing said so, which is exactly the
+  class the "no notifications" rule above cannot cover. `bin/yt_watchdog.py` is the
+  deliberate exception — the only thing allowed to notify, and the one thing that must
+  **never** be run on the streamer, nor may its own host be assumed alive.
+  See `docs/watchdog.md`.
 - `bin/cam_config.py` reports what the camera has been *told*, not what it delivers:
   the firmware accepts ONVIF encoder writes, reports them back correctly, and
   **ignores them** — the delivered stream stayed at ~2.3 Mbit/s and 14 fps through

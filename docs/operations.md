@@ -14,9 +14,13 @@ launchd revives a job that EXITS but not one that HANGS.
     ~/Downloads/YTLive/bin/status.sh          # everything that can fail silently, on one page
     ~/Downloads/YTLive/bin/status.sh --no-net  # same, skipping the YouTube API calls
 
-The logs are the project's own bookkeeping, not a report to be read - nothing here depends
-on a human noticing anything, and there are deliberately no notifications. Every failure
-path retries instead of reporting. status.sh is the one place that answers "is it healthy".
+The logs are the project's own bookkeeping, not a report to be read - nothing on the streamer
+depends on a human noticing anything, and there are deliberately no notifications there. Every
+failure path retries instead of reporting. status.sh is the one place that answers "is it
+healthy". The one exception is host-level failure, which retries cannot cover: on 2026-09-18 the
+MacBook lost power and slept, the channel stayed dark 10 h 23 m, and nothing said so. The
+external watchdog (`bin/yt_watchdog.py`) emails a human for exactly that class - it runs off the
+streamer, and is the only thing allowed to notify. See docs/watchdog.md.
 
 Reshuffle the music (takes effect on next restart):
     ~/Downloads/YTLive/bin/shuffle_playlist.sh
@@ -44,13 +48,33 @@ There is no `MODE="copy"` case in stream.sh - its `case` has only `crop` and `en
 publisher ALWAYS re-encodes with `h264_videotoolbox`, so there is no passthrough mode even
 in principle.
 
+## Host hardening (run once, on the streamer)
+On 2026-09-18 the streamer dropped off the network at 10:19:54Z - a shop power/router loss,
+after which the Mac ran on battery and slept - and the channel stayed dark 10 h 23 m with
+nothing reporting it. No in-process watchdog could see that, because the host itself was gone.
+Two `pmset` settings make the host harder to lose, and they are set once, as root, on the
+streamer:
+
+    sudo pmset -a autorestart 1              # come back up after a power failure
+    sudo pmset -c sleep 0 disablesleep 1     # never sleep, lid closed included
+    pmset -g | grep -Ei 'sleep|autorestart'  # verify
+    pmset -g | grep -i SleepDisabled         # must be 1
+
+`autorestart` makes the Mac boot again as soon as mains power returns, so a power failure
+becomes a reboot rather than an outage. `sleep 0` with `disablesleep 1` keeps it awake with the
+lid shut, so closing the Mac does not suspend the stream. The limit matters as much as the fix:
+neither setting can do anything if the Mac loses power entirely or is unplugged, because no
+setting runs code on a machine with no power - that case needs a UPS on the Mac **and** the
+router, and it is why the external watchdog (docs/watchdog.md) exists. The lid-closed half is
+the long-standing item docs/known-issues.md used to carry.
+
 ## Disk and logs  (added 2026-09-05)
 Nothing bounded the logs before, and `log/` was tracked in git - so every commit stored
 another copy of a multi-megabyte `publisher.log`. `.git` is 353 MB, but the logs are not why:
 measured across the whole history, `log/` accounts for 26.6 MB and `conf/` for 3.7 MB, while
 the tracked `MP3/` library is **328.4 MB** of it. The weight is the music. Both are gitignored
 now, which stops new copies but does not remove the blobs already in the public history (see
-T-21 in the wiki tracker).
+the accepted-risk note in the wiki Project-Tracker).
 
     LOG_MAX_BYTES=524288      512 KB cap per log file (the shipped conf/stream.env.example)
     HOUSEKEEP_EVERY=300       stream.sh trims every 5 min, and once at startup
@@ -72,4 +96,4 @@ publisher start). `MP3/` stays tracked: it is write-once, so it does not grow - 
 it is nearly the whole 353 MB `.git`, so it is also not a rounding error. The blobs already in
 public history (the MP3 library, plus the `log/` and `conf/golden.jpg` copies that were tracked
 until 2026-09-05) are untouched; removing any of them needs a history rewrite and a force-push,
-which is a separate, deliberate decision - see T-21 in the wiki tracker.
+which is a separate, deliberate decision - see the accepted-risk note in the wiki Project-Tracker.

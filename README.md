@@ -27,9 +27,13 @@ keeps running and the current segment's recording is still saved, but no success
 can be created and the channel goes dark until a human runs auth. `bin/yt_api.py auth` prints
 the publish click-path; `bin/status.sh` shows the probe result.
 
-There are deliberately no notifications and the logs are the project's own bookkeeping, not
-a report anyone reads: nothing here may depend on a human noticing anything, so every
-failure path retries instead of reporting.
+On the streamer there are deliberately no notifications and the logs are the project's own
+bookkeeping, not a report anyone reads: nothing there may depend on a human noticing anything,
+so every failure path retries instead of reporting. Retrying cannot cover the host itself — on
+2026-09-18 the MacBook lost power and slept, the channel stayed dark 10 h 23 m, and nothing said
+so. That one class is reported by the external watchdog ([bin/yt_watchdog.py](bin/yt_watchdog.py),
+[docs/watchdog.md](docs/watchdog.md)), the only component here that runs off the streamer and the
+only one allowed to notify.
 
 ## Documentation
 
@@ -41,6 +45,7 @@ failure path retries instead of reporting.
 - [docs/operations.md](docs/operations.md) - Day to day: control, smoke test, disk and logs
 - [docs/machines.md](docs/machines.md) - Installing elsewhere, the SSH mesh, Tailscale
 - [docs/known-issues.md](docs/known-issues.md) - Known issues and open items
+- [docs/watchdog.md](docs/watchdog.md) - The external watchdog: the one component that runs off the streamer
 - [wiki](https://github.com/Pummelchen/YTLive_Laundry/wiki) - the operator's guide: install,
   day-to-day commands, troubleshooting, updating and rollback
 
@@ -48,7 +53,7 @@ failure path retries instead of reporting.
 
 Two gates, and nothing runs either for you — there is no CI:
 
-    tests/run.sh          84 checks, credential-free: no camera, network, ffmpeg or credentials,
+    tests/run.sh          168 checks, credential-free: no camera, network, ffmpeg or credentials,
                           so it is safe to run on the streaming Mac. --list shows what it covers.
     bin/smoke_test.sh     syntax/AST plus the real API commands and prepare --dry-run. Needs
                           conf/yt_oauth.json, so it cannot pass on a bare clone.

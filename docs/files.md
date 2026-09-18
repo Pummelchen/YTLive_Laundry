@@ -1,6 +1,8 @@
 # What it is
 
 ## Files
+    install.sh               provision the STREAMER: ffmpeg, yt-dlp, two LaunchAgents
+    release.sh               build and publish a source release from a tag (RELEASE.md)
     bin/stream.sh            the streamer (reader + publisher, watchdog, rotation, VOD check)
     bin/shuffle_playlist.sh  regenerate the random track order
     bin/status.sh            health check
@@ -17,6 +19,10 @@
     bin/yt_api.py            YouTube Live API: create/bind/end, and the config reference
     bin/yt_check.py          pulls a frame from the public stream and grades it
     bin/yt_monitor.sh        the watchdog loop
+    bin/yt_watchdog.py       the EXTERNAL watchdog: runs OFF the streamer and emails a human
+                             when the channel goes dark (the only code allowed to notify)
+    bin/watchdog-install.sh  install that watchdog on an always-on host (systemd or launchd)
+    bin/deploy-release.sh    deploy a tag with a rollback that covers what install.sh writes
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
     conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,
@@ -28,6 +34,13 @@
     conf/cam_encoder_*.xml, conf/camera_original.txt, conf/ternak-macbook.pub
                              tracked camera dumps and an SSH public key
     conf/playlist.txt        the shuffled order (generated)
+    conf/watchdog.env.example  tracked template for the external watchdog; the live
+                             conf/watchdog.env holds a Gmail app password (chmod 600, gitignored)
+    conf/ytlive-watchdog.service  the systemd unit for the always-on watchdog host
+    docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
+                             ...) plus the per-release notes release-notes-vX.Y.md
+    tests/                   the credential-free suite: tests/run.sh and its README
+    backup/                  frozen snapshots of what was deployed (backup/README.md)
     log/                     runtime state, gitignored. Files the project reads back:
                              broadcast_started (rotation clock), rotating (monitor stand-down
                              deadline), rotate_now (forced-rotation trigger), cam_ip (current
