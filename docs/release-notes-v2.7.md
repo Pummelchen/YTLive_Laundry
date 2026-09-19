@@ -188,6 +188,43 @@ in front of a streamer that never pushed is a **real page for a healthy streamer
 really is stale. The two places to look are `heartbeat: dead-man signal ON` in the streamer's log
 and `accept … bytes from 100.x` in `journalctl -u ytlive-heartbeat`.
 
+## T-13 — a filling disk pages a human, using the push that was already there
+
+The repair half landed in 2.6: `housekeep` cuts every log to a quarter of its budget and drops the
+regenerable caches below `DISK_LOW_MB`. The half that **alerts** could not be done on the streamer —
+it is not allowed to notify — and was left blocked on finding a delivery path. T-34 turned out to
+be that path: the heartbeat body already carries `disk_free_mb`, so the watchdog reads the figure
+out of the same file it checks for freshness. No SSH, no API call, no second mechanism, and the
+alert arrives on the host that is allowed to send mail.
+
+- `WATCH_DISK_MIN_MB` (default **2000 MB**, `0` disables) is the floor. It is deliberately above the
+  streamer's own `DISK_LOW_MB` (1000): `housekeep` should get its chance to trim first, and reaching
+  the watchdog's floor means that could not keep up — the point at which recordings, the deploy
+  backups, the git tree and the next rotation's ffmpeg are at risk.
+- It reports **while the channel is live**. A healthy stream on a filling disk is exactly the case
+  this exists for, so the rule runs before the live-channel early return and keeps its **own**
+  episode: `last_alert_kind` still belongs to the outage story, so a low disk can neither hide a
+  dark/silent alert nor be hidden by one. One mail per crossing, a reminder every `WATCH_REMIND`,
+  and one when it climbs back.
+- The figure is only believed while the push is **fresh**. A stale file is the app-gone story
+  (`disk_state()` refuses it), because an old number would page about a disk that may be fine now —
+  the one way this rule could lie.
+
+`bin/yt_watchdog.py status` shows the level it knows (`disk : ok 165,357 MB free (alert under 2,000
+MB)`) so the number is visible before it becomes an alert.
+
+## The watchdog host can say which build it runs
+
+`bin/watchdog-install.sh` now stamps `$PREFIX/VERSION` from the tree it installs, and
+`bin/yt_watchdog.py status` prints `watchdog : version <x.y>` (the journal's start line names it
+too). An install made before 2.7, or by hand, reports `unknown` rather than inventing a version.
+
+This is not decoration. On 2026-09-19 the watchdog host was found running a **pre-2.4**
+`yt_watchdog.py` — no heartbeat code at all — while the streamer's deploy printed `DEPLOY COMPLETE`
+and the dead-man signal the release depended on could not have fired. The two halves are separate
+installs with separate installers and nothing cross-checked them; the only way to see it was to
+hash the file against a checkout.
+
 ## Files in this release
 
 | File | Change |
@@ -201,12 +238,14 @@ and `accept … bytes from 100.x` in `journalctl -u ytlive-heartbeat`.
 | `bin/yt_heartbeat.py` | **new** — the dead-man transport in one stdlib-only file: `serve` (bearer token in constant time, 8 KB cap, atomic 0600 write, 401/404/405, non-zero exit on bind failure) and `push` (timestamp, host, uptime, disk MB, publisher liveness, network state, broadcast id; token from file or env, never argv) (T-34) |
 | `bin/stream.sh` | T-34: `start_heartbeat` starts the pusher only when `HEARTBEAT_URL` is set, refuses to start when the token file is unreadable, logs ON/OFF, and the TERM/INT trap reaps it |
 | `conf/stream.env.example` | T-34: `HEARTBEAT_URL` (empty = the signal is OFF), `HEARTBEAT_TOKEN_FILE`, `HEARTBEAT_INTERVAL` (300 s) |
-| `conf/watchdog.env.example` | T-34: the receive side (`HEARTBEAT_BIND`, `HEARTBEAT_PORT`, `HEARTBEAT_STATE_FILE`, `HEARTBEAT_TOKEN_FILE`) and `WATCH_HEARTBEAT=""` **shipped empty on purpose** — an absent file never alerts, an armed watchdog with no pusher is a page for a healthy streamer |
+| `conf/watchdog.env.example` | T-34: the receive side (`HEARTBEAT_BIND`, `HEARTBEAT_PORT`, `HEARTBEAT_STATE_FILE`, `HEARTBEAT_TOKEN_FILE`) and `WATCH_HEARTBEAT=""` **shipped empty on purpose** — an absent file never alerts, an armed watchdog with no pusher is a page for a healthy streamer; T-13: `WATCH_DISK_MIN_MB="2000"`, the floor for the figure the same push carries |
+| `bin/yt_watchdog.py` | T-13: reads `disk_free_mb` out of the heartbeat body it already stats, and alerts below `WATCH_DISK_MIN_MB` with a recovery — its own episode, before the live-channel early return, and only while the push is fresh; `status` now prints the level; T-34: reports the version stamp |
+| `bin/watchdog-install.sh` | T-13/version: stamps `$PREFIX/VERSION` from the tree it installs, so the host can answer "which build am I running?" — the question that had no answer when it was found running a pre-2.4 watchdog behind a green streamer deploy |
 | `conf/ytlive-heartbeat.service` | **new** — the systemd unit for the listener, modelled on the watchdog's, ordered `Before=ytlive-watchdog.service` |
 | `tests/t16_heartbeat.sh` | **new** — 54 checks: a **real** listener against a **real** pusher on loopback — token accept/reject, method and path rejection (including HEAD), the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is missing, and that the token never appears in the process arguments |
 | `docs/files.md` | `log/vod_pending` added to the runtime-state list, with why it is not derived from the trimmed `rotation_history.log`; the heartbeat's `log/heartbeat.log` and the host-side state file |
-| `AGENTS.md` | the suite count: 520 → **631** checks |
-| `README.md` | the suite count: 520 → **631** checks |
+| `AGENTS.md` | the suite count: 520 → **655** checks |
+| `README.md` | the suite count: 520 → **655** checks |
 | `tests/t11_paths_pids.sh` | grew to 38: every script tracked 755 is now asserted, because `install.sh` chmods `bin/*.sh` and `bin/*.py`, so the 644 `bin/cam_time.py` of 2.6 left a deployed tree that could never be clean |
 | `log/vod_pending` (**runtime state, gitignored**) | the recordings still awaiting a verdict, one `<id> <probes>` per line; bounded by `VOD_MISSING_RETRIES` / `VOD_MAX_PROBES`, and adopted from the history on an install that predates it (T-12) |
 
@@ -224,7 +263,7 @@ the total below is the sum of the per-file counts.
 | `tests/t04_token.sh` | 17 | all passed |
 | `tests/t05_rotation_gate.sh` | 15 | all passed |
 | `tests/t06_install.sh` | 21 | all passed |
-| `tests/t07_watchdog.sh` | 120 | all passed |
+| `tests/t07_watchdog.sh` | 144 | all passed |
 | `tests/t08_hosttools.sh` | 46 | all passed |
 | `tests/t09_net.sh` | 42 | all passed |
 | `tests/t10_camtools.sh` | 63 | all passed |
@@ -234,9 +273,9 @@ the total below is the sum of the per-file counts.
 | `tests/t14_monitor_beat.sh` | 25 | all passed |
 | `tests/t15_resilience.sh` | 23 | all passed |
 | `tests/t16_heartbeat.sh` | 54 | all passed |
-| **Total** | **631** | **`SUITE PASSED`** |
+| **Total** | **655** | **`SUITE PASSED`** |
 
-- The project's own suite, serially: **checked** — 631 checks, all passing. The runner reports
+- The project's own suite, serially: **checked** — 655 checks, all passing. The runner reports
   `ALL PASSED (N checks)` per file and `SUITE PASSED` at the end.
 - `tests/t15_resilience.sh` (new): **checked** — 23 checks. The pending list through every outcome
   (an id only in `vod_pending` is verified and dropped; a MISSING is recorded, re-probed once and
@@ -264,13 +303,24 @@ the total below is the sum of the per-file counts.
   online, that it never says `EXPIRED` and never tells the operator to re-auth on age alone, and
   that age alone is the only case where the message says so. Measured on the live streamer:
   `token` → `probe LIVE`, `status.sh --no-net` → `WARN` (it used to be a red `FAIL`).
+- The disk rule: **checked behaviourally, at both levels** — `tests/t07_watchdog.sh` (grew to 144)
+  drives `decide()` as a pure function for the crossing, the reminder, the recovery, the switch
+  (`WATCH_DISK_MIN_MB=0`) and the unusable-number cases, and then runs the **real** `yt_watchdog.py
+  once` against a real heartbeat file whose body carries `disk_free_mb`, so the figure genuinely
+  travels through the file it is read from. A malformed body is pinned as silent rather than a page.
+  **Not checked:** a real low-disk host — the floor was never crossed on the streamer (166 GB free),
+  so the alert path is exercised with a 500 MB body, not by filling a disk.
+- The version stamp: **checked** — `tests/t07_watchdog.sh` installs into a scratch prefix and
+  asserts the stamp is byte-identical to the tree's `VERSION`, that `program_version()` reads it
+  back, and that an unstamped install reports `unknown` instead of a version. **Not checked:** the
+  live host reading it (the stamp is deployed with this release).
 - `tests/t11_paths_pids.sh`: grew to **38** — every script tracked 755, which is what caught the
   644 `bin/cam_time.py` of the 2.6 tree.
 - `bin/status.sh` (the T-08 surface): **checked** — its syntax is parsed by t01 and t11, and t15
   asserts the `FRAGMENT:` count is wired. That is a **source assertion**, not an execution against a
   log that actually holds fragments: no check here proves the warning renders correctly against a
   real `stream.log`.
-- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **631**
+- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **655**
   checks (they said 520 for 2.6, and then 569 while the t15 FRAGMENT checks and t16 were still
   uncounted).
 - `bin/smoke_test.sh`: **not checked** — it needs `conf/yt_oauth.json`, which is gitignored and in

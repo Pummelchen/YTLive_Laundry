@@ -81,8 +81,13 @@ None is trusted alone. The channel decides *whether* to alert; the host and hear
 | Heartbeat fresh | silence |
 | Heartbeat absent or unset | silence — an unconfigured deployment, and `status`/`once` say so |
 | Heartbeat resumes after a silent alert | one "heartbeat is back" email |
+| Disk below `WATCH_DISK_MIN_MB` (default 2000 MB) | one "streamer disk low" email, then a reminder every `WATCH_REMIND` — reported even while the channel is live, because a full disk kills the next rotation's ffmpeg |
+| Disk back above the floor | one "disk is back above the floor" email |
+| Disk figure missing, stale or switched off (`WATCH_DISK_MIN_MB=0`) | silence — an old number would page about a disk that may be fine now |
 
-An alert is one per episode, then a reminder, never a stream of messages.
+An alert is one per episode, then a reminder, never a stream of messages. The disk rule keeps
+its **own** episode and does not touch `last_alert_kind`: a healthy stream on a filling disk is
+the whole point of it, and it must neither hide a dark/silent episode nor be hidden by one.
 
 If the mail path itself fails, the alert is **spooled to disk and retried** on the next
 cycle; it is never dropped. The mail path is how outages get reported, so losing a message
@@ -212,6 +217,23 @@ Gmail app password and the streamer holds a YouTube OAuth refresh token, so a pu
 host reaching into the streamer — would let a compromised watchdog host touch the streamer's
 credentials as well; tracker row T-23 is about exactly that. With push, the streamer is the only
 side that initiates: it can post a status and nothing more, and the watchdog host never dials it.
+
+**The same push answers a second question: free space.** The body carries `disk_free_mb`, so the
+watchdog reports a filling disk with no second mechanism, no SSH and no API call — configure
+`WATCH_DISK_MIN_MB` (default 2000 MB, `0` disables). The figure is only believed while the file is
+**fresh**: an old push's number is worse than no number, so a stale file reports the silent-app
+story and no disk claim at all. The floor is deliberately above the streamer's own `DISK_LOW_MB`
+(1000), so `housekeep` gets its chance to trim logs and drop regenerable caches first; reaching
+the watchdog's floor means that could not keep up, which is the point at which recordings, the
+git tree and the next rotation are at risk. This closed tracker row T-13.
+
+**The host can say which build it runs.** `bin/watchdog-install.sh` stamps `$PREFIX/VERSION` from
+the tree it installs, and `bin/yt_watchdog.py status` prints `watchdog : version <x.y>` (the start
+line in the journal names it too). It reports `unknown` for an install made before 2.7 or by hand.
+That stamp is not decoration: on 2026-09-19 the host was found running a **pre-2.4** watchdog whose
+heartbeat code the deployed release depended on, and the only way to see it was hashing the file
+against a checkout. The streamer and this host are separate installs, so a release that touches the
+watchdog must be installed on **both** — see AGENTS.md and RELEASE.md §1.9.
 
 Two honest limits of the transport:
 

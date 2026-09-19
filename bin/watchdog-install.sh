@@ -163,6 +163,19 @@ else
   install -m 755 "$BASE/bin/yt_watchdog.py" "$PREFIX/bin/yt_watchdog.py" || die "cannot install the script"
 fi
 
+# --- the version stamp --------------------------------------------------------------------
+# Without this, "which build is this host running?" had no answer except hashing the file
+# against a checkout - which is how a PRE-2.4 yt_watchdog.py sat on the live host while the
+# streamer reported DEPLOY COMPLETE and the dead-man rule the release depended on could not
+# fire (measured 2026-09-19). The streamer and this host are separate installs with separate
+# installers, so the host has to be able to say what it is running.
+if [ -f "$BASE/VERSION" ]; then
+  cat "$BASE/VERSION" > "$PREFIX/VERSION" || die "cannot write $PREFIX/VERSION"
+  say "version  : $(cat "$PREFIX/VERSION")"
+else
+  say "version  : NO $BASE/VERSION - this host will report unknown (not a release tree?)"
+fi
+
 if [ -f "$PREFIX/conf/watchdog.env" ]; then
   say "keeping the existing $PREFIX/conf/watchdog.env (it holds the mail secret)"
 else

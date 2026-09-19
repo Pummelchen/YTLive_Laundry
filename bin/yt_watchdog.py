@@ -108,6 +108,9 @@ DEFAULTS = {
     "WATCH_REMIND": "21600",        # repeat an unresolved alert every 6 h
     "WATCH_HEARTBEAT": "",          # path to a file the streamer app touches; empty = disabled
     "WATCH_HEARTBEAT_MAX": "900",   # 15 min without a touch -> the app is silent
+    "WATCH_DISK_MIN_MB": "2000",    # the streamer's push carries free MB; below this -> alert.
+                                    # 0 disables. Chosen above stream.sh's DISK_LOW_MB (1000), so
+                                    # the repair runs first and this fires only if it cannot keep up.
     "WATCH_HTTP": "1",              # second channel reader (direct HTTPS) on by default
     "WATCH_HTTP_URL": "",           # optional override; default derives from WATCH_CHANNEL
     "WATCH_HTTP_TIMEOUT": "15",     # short: the loop must not stall on a hanging page
@@ -353,6 +356,28 @@ def host_state(cfg):
     return "unknown", None
 
 
+def heartbeat_payload(path):
+    """The parsed body of the last push, or None.
+
+    The pusher sends a real status document (timestamp, host, uptime, free disk MB, publisher
+    liveness, network state, broadcast id), so the freshness check is no longer the only thing
+    this file can answer. Every failure - missing, unreadable, not JSON, not an object -
+    degrades to None, and a body is only believed while it is FRESH: a stale file is positive
+    evidence the app is gone, and its last numbers say nothing about now.
+    """
+    if not path:
+        return None
+    try:
+        text = pathlib.Path(path).read_text()
+    except Exception:
+        return None
+    try:
+        body = json.loads(text)
+    except ValueError:
+        return None
+    return body if isinstance(body, dict) else None
+
+
 def heartbeat_state(cfg):
     """(state, age_seconds) for the streamer application's heartbeat file.
 
@@ -382,6 +407,23 @@ def heartbeat_state(cfg):
     return "stale", age
 
 
+def disk_state(cfg, heartbeat, payload):
+    """The pusher's free-space figure as a plain value for decide(), or None.
+
+    None means "no usable number" - the signal is disabled, the file is absent or unreadable,
+    the push is too old to believe, or the body carries no integer disk_free_mb - and every
+    one of those must be SILENT rather than guessed at. An old file's number is worse than no
+    number: it would page about a disk that may be fine now.
+    """
+    min_mb = cfg.num("WATCH_DISK_MIN_MB")
+    if min_mb <= 0 or heartbeat != "fresh" or not isinstance(payload, dict):
+        return None
+    free_mb = payload.get("disk_free_mb")
+    if not isinstance(free_mb, int) or isinstance(free_mb, bool):
+        return None
+    return {"free_mb": free_mb, "threshold": min_mb}
+
+
 # --------------------------------------------------------------------------------------
 # State
 # --------------------------------------------------------------------------------------
@@ -399,6 +441,7 @@ def new_state():
         "last_host_state": None,
         "last_heartbeat_state": None,
         "last_heartbeat_age": None,
+        "disk": None,               # {"free_mb","min_mb","threshold","since","alerted_at"}
         "last_error": None,
         "checks": 0,
     }
@@ -428,7 +471,7 @@ def save_state(path, state):
 # --------------------------------------------------------------------------------------
 # The decision, as a pure function of (time, state, signals, config)
 # --------------------------------------------------------------------------------------
-def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None):
+def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None, disk=None):
     """Return (new_state, actions). Pure - no clock, no network, no I/O - so the whole
     alerting policy is testable without waiting 15 minutes or touching YouTube.
 
@@ -436,6 +479,12 @@ def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=N
     keeping the file I/O out here is what lets every heartbeat rule below be tested in
     microseconds. "stale" is positive evidence the streamer app is silent; "fresh",
     "absent", "disabled" and "unknown" are not.
+
+    `disk` is {"free_mb", "threshold"} from the same push (disk_state()), or None when there
+    is no fresh number. It is a DIFFERENT kind of fact from the three signals above: the
+    channel, the host and the app are episodes that end, while free space is a level that
+    crosses a line. It therefore reports on its own, under its own episode key, so a full disk
+    can never be hidden by - or hide - an unrelated dark/blind/silent alert.
     """
     s = dict(state)
     actions = []
@@ -462,6 +511,43 @@ def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=N
         s["last_alert_kind"] = kind
         s["last_alert_at"] = now
         actions.append(dict(kind=kind, **extra))
+
+    # --- free space: a level, not an episode ------------------------------------------------
+    # Reported before the channel rules and independent of the live-channel early return, so
+    # a healthy stream on a filling disk is exactly the case that gets reported. Its own
+    # `alerted_at` gives one mail per crossing plus WATCH_REMIND reminders; it never touches
+    # last_alert_kind, which belongs to the outage story.
+    if disk is None:
+        prior = s.get("disk")
+        if isinstance(prior, dict) and prior.get("since") is not None:
+            # The number went away (push stopped, or disk_free_mb became unreadable). That is
+            # not a recovery, so no mail - but forget the episode, so a later crossing is new.
+            prior = dict(prior)
+            prior["since"] = None
+            prior["alerted_at"] = None
+            s["disk"] = prior
+    else:
+        free_mb = disk["free_mb"]
+        threshold = disk["threshold"]
+        prior = s.get("disk") if isinstance(s.get("disk"), dict) else {}
+        if free_mb < threshold:
+            since = prior.get("since")
+            if since is None:
+                since = now
+            alerted_at = prior.get("alerted_at")
+            if alerted_at is None or (now - alerted_at) >= remind:
+                s["disk"] = {"free_mb": free_mb, "min_mb": disk.get("min_mb"), "threshold": threshold,
+                             "since": since, "alerted_at": now}
+                actions.append(dict(kind="disk_low", free_mb=free_mb, threshold=threshold,
+                                    low_for=now - since))
+            else:
+                s["disk"] = {"free_mb": free_mb, "min_mb": disk.get("min_mb"), "threshold": threshold,
+                             "since": since, "alerted_at": alerted_at}
+        else:
+            if isinstance(prior.get("since"), int) and prior["since"] is not None:
+                actions.append(dict(kind="disk_recover", free_mb=free_mb, threshold=threshold))
+            s["disk"] = {"free_mb": free_mb, "min_mb": disk.get("min_mb"), "threshold": threshold,
+                         "since": None, "alerted_at": None}
 
     if channel == "live":
         s["dark_since"] = None
@@ -609,6 +695,43 @@ def human_heartbeat(state, cfg):
     return "unknown"
 
 
+def program_version(cfg):
+    """The release this install came from, written by watchdog-install.sh, or "unknown".
+
+    This is the answer to "which build is the host actually running?", and it could not be
+    asked before 2026-09-19 - when the live host turned out to be running a pre-2.4 watchdog
+    whose heartbeat code the deployed release depended on, with no way to see that from the
+    outside. A missing file means the install predates the stamp or was made by hand.
+    """
+    try:
+        base = pathlib.Path(cfg["WATCH_STATE_DIR"] or ".")
+    except Exception:
+        return "unknown"
+    for cand in (base / "VERSION", base.parent / "VERSION"):
+        try:
+            text = cand.read_text().strip()
+        except Exception:
+            continue
+        if text:
+            return text
+    return "unknown (no stamp - installed before 2.7 or by hand)"
+
+
+def human_disk(state, cfg):
+    """One line for the disk level the streamer's push reports, or why there is none."""
+    d = state.get("disk")
+    if not isinstance(d, dict) or d.get("free_mb") is None:
+        if cfg.num("WATCH_DISK_MIN_MB") <= 0:
+            return "disabled (WATCH_DISK_MIN_MB=0)"
+        return "unavailable (no fresh push carries disk_free_mb)"
+    free = d["free_mb"]
+    limit = d.get("threshold") or cfg.num("WATCH_DISK_MIN_MB")
+    if isinstance(d.get("since"), int) and d.get("since") is not None:
+        return (f"LOW {free:,} MB free, under {limit:,} MB since "
+                f"{human_duration(max(0, int(time.time()) - d['since']))}")
+    return f"ok {free:,} MB free (alert under {limit:,} MB)"
+
+
 def compose(action, state, channel, host, host_last_seen, vid, cfg):
     """Subject and body. Written for someone reading it on a phone at 3am: what is wrong,
     since when, whether the box is reachable, and the first thing to do about it."""
@@ -650,6 +773,23 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
     elif action.get("of") == "silent":
         subject = "[YTLive] streamer heartbeat is back"
         head = "The streamer's heartbeat file is being updated again; the app is alive."
+    elif kind == "disk_low":
+        free = action.get("free_mb")
+        limit = action.get("threshold")
+        subject = f"[YTLive] streamer disk low ({free:,} MB free)"
+        head = (f"{where} has {free:,} MB free, under the {limit:,} MB floor"
+                + (f", and has been for {human_duration(action.get('low_for'))}"
+                   if action.get("low_for") else "")
+                + ". The streamer's own housekeep drops quarter-sized logs and the regenerable "
+                  "caches below DISK_LOW_MB, so reaching this floor means that was not enough: "
+                  "recordings, deploy backups and the git tree are what is left, and $HOME "
+                  "filling up also kills the next rotation's ffmpeg.")
+    elif kind == "disk_recover":
+        subject = "[YTLive] streamer disk is back above the floor"
+        head = (f"{where} reports {action.get('free_mb'):,} MB free again, above the "
+                f"{action.get('threshold'):,} MB floor. Nothing to do unless it repeats - if it "
+                f"does, the growth is faster than housekeep, and the deploy backups in $HOME are "
+                f"the first thing to delete.")
     else:
         subject = "[YTLive] channel is LIVE again"
         head = "The channel is live again; the outage is over."
@@ -660,6 +800,7 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         f"channel state : {channel}",
         f"host state    : {host}" + (f" (last seen {human_time(host_last_seen, cfg)})" if host_last_seen else ""),
         f"heartbeat     : {human_heartbeat(state, cfg)}",
+        f"disk          : {human_disk(state, cfg)}",
         f"video id      : {vid or 'none'}",
         f"now           : {human_time(time.time(), cfg)}",
     ]
@@ -809,7 +950,10 @@ def check_once(cfg, state):
     if channel == "live" and vid:
         state["last_video"] = vid
     now = int(time.time())
-    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age)
+    # The push that proves the app is alive also carries its free-space figure, so the disk
+    # rule needs no second mechanism and no network: one file, one read, two facts.
+    disk = disk_state(cfg, heartbeat, heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip()))
+    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age, disk)
     return new, actions, channel, host, host_last_seen, vid, heartbeat, heartbeat_age
 
 
@@ -821,6 +965,7 @@ def cmd_once(cfg, as_json=True):
         print(json.dumps({
             "channel": channel, "host": host,
             "heartbeat": heartbeat, "heartbeat_age": heartbeat_age,
+            "disk": new.get("disk"),
             "host_last_seen": host_last_seen, "vid": vid,
             "actions": [a["kind"] for a in actions],
             "dark_since": new.get("dark_since"),
@@ -833,7 +978,8 @@ def cmd_once(cfg, as_json=True):
 
 
 def cmd_run(cfg):
-    log_line(cfg, f"watchdog starting: channel={cfg.channel_url or '(unset)'} "
+    log_line(cfg, f"watchdog starting: version={program_version(cfg)} "
+                  f"channel={cfg.channel_url or '(unset)'} "
                   f"host={cfg['WATCH_HOST'] or '(unset)'} "
                   f"heartbeat={cfg['WATCH_HEARTBEAT'] or '(disabled)'} "
                   f"every {cfg.num('WATCH_INTERVAL')}s")
@@ -864,11 +1010,13 @@ def cmd_run(cfg):
 def render_status(cfg, state, channel, host, host_last_seen, vid):
     lines = [
         "YTLive external watchdog",
+        f"  watchdog       : version {program_version(cfg)}",
         f"  channel        : {cfg['WATCH_CHANNEL'] or '(unset)'}  ->  {cfg.channel_url or '(unset)'}",
         f"  host peer      : {cfg['WATCH_HOST'] or '(unset)'}",
         f"  channel state  : {channel}",
         f"  host state     : {host}" + (f"  last seen {human_time(host_last_seen, cfg)}" if host_last_seen else ""),
         f"  heartbeat      : {human_heartbeat(state, cfg)}",
+        f"  disk           : {human_disk(state, cfg)}",
         f"  video id       : {vid or 'none'}",
         f"  dark since     : {human_time(state.get('dark_since'), cfg)}",
         f"  unknown since  : {human_time(state.get('unknown_since'), cfg)}",
@@ -876,7 +1024,7 @@ def render_status(cfg, state, channel, host, host_last_seen, vid):
         f"  last alert     : {state.get('last_alert_kind') or 'none'} at {human_time(state.get('last_alert_at'), cfg)}",
         f"  alert mode     : {cfg['WATCH_ALERT_MODE']} -> {cfg['WATCH_ALERT_TO'] or '(unset)'}",
         f"  state file     : {cfg['WATCH_STATE']}",
-        f"  thresholds     : dark {human_duration(cfg.num('WATCH_DARK_GRACE'))}, blind {human_duration(cfg.num('WATCH_BLIND_GRACE'))}, heartbeat {human_duration(cfg.num('WATCH_HEARTBEAT_MAX'))}, remind {human_duration(cfg.num('WATCH_REMIND'))}",
+        f"  thresholds     : dark {human_duration(cfg.num('WATCH_DARK_GRACE'))}, blind {human_duration(cfg.num('WATCH_BLIND_GRACE'))}, heartbeat {human_duration(cfg.num('WATCH_HEARTBEAT_MAX'))}, disk {cfg.num('WATCH_DISK_MIN_MB'):,.0f} MB, remind {human_duration(cfg.num('WATCH_REMIND'))}",
     ]
     return "\n".join(lines)
 

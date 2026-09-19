@@ -57,7 +57,7 @@ Two gates. The first now runs in CI on every push and pull request (`.github/wor
 macOS runners — the suite is macOS-only); the second still needs a credential, so it cannot run
 there and stays a by-hand host gate:
 
-    tests/run.sh          631 checks, credential-free: no camera, network, ffmpeg or credentials,
+    tests/run.sh          655 checks, credential-free: no camera, network, ffmpeg or credentials,
                           so it is safe to run on the streaming Mac. --list shows what it covers.
     bin/smoke_test.sh     syntax/AST plus the real API commands and prepare --dry-run. Needs
                           conf/yt_oauth.json, so it cannot pass on a bare clone.

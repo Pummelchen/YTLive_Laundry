@@ -101,6 +101,26 @@ dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.*
   (`yt_api.py auth`, device flow, works over SSH) is maintenance, not an emergency.
   `tests/t04_token.sh` grew to 17 checks and pins that age alone never claims a dead token and
   never sends the operator to re-auth.
+- **T-13 — a filling disk now pages a human, off the streamer and with no new mechanism.** The
+  repair half landed in 2.6 (`housekeep` cuts logs and drops regenerable caches below
+  `DISK_LOW_MB`), and the delivery half was blocked until T-34: the streamer may not notify, so
+  the alert had to leave the machine. The heartbeat push already carries **`disk_free_mb`**, so
+  `bin/yt_watchdog.py` now reads the figure out of the same file it checks for freshness and
+  alerts below `WATCH_DISK_MIN_MB` (default **2000 MB**, `0` disables) with a recovery when it
+  climbs back. The floor is deliberately above the streamer's own `DISK_LOW_MB` (1000), so
+  `housekeep` gets its chance first and this fires when that could not keep up — the point at
+  which recordings, the deploy backups, the git tree and the next rotation's ffmpeg are at risk.
+  Three properties are load-bearing and pinned in `tests/t07_watchdog.sh`: it reports **while the
+  channel is live** (a healthy stream on a full disk is the case it exists for), the figure is
+  only believed while the push is **fresh** (an old number would page about a disk that may be
+  fine now), and it keeps its **own episode** — `last_alert_kind` still belongs to the outage
+  story, so a low disk can neither hide a dark alert nor be hidden by one.
+- **The watchdog host can say which build it runs.** `bin/watchdog-install.sh` stamps
+  `$PREFIX/VERSION` from the tree it installs and `bin/yt_watchdog.py status` prints
+  `watchdog : version <x.y>`; an install made before this or by hand reports `unknown`. Measured
+  2026-09-19: the host was running a **pre-2.4** watchdog with no heartbeat code at all while the
+  streamer's deploy said `DEPLOY COMPLETE`, and the only way to see it was hashing the file
+  against a checkout. Two separate installs, and nothing cross-checked them.
 - **Tests.** `tests/t15_resilience.sh` (23 checks) drives the pending list through every outcome —
   verified, MISSING twice, never-resolving, adopted from the history, probe count carried forward,
   idempotent add — and tests the clock adoption behaviourally (a new broadcast adopts its real
@@ -110,8 +130,8 @@ dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.*
   grading command runs, and that the graded status still lands. `tests/t16_heartbeat.sh` (54 checks)
   drives a **real listener against a real pusher on loopback**: token accept/reject, method and path
   rejection, the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is
-  missing, and that the token never appears in the process arguments. The suite is now **631
-  checks** (t01 55, t02 12, t03 22, t04 17, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38,
+  missing, and that the token never appears in the process arguments. The suite is now **655
+  checks** (t01 55, t02 12, t03 22, t04 17, t05 15, t06 21, t07 144, t08 46, t09 42, t10 63, t11 38,
   t12 57, t13 21, t14 25, t15 23, t16 54).
 
 ## 2.6 — 2026-09-19

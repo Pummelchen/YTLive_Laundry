@@ -63,16 +63,17 @@ def cfg(**over):
 
 C = cfg()
 
-def run(seq, c=None, hb="disabled"):
+def run(seq, c=None, hb="disabled", disk=None):
     c = c or C
     st = wd.new_state(); out = []
     for item in seq:
         t, ch, host = item[0], item[1], item[2]
         h = item[3] if len(item) > 3 else hb
         age = item[4] if len(item) > 4 else None
+        d = item[5] if len(item) > 5 else disk
         if isinstance(h, tuple):
             h, age = h
-        st, acts = wd.decide(t, st, ch, host, c, h, age)
+        st, acts = wd.decide(t, st, ch, host, c, h, age, d)
         out.append([a["kind"] for a in acts])
     return out, st
 
@@ -171,6 +172,48 @@ st2 = wd.new_state()
 st2, a2 = wd.decide(0, st2, "unknown", "down", C, "stale", 2000)
 ck(bool(a2) and a2[0]["kind"] == "silent" and a2[0].get("host_lost") is True,
    "a stale heartbeat with the host gone is attributed to the host")
+
+# --- the disk level the push carries: a level, not an episode ----------------------------
+# The pusher already sends disk_free_mb, so a filling disk is visible off-host with no new
+# mechanism. It must report on its own: a healthy live channel on a full disk is exactly the
+# case that has to page, and a low disk must not be swallowed by an unrelated dark/silent
+# episode (nor swallow one).
+LOW = {"free_mb": 500, "threshold": 2000}
+FINE = {"free_mb": 165000, "threshold": 2000}
+out, st = run([(0, "live", "live", "fresh", 30, LOW), (60, "live", "live", "fresh", 30, LOW)])
+ck(out[0] == ["disk_low"], "a low disk alerts even while the channel is perfectly live")
+ck(out[1] == [], "and does not repeat on the very next check")
+ck(st["last_alert_kind"] is None,
+   "a disk alert does not claim the outage episode (so a later dark still alerts at once)")
+ck(st["disk"]["since"] == 0, "the low-disk clock starts at the first crossing")
+
+out, st = run([(0, "live", "live", "fresh", 30, LOW), (23000, "live", "live", "fresh", 30, LOW)])
+ck(out[1] == ["disk_low"], "an unresolved low disk is reminded after WATCH_REMIND")
+
+out, st = run([(0, "live", "live", "fresh", 30, LOW), (100, "live", "live", "fresh", 30, FINE)])
+ck(out[1] == ["disk_recover"], "free space returning above the floor reports a recovery once")
+ck(st["disk"]["since"] is None, "and clears the low-disk episode so the next crossing is new")
+
+out, st = run([(0, "live", "live", "fresh", 30, FINE)])
+ck(out[0] == [] and st["disk"]["free_mb"] == 165000, "a healthy disk is recorded silently")
+
+# An unusable number must be silent, never guessed at: no fresh push, no integer, or the
+# feature switched off. An OLD number is the dangerous one - it would page about a disk that
+# may be fine now.
+out, st = run([(0, "live", "live", "fresh", 30, LOW), (100, "live", "live", "fresh", 30, None)])
+ck(out[1] == [], "a low disk whose number went away does not report a recovery it cannot prove")
+# A stale push is the app being gone: that is the silent story, and decide() is handed no disk
+# (disk_state() refuses an old file's number), so one event cannot be reported as two.
+ck(wd.disk_state(cfg(WATCH_DISK_MIN_MB="2000"), "stale", {"disk_free_mb": 500}) is None,
+   "disk_state refuses a stale push, so an old figure can never page about the disk now")
+out, st = run([(0, "unknown", "live", "stale", 2000, None)])
+ck(out[0] == ["silent"], "a stale push yields the silent alert")
+
+# The switch: WATCH_DISK_MIN_MB=0 turns the whole rule off, and the writer's own file is the
+# source - no second mechanism, no API call.
+off = cfg(WATCH_DISK_MIN_MB="0")
+out, st = run([(0, "live", "live", "fresh", 30, None)], c=off)
+ck(out[0] == [], "WATCH_DISK_MIN_MB=0 disables the disk rule")
 
 # UNKNOWN is still not DARK: the original rule must survive the new signal.
 out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")])
@@ -348,6 +391,7 @@ if [[ -f "$ENVEX" ]]; then
   # signal must ship OFF: an unconfigured heartbeat is normal, not an outage.
   t_assert_contains "$(cat "$ENVEX")" 'WATCH_HEARTBEAT=""' "the template ships with the heartbeat unset (disabled, not alerting)"
   t_assert_contains "$(cat "$ENVEX")" 'WATCH_HEARTBEAT_MAX="900"' "and documents the heartbeat staleness limit"
+  t_assert_contains "$(cat "$ENVEX")" 'WATCH_DISK_MIN_MB="2000"' "and ships the disk floor for the figure the same push carries"
   t_assert_contains "$(cat "$ENVEX")" 'WATCH_HTTP="1"' "and the second channel reader on by default"
 fi
 
@@ -428,6 +472,26 @@ out=$(run_once WATCH_HEARTBEAT="$T_BASE/log/no-such-heartbeat" WATCH_HEARTBEAT_M
 t_assert_contains "$out" '"heartbeat": "absent"' "once: an absent heartbeat is reported as absent"
 acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
 t_assert_eq "" "$acts" "once: an absent heartbeat never raises a silent action (unconfigured)"
+
+# The push body is a status document, not just a mtime: its disk_free_mb must reach the rule
+# through the real file, and a body that is absent or malformed must stay silent rather than
+# page on a guess.
+print -r -- '{"ts":1,"host":"ternak","disk_free_mb":500,"publisher":true}' > "$HB"
+out=$(run_once WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000); rc=$?
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_contains "$acts" "disk_low" "once: a fresh push reporting 500 MB free raises disk_low"
+t_assert_contains "$out" '"free_mb": 500' "once: the reported free space is carried in the state"
+
+print -r -- '{"ts":1,"host":"ternak","disk_free_mb":165000}' > "$HB"
+out=$(run_once WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_contains "$acts" "disk_recover" "once: space above the floor reports the recovery"
+
+print -r -- 'not json at all' > "$HB"
+out=$(run_once WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000); rc=$?
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_eq "" "$acts" "once: a malformed push body is silent, never a disk alert"
+t_assert_contains "$out" '"heartbeat": "fresh"' "once: a malformed body still counts as a fresh heartbeat"
 
 # --- the installer must not use the macOS system python, and must give the job a PATH -------
 # /usr/bin/python3 is the Xcode Command Line Tools build - 3.9.6, measured on this project's
@@ -523,6 +587,39 @@ t_assert_eq 0 $rc "the installer has a dry run"
 t_assert_contains "$out" "DRY RUN" "and it says so"
 t_assert_contains "$out" "python   : $T_BASE/fakepy/new/python3" "and reports the interpreter it would use"
 t_assert_no_file "$T_BASE/wd-dry/bin/yt_watchdog.py" "the dry run writes nothing at all"
+
+# The host must be able to say WHICH build it runs. It could not before: the live watchdog host
+# was found running a pre-2.4 yt_watchdog.py - no heartbeat code at all - while the streamer
+# said DEPLOY COMPLETE, and the only way to see it was to hash the file against a checkout.
+VER="$T_BASE/wd-real"
+out=$(HOME="$T_BASE/home" PATH="$STUBS:$PATH" WATCHDOG_PY_SEARCH="$T_BASE/fakepy/new/python3" \
+      /bin/sh "$INST" --prefix "$VER" 2>&1); rc=$?
+t_assert_eq 0 $rc "the installer installs without --start"
+t_assert_contains "$out" "version  : $(cat "$REPO_DIR/VERSION")" "and reports the version it stamped"
+t_assert_file "$VER/VERSION" "the install carries a VERSION stamp"
+if [ -f "$VER/VERSION" ] && [ "$(cat "$VER/VERSION")" = "$(cat "$REPO_DIR/VERSION")" ]; then
+  t_ok "the stamp is byte-identical to the tree it came from"
+else
+  t_bad "the stamp does not match the tree's VERSION"
+fi
+# and the watchdog reads that stamp back, so `status` answers the question on the host itself.
+out=$(WATCH_STATE_DIR="$VER" WATCH_ALERT_MODE=file PYTHONDONTWRITEBYTECODE=1 python3 -c "
+import importlib.util, os
+spec = importlib.util.spec_from_file_location('w', '$VER/bin/yt_watchdog.py')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+env = {'WATCH_STATE_DIR': '$VER', 'WATCH_ALERT_MODE': 'file'}
+print(m.program_version(m.Cfg(env)))
+" 2>&1)
+t_assert_eq "$(cat "$REPO_DIR/VERSION")" "$out" "and yt_watchdog.py reads the stamp back"
+# A hand-made or pre-2.7 install has no stamp; that must be stated, not guessed.
+out=$(WATCH_STATE_DIR="$T_BASE/no-stamp" PYTHONDONTWRITEBYTECODE=1 python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('w', '$REPO_DIR/bin/yt_watchdog.py')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+env = {'WATCH_STATE_DIR': '$T_BASE/no-stamp', 'WATCH_ALERT_MODE': 'file'}
+print(m.program_version(m.Cfg(env)))
+" 2>&1)
+t_assert_contains "$out" "unknown" "an unstamped install reports unknown rather than a version"
 
 t_teardown
 t_summary
