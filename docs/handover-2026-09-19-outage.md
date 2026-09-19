@@ -20,8 +20,15 @@ something is a hypothesis it says so.
    `sudo bin/harden-host.sh --go`. Full procedure in §4.
 4. **Resume the engineering work at §6 and §9.** The blocker is physical, nothing else.
 
-Repo state at handover: `main` = **4421ee8** (clean, = `origin/main`), wiki = **f74f76f** (clean),
-tags `v1.0`–`v2.3`, latest release **v2.3**, test suite **218 checks, `SUITE PASSED`**.
+Repo state at handover: `main` and the wiki are both clean and level with their remotes, tags
+`v1.0`–`v2.3`, latest release **v2.3**, test suite **218 checks, `SUITE PASSED`**, and the watchdog
+`ytlive-watchdog` is `enabled` + `active` on the VPS. (Deliberately no HEAD shas here: this file gets
+edited, and a self-referential sha is stale the moment it is committed. `git log` is the source.)
+
+> **The one action that unblocks everything is still physical: open the MacBook's lid.** If it
+> responds, run `bin/forensics.sh --save` before rebooting anything, then
+> `sudo bin/harden-host.sh --go`. The watchdog will email you the moment the channel is live again
+> — and the next session can pick up straight from §4 of the handover.
 
 ---
 
