@@ -96,7 +96,7 @@ Two further facts from the same investigation:
   application has gone silent even when the channel read is `unknown`. Deliberately, delivery is
   not implemented: the two options are a push endpoint or a restricted SSH pull, and choosing
   between them is a security decision, not a coding one.
-- **`tests/t09_net.sh`** — 39 checks driving the classifier through stubs (so the suite still
+- **`tests/t09_net.sh`** — 42 checks driving the classifier through stubs (so the suite still
   needs no network and cannot touch a real interface), the whole action ladder, the rate limits,
   the operator hold, and the safety property that no action may power-cycle a service or disable
   the radio. `tests/t07_watchdog.sh` grew 76 → 120 and `tests/t08_hosttools.sh` grew with the new

@@ -142,7 +142,7 @@ options are a small authenticated push endpoint on the watchdog host or a restri
 a forced `touch`, and choosing between them is a security decision, not a coding one. The shipped
 default is empty.
 
-**Tests.** `tests/t09_net.sh` is new with **39 checks** driving the classifier through stubs (so
+**Tests.** `tests/t09_net.sh` is new with **42 checks** driving the classifier through stubs (so
 the suite still needs no network and cannot touch a real interface), the whole action ladder, the
 rate limits, the operator hold, and the safety property that no action may power-cycle a service or
 disable the radio. `tests/t07_watchdog.sh` grew **76 → 120** (heartbeat rules and the second channel
@@ -175,7 +175,7 @@ the next function's closing brace, so a test could exercise the wrong text and s
 | `bin/yt_watchdog.py` | second channel reader over plain HTTPS (`WATCH_HTTP`), combined `live`/`offline`/`unknown` rule; dead-man heartbeat (`WATCH_HEARTBEAT`, `WATCH_HEARTBEAT_MAX`) |
 | `conf/stream.env.example` | `NET_*` knobs incl. `NET_ALLOW_REBOOT="no"`, and `LOG_MAX_BYTES_STREAM="2097152"` |
 | `conf/watchdog.env.example` | `WATCH_HTTP`, `WATCH_HTTP_TIMEOUT`, `WATCH_HTTP_URL`, `WATCH_HEARTBEAT`, `WATCH_HEARTBEAT_MAX`, with the delivery limit stated |
-| `tests/t09_net.sh` | **new** — 39 checks, stubbed, no network |
+| `tests/t09_net.sh` | **new** — 42 checks, stubbed, no network |
 | `tests/lib.sh` | `t_extract_fn` handles single-line function definitions |
 | `tests/t07_watchdog.sh` | 76 → 120 checks: heartbeat rules and the direct HTTP reader |
 | `tests/t08_hosttools.sh` | 27 → 46 checks: the forensics network section, the glob fix, and a missing-tools run |
