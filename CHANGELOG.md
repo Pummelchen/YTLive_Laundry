@@ -88,6 +88,19 @@ dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.*
   **Push, not pull, on purpose:** the streamer may post a status, but must never be able to reach
   into the host that holds the Gmail app password, while the streamer is the one holding the
   channel's OAuth token.
+- **The OAuth app stays in "Testing", so an elapsed token countdown is never a failure (T-01,
+  closed by decision 2026-09-19).** Publishing the app is not pursued, which makes the 7-day
+  Testing clock permanent and removes the one path that used to silence it. The countdown is
+  therefore advisory everywhere: `bin/yt_api.py token --offline` (what `status.sh --no-net`
+  runs) warns and exits 1 instead of reporting `EXPIRED`/exit 2 with "run: yt_api.py auth", and
+  `bin/yt_api.py auth` step 4 no longer tells the operator to publish. This was a live false
+  alarm: on 2026-09-19 the token was **14.3 days old** and Google still accepted it — the live
+  probe said `LIVE` and a real broadcast query succeeded — while the offline check showed a red
+  failure for a working credential. Nothing defensive was lost: the probe still decides,
+  `rotate_broadcast()` still refuses to cut rather than take the channel dark, and re-auth
+  (`yt_api.py auth`, device flow, works over SSH) is maintenance, not an emergency.
+  `tests/t04_token.sh` grew to 17 checks and pins that age alone never claims a dead token and
+  never sends the operator to re-auth.
 - **Tests.** `tests/t15_resilience.sh` (23 checks) drives the pending list through every outcome —
   verified, MISSING twice, never-resolving, adopted from the history, probe count carried forward,
   idempotent add — and tests the clock adoption behaviourally (a new broadcast adopts its real
@@ -97,8 +110,8 @@ dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.*
   grading command runs, and that the graded status still lands. `tests/t16_heartbeat.sh` (54 checks)
   drives a **real listener against a real pusher on loopback**: token accept/reject, method and path
   rejection, the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is
-  missing, and that the token never appears in the process arguments. The suite is now **627
-  checks** (t01 55, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38,
+  missing, and that the token never appears in the process arguments. The suite is now **631
+  checks** (t01 55, t02 12, t03 22, t04 17, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38,
   t12 57, t13 21, t14 25, t15 23, t16 54).
 
 ## 2.6 — 2026-09-19

@@ -23,23 +23,33 @@ One-time setup: console.cloud.google.com/apis/credentials -> enable "YouTube Dat
 auth` and paste the id and secret. It prints a short code to enter at google.com/device.
 No browser is needed on the streaming Mac, so this works fine over SSH.
 
-**The 7-day expiry is a "Testing" behaviour, not a fact of life.** A refresh token issued
-to an External OAuth app whose publishing status is "Testing" dies after 7 days. Publishing
-the app to **"In production"** removes that clock. Google verification is NOT required to
-escape it: an unverified published app still works for its owner - you click past one
-"Google hasn't verified this app -> Advanced -> Go to <app> (unsafe)" screen - and a
-100-user cap applies. Approval is only needed to remove that warning for *other* users.
+**The 7-day expiry is a "Testing" behaviour, not a fact of life - and the decision here is
+to live with it.** A refresh token issued to an External OAuth app whose publishing status
+is "Testing" dies after 7 days; publishing the app to **"In production"** removes that
+clock, and Google verification is not required for that (an unverified published app still
+works for its owner past one "Google hasn't verified this app -> Advanced -> Go to <app>"
+screen, with a 100-user cap). **That path is closed by operator decision (2026-09-19): the
+app stays in Testing and is not published.** So the clock is treated as PERMANENT, and
+nothing in this project may claim more than that.
 
-    console.cloud.google.com -> APIs & Services -> OAuth consent screen (Google Auth
-    Platform) -> Audience -> User type: External -> Publishing status: "In production"
-    -> Publish app
-    Keep the existing "TVs and Limited Input devices" client. Do NOT submit for
-    verification. Then re-run: bin/yt_api.py auth
-    Tokens issued while the app was Testing keep their 7-day life, so publishing without a
-    fresh auth changes nothing.
+Two consequences, both already implemented:
 
-`bin/yt_api.py auth` prints this same advice at its step 4, so the operator sees it at the
-moment it matters.
+- **The countdown is advisory and is NEVER the verdict.** `bin/yt_api.py token` mints a real
+  access token and reports `LIVE`/`DEAD`/`UNKNOWN`; the day countdown only predicts. Even
+  past it, an age-based reading warns (`WARN`) and never fails - on 2026-09-19 this token
+  was **14.3 days old** and Google still accepted it while `--offline` was returning
+  `EXPIRED` and telling the operator to re-auth, so a no-network health check showed a red
+  failure for a working credential. Age alone is not evidence, here or anywhere.
+- **A dead token cannot take the channel dark by itself.** `rotate_broadcast()` refuses to
+  cut when it cannot create the successor (`ROTATE_WITHOUT_API="no"`), so the channel keeps
+  streaming and the recording is lost instead of the stream. Re-auth is then a maintenance
+  task with no emergency, which is what makes the Testing status survivable:
+  `bin/yt_api.py auth` uses the device flow (a code at google.com/device), so it works over
+  SSH with no browser on the streaming Mac.
+
+The advice to publish the app is superseded by this decision: `bin/yt_api.py auth` step 4 and
+the countdown wording no longer tell the operator to publish, and none of them report an
+elapsed countdown as a dead credential.
 
 This installation is deliberately hardened for the case where the owner cannot publish, so
 a dead token cannot silently take the channel dark:

@@ -205,8 +205,8 @@ and `accept … bytes from 100.x` in `journalctl -u ytlive-heartbeat`.
 | `conf/ytlive-heartbeat.service` | **new** — the systemd unit for the listener, modelled on the watchdog's, ordered `Before=ytlive-watchdog.service` |
 | `tests/t16_heartbeat.sh` | **new** — 54 checks: a **real** listener against a **real** pusher on loopback — token accept/reject, method and path rejection (including HEAD), the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is missing, and that the token never appears in the process arguments |
 | `docs/files.md` | `log/vod_pending` added to the runtime-state list, with why it is not derived from the trimmed `rotation_history.log`; the heartbeat's `log/heartbeat.log` and the host-side state file |
-| `AGENTS.md` | the suite count: 520 → **627** checks |
-| `README.md` | the suite count: 520 → **627** checks |
+| `AGENTS.md` | the suite count: 520 → **631** checks |
+| `README.md` | the suite count: 520 → **631** checks |
 | `tests/t11_paths_pids.sh` | grew to 38: every script tracked 755 is now asserted, because `install.sh` chmods `bin/*.sh` and `bin/*.py`, so the 644 `bin/cam_time.py` of 2.6 left a deployed tree that could never be clean |
 | `log/vod_pending` (**runtime state, gitignored**) | the recordings still awaiting a verdict, one `<id> <probes>` per line; bounded by `VOD_MISSING_RETRIES` / `VOD_MAX_PROBES`, and adopted from the history on an install that predates it (T-12) |
 
@@ -221,7 +221,7 @@ the total below is the sum of the per-file counts.
 | `tests/t01_syntax.sh` | 55 | all passed |
 | `tests/t02_monitor_classify.sh` | 12 | all passed |
 | `tests/t03_files.sh` | 22 | all passed |
-| `tests/t04_token.sh` | 13 | all passed |
+| `tests/t04_token.sh` | 17 | all passed |
 | `tests/t05_rotation_gate.sh` | 15 | all passed |
 | `tests/t06_install.sh` | 21 | all passed |
 | `tests/t07_watchdog.sh` | 120 | all passed |
@@ -234,9 +234,9 @@ the total below is the sum of the per-file counts.
 | `tests/t14_monitor_beat.sh` | 25 | all passed |
 | `tests/t15_resilience.sh` | 23 | all passed |
 | `tests/t16_heartbeat.sh` | 54 | all passed |
-| **Total** | **627** | **`SUITE PASSED`** |
+| **Total** | **631** | **`SUITE PASSED`** |
 
-- The project's own suite, serially: **checked** — 627 checks, all passing. The runner reports
+- The project's own suite, serially: **checked** — 631 checks, all passing. The runner reports
   `ALL PASSED (N checks)` per file and `SUITE PASSED` at the end.
 - `tests/t15_resilience.sh` (new): **checked** — 23 checks. The pending list through every outcome
   (an id only in `vod_pending` is verified and dropped; a MISSING is recorded, re-probed once and
@@ -259,13 +259,18 @@ the total below is the sum of the per-file counts.
   the token appearing in no process's argv. `stream.sh`'s side is checked from the source: the
   pusher starts only with a non-empty `HEARTBEAT_URL`, an unreadable token file refuses the start,
   the trap reaps the pid, and the ON/OFF line is logged.
+- The token countdown on a **Testing** app: **checked** — `tests/t04_token.sh` (grew to 17) pins
+  that an elapsed countdown is `WARN`/exit 1 offline and `EXPIRING` with the probe's evidence
+  online, that it never says `EXPIRED` and never tells the operator to re-auth on age alone, and
+  that age alone is the only case where the message says so. Measured on the live streamer:
+  `token` → `probe LIVE`, `status.sh --no-net` → `WARN` (it used to be a red `FAIL`).
 - `tests/t11_paths_pids.sh`: grew to **38** — every script tracked 755, which is what caught the
   644 `bin/cam_time.py` of the 2.6 tree.
 - `bin/status.sh` (the T-08 surface): **checked** — its syntax is parsed by t01 and t11, and t15
   asserts the `FRAGMENT:` count is wired. That is a **source assertion**, not an execution against a
   log that actually holds fragments: no check here proves the warning renders correctly against a
   real `stream.log`.
-- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **627**
+- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **631**
   checks (they said 520 for 2.6, and then 569 while the t15 FRAGMENT checks and t16 were still
   uncounted).
 - `bin/smoke_test.sh`: **not checked** — it needs `conf/yt_oauth.json`, which is gitignored and in

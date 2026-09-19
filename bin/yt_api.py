@@ -271,11 +271,12 @@ def cmd_auth():
     print("  2. Enable 'YouTube Data API v3' for the project")
     print("  3. Create Credentials -> OAuth client ID -> application type 'TVs and Limited"
           " Input devices'")
-    print("  4. OAuth consent screen -> PUBLISH THE APP ('In production').")
-    print("     This matters: while the app is in 'Testing', Google expires the refresh")
-    print("     token after 7 DAYS and the stream would silently stop rotating. Publishing")
-    print("     shows an 'unverified app' warning you can click past - that is fine for a")
-    print("     personal app, and the token then does not expire.")
+    print("  4. Leave the OAuth consent screen in 'Testing'. Publishing the app to")
+    print("     'In production' is NOT pursued for this installation (owner decision,")
+    print("     2026-09-19), so the 7-day Testing clock is treated as permanent and")
+    print("     re-running this command is ordinary maintenance, not a failure. The stream")
+    print("     is defended against a lapsed token either way: rotations refuse to cut")
+    print("     rather than go dark, and the day countdown warns but never decides.")
     print("  5. Paste the client id and secret below\n")
     try:
         cid = input("client_id: ").strip()
@@ -386,11 +387,15 @@ def token_age_warning(probe_state=None):
         return None
     if left <= 0:
         if probe_state == "LIVE":
+            # The probe just proved the credential works, so the countdown is simply wrong
+            # about this token. Publishing is not pursued here (owner decision 2026-09-19),
+            # so this is the expected steady state, not a hint that the app went live.
             return (f"the {TOKEN_TTL_DAYS:.0f}-day Testing countdown has passed ({age:.1f} days "
-                    f"old) but Google still accepts the token - the OAuth app is probably "
-                    f"published now. Set YT_TOKEN_TTL_DAYS=0 to silence this.")
+                    f"old) and the probe proves the token still works - the countdown is "
+                    f"advisory only and this is expected here")
         return (f"refresh token is {age:.1f} days old and the {TOKEN_TTL_DAYS:.0f}-day Testing "
-                f"limit has passed. Run: bin/yt_api.py auth")
+                f"countdown has passed. That is age alone, not evidence - probe it (bin/yt_api.py "
+                f"token) and run bin/yt_api.py auth if Google rejects the refresh")
     if left <= TOKEN_WARN_DAYS:
         return (f"refresh token expires in {left:.1f} days ({age:.1f} days old, Testing apps "
                 f"get {TOKEN_TTL_DAYS:.0f}). Re-run bin/yt_api.py auth before then or the "
@@ -1251,11 +1256,25 @@ def cmd_token(offline=False):
             print(json.dumps({"status": "UNKNOWN", "offline": True,
                               "msg": f"{CREDS} has no authorised_at - run: bin/yt_api.py auth"}))
             return 2
-        state = "EXPIRED" if left <= 0 else ("EXPIRING" if left <= TOKEN_WARN_DAYS else "OK")
+        # A countdown is a PREDICTION, so an elapsed one is never reported as a dead token -
+        # not here and not in the live path. Measured 2026-09-19: this refresh token was 14.3
+        # days old and Google still accepted it (the live probe said LIVE and a real broadcast
+        # query succeeded) while `--offline` returned EXPIRED/exit 2 and told the operator to
+        # re-auth. `status.sh --no-net` passes this flag, so that false red light is what a
+        # no-network health check showed. Warn, never fail, on age alone.
+        if left <= 0:
+            print(json.dumps({"status": "WARN", "offline": True,
+                              "age_days": round(age, 2), "days_left": round(left, 2),
+                              "msg": (f"refresh token is {age:.1f} days old and the "
+                                      f"{TOKEN_TTL_DAYS:.0f}-day Testing countdown has passed, "
+                                      f"but offline this is AGE ONLY and proves nothing - run "
+                                      f"without --offline to probe: bin/yt_api.py token")}))
+            return 1
+        state = "EXPIRING" if left <= TOKEN_WARN_DAYS else "OK"
         print(json.dumps({"status": state, "offline": True,
                           "age_days": round(age, 2), "days_left": round(left, 2),
                           "msg": token_age_warning() or ""}))
-        return {"OK": 0, "EXPIRING": 1, "EXPIRED": 2}[state]
+        return {"OK": 0, "EXPIRING": 1}[state]
 
     state, detail = probe_refresh_token()
     age, left = token_age()

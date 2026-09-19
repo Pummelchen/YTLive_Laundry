@@ -47,12 +47,26 @@ m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 print(m.token_age_warning("LIVE") or "")
 PY
 )
-t_assert_contains "$warn" "published" "an elapsed countdown on a LIVE token is reported as probable-publication, not an outage"
+t_assert_contains "$warn" "advisory only" "an elapsed countdown on a LIVE token is reported as advisory, not an outage"
 if print -r -- "$warn" | grep -q "EXPIRED"; then
   t_bad "an elapsed countdown still says EXPIRED even though the probe proved the token live"
 else
   t_ok "an elapsed countdown never says EXPIRED when the probe proved the token live"
 fi
+
+# --- offline: an elapsed countdown must never be a FAIL -----------------------------------
+# Measured 2026-09-19: the live token was 14.3 days old and Google still accepted it, while
+# `token --offline` (what `status.sh --no-net` runs) returned EXPIRED/exit 2 and told the
+# operator to re-auth. Age is a prediction; the offline path proves nothing, so it warns.
+out=$(run token --offline 2>&1); rc=$?
+t_assert_eq "1" "$rc" "token --offline past the countdown warns (exit 1), it does not fail"
+t_assert_contains "$out" '"status": "WARN"' "the offline status is WARN, not EXPIRED"
+if print -r -- "$out" | grep -qE "EXPIRED|Run: bin/yt_api.py auth"; then
+  t_bad "the offline countdown still claims the token is dead (EXPIRED / re-auth) on age alone"
+else
+  t_ok "the offline countdown never claims the token is dead on age alone"
+fi
+t_assert_contains "$out" "proves nothing" "it says plainly that age alone proves nothing"
 
 warn2=$(BASE="$T_BASE" python3 - <<PY
 import importlib.util
