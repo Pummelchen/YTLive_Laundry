@@ -158,6 +158,23 @@ packs it, so a release cannot ship a tree that fails either.
   because WireGuard encrypts it; do not add TLS. The push direction is deliberate: the
   watchdog host holds the Gmail app password and must never be able to reach into the
   streamer. `conf/*.token` is gitignored.
+- **A change that spans the streamer and the watchdog host is not live until BOTH are
+  deployed — and nothing tells you when they disagree.** They are separate installs with
+  separate installers and no version stamp on the host: `bin/deploy-release.sh --tag vX.Y`
+  on the streamer, `bin/watchdog-install.sh --start` on the watchdog host (it keeps an
+  existing live `conf/watchdog.env`, so a re-install cannot disarm a configured heartbeat).
+  Measured 2026-09-19: the host was still running a **pre-2.4** `yt_watchdog.py` — the
+  stale-heartbeat rule existed only in the repo, so a freshly deployed push/listener pair
+  could not have alerted. Before claiming a cross-host feature works, hash or diff the
+  host's `$PREFIX/bin/*.py` against the tagged tree, and run `bin/yt_watchdog.py status`
+  there to read what it actually decides.
+- **A published release tag is never moved; cut a new version instead.** A moved tag
+  silently breaks `git fetch --tags` on clones that already hold the old object (they need
+  `--force`, and without it they stay on old code with no error), and it invalidates
+  archives and digests published from the old object. The 2026-09-19 `v2.7` re-cut is a
+  **one-time recorded exception**: T-34 was a 2.7-scoped row cut before it landed, the only
+  installed consumer (the streamer) was force-fetched in the same change, and the GitHub
+  release was re-published and re-verified. Do not read it as a precedent.
 - **`CAM_LINK_TIMEOUT="45"` is declared in `conf/stream.env.example` but read by no
   script.** It is one of the dead knobs listed below, and its old comment claimed the
   watchdog watched the camera's TCP session "instead" of the output frame counter -

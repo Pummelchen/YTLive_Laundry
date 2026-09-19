@@ -152,6 +152,15 @@ Verify the Release: the notes quote the digest in the `.sha256` beside it, the
 assets are the archive and its checksum, and the changelog points at the same tag.
 Leave previous releases' notes and performance tables alone.
 
+**If the release carries a change to the external watchdog, verify the host too.** The
+streamer and the watchdog host are separate installs (`bin/deploy-release.sh` and
+`bin/watchdog-install.sh`), the host carries no version stamp, and nothing cross-checks
+them — so a release can be "deployed" while the host still runs an older build. That is
+not theoretical: on 2026-09-19 the host was found running a pre-2.4 `yt_watchdog.py`
+whose heartbeat code the release depended on. Compare `$PREFIX/bin/*.py` on the host
+against the tag, and read `bin/yt_watchdog.py status` there, before reporting the feature
+live.
+
 ## 1.10 Rules, agents and other repositories
 
 - **These rules live in this repository and are edited only here.** They are not
