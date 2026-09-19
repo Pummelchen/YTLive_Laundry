@@ -46,6 +46,9 @@ RTMP session.
   holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
   unit for the always-on host).
 - `docs/` — 9 design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
+  **`docs/handover-2026-09-19-outage.md` is a LIVE handover for the open 2026-09-18 outage: read it
+  first if the streamer is still offline, and delete it — recording the removal — once the incident
+  is closed.** `docs/v3-datacenter-plan.md` is an unscheduled v3.0 proposal.
   `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
   `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by

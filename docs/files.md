@@ -42,6 +42,11 @@
     conf/ytlive-watchdog.service  the systemd unit for the always-on watchdog host
     docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
                              ...) plus the per-release notes release-notes-vX.Y.md
+    docs/handover-2026-09-19-outage.md  LIVE handover for the open 2026-09-18 outage: read first,
+                             delete once the incident is closed
+    docs/v3-datacenter-plan.md          unscheduled v3.0 proposal (push-based SRT, Hetzner SG)
+    docs/task-table-standard.md         the ONE task-table standard: columns, types, statuses,
+                             sizes, ownership, and the ordering that is the priority
     tests/                   the credential-free suite: tests/run.sh and its README
     backup/                  frozen snapshots of what was deployed (backup/README.md)
     log/                     runtime state, gitignored. Files the project reads back:
