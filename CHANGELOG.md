@@ -11,9 +11,10 @@ to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
 ## 2.7 — 2026-09-19
 
-**Four silent failure modes in the stream's own restarts and bookkeeping: a stale rotation clock, a
+**Five silent failure modes in the stream's own restarts and bookkeeping: a stale rotation clock, a
 recording whose verdict fell out of a trimmed log, a bounce that signalled a pid it no longer
-owned, and a heartbeat written so late that a healthy monitor could be killed for being slow.**
+owned, a heartbeat written so late that a healthy monitor could be killed for being slow, and a
+dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.**
 
 - **T-08 — a restart can no longer leave the rotation loop holding a dead broadcast's age.** A
   publisher death or a stall makes `stream.sh` restart ffmpeg, and YouTube's `enableAutoStop` closes
@@ -66,15 +67,39 @@ owned, and a heartbeat written so late that a healthy monitor could be killed fo
   local: `tests/t14_monitor_beat.sh` reads both numbers out of the sources and fails if they cross,
   and proves behaviourally that a hanging pass is killed at the ceiling, returns nothing, and exits
   non-zero — which the monitor reads as `NOSTATUS` and handles on the never-act path.
-- **Tests.** `tests/t15_resilience.sh` (21 checks) drives the pending list through every outcome —
+- **T-34 — the dead-man heartbeat is delivered: the streamer pushes, the watchdog host listens.**
+  `yt_watchdog.py` has had the rule since 2.4 — a `WATCH_HEARTBEAT` file older than
+  `WATCH_HEARTBEAT_MAX` means the streamer's **application** has gone silent even while the channel
+  read is UNKNOWN — but **nothing ever wrote that file**, so the rule could never fire. The operator
+  chose the HTTP PUSH: `bin/yt_heartbeat.py serve` runs on the watchdog host and `… push` runs on
+  the streamer, one stdlib-only file for both ends so the wire format has one implementation.
+  `stream.sh` starts the pusher **only when `HEARTBEAT_URL` is set**, passes the secret as a
+  **file path and never as an argv value** (argv is world-readable through `ps`, the same rule the
+  camera credentials already follow), refuses to start when the token file is unreadable — so a
+  misconfiguration lands in the log instead of hiding behind a signal that looks deliberately off —
+  and reaps it in the TERM/INT trap. The listener takes one `POST /heartbeat` behind a bearer token
+  compared in constant time, caps the body at 8 KB, writes atomically (temp + `os.replace`) at mode
+  600, answers 401/404/405 for everything else, and exits non-zero on a bind failure. **An
+  unconfigured install stays completely silent, and that is the safety property the template
+  encodes:** an *absent* file is "unconfigured" and never alerts, only a *stale* one does — so
+  `conf/watchdog.env.example` ships `WATCH_HEARTBEAT=""` and arming it is the operator's explicit
+  step (uncomment the path, restart the watchdog, and only once the pushes are arriving; arming the
+  watchdog in front of a streamer that never pushed is a real page for a healthy streamer).
+  **Push, not pull, on purpose:** the streamer may post a status, but must never be able to reach
+  into the host that holds the Gmail app password, while the streamer is the one holding the
+  channel's OAuth token.
+- **Tests.** `tests/t15_resilience.sh` (23 checks) drives the pending list through every outcome —
   verified, MISSING twice, never-resolving, adopted from the history, probe count carried forward,
   idempotent add — and tests the clock adoption behaviourally (a new broadcast adopts its real
   start; an unchanged one re-uses the stored clock and costs no API call), plus the source
   assertions that the bounce uses the pidfile and that both restart paths arm the retry.
   `tests/t14_monitor_beat.sh` (25 checks) proves the heartbeat is already fresh at the instant the
-  grading command runs, and that the graded status still lands. The suite is now **569 checks**
-  (t01 53, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38, t12 57,
-  t13 21, t14 25, t15 21).
+  grading command runs, and that the graded status still lands. `tests/t16_heartbeat.sh` (54 checks)
+  drives a **real listener against a real pusher on loopback**: token accept/reject, method and path
+  rejection, the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is
+  missing, and that the token never appears in the process arguments. The suite is now **627
+  checks** (t01 55, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38,
+  t12 57, t13 21, t14 25, t15 23, t16 54).
 
 ## 2.6 — 2026-09-19
 

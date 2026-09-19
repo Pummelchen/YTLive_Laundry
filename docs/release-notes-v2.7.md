@@ -1,6 +1,6 @@
-# YTLive_Laundry 2.7 — the clock a restart stranded, the verdict a trimmed log ate, the bounce aimed at a stale pid, and the heartbeat written too late
+# YTLive_Laundry 2.7 — the clock a restart stranded, the verdict a trimmed log ate, the bounce aimed at a stale pid, the heartbeat written too late, and the dead-man signal nothing ever wrote
 
-2.7 closes four silent failure modes in the stream's own restarts and bookkeeping. A restart could
+2.7 closes five silent failure modes in the stream's own restarts and bookkeeping. A restart could
 strand the rotation loop on the **dead broadcast's age**, so the loop could fire a rotation early
 and cut a **second short recording out of the same session** — and a bad picture with an
 **unreachable camera** no longer restarts the publisher at all, because that restart cannot fix the
@@ -10,6 +10,12 @@ fall out of `rotation_history.log`, which is deliberately trimmed to the last 10
 publisher could be restarted underneath it (T-19), and the monitor wrote its heartbeat only
 **after** the grading pass, so one slow pass could get a healthy monitor killed for being slow
 (T-20). Full detail is in [`CHANGELOG.md`](../CHANGELOG.md).
+
+And the watchdog's dead-man rule — since 2.4 it has been able to page when a **streamer application**
+stops reporting even while the channel read is UNKNOWN, but **nothing ever wrote the file it
+watches**, so the rule could not fire once (T-34). It is delivered now: the streamer pushes its own
+status to a listener on the watchdog host, which is the one direction that does not hand the
+streamer a door into the host holding the mail password.
 
 - Built from tag `v2.7`
 - Contents: the tagged tree **without `MP3/`**, without `backup/` and without `AUDIT/`. The
@@ -146,6 +152,42 @@ evidence of a bad picture, so it never triggers a restart. And `tests/t14_monito
 takes about **20 s**: it is behavioural rather than mocked, and it is one of the slower files in the
 suite.
 
+## T-34 — the dead-man heartbeat is delivered: the streamer pushes, the watchdog host listens
+
+`yt_watchdog.py` has had the rule since 2.4: a `WATCH_HEARTBEAT` file older than
+`WATCH_HEARTBEAT_MAX` means the streamer's **application** has gone silent, and that is a distinct
+verdict from "the channel read is UNKNOWN". **Nothing ever wrote the file**, so the rule could not
+fire — the off-host watchdog could only ever learn about a broken streamer from YouTube's own view,
+which is exactly the blind spot the 2026-09-18 transport loss sat in.
+
+The operator chose the **HTTP push** over a restricted SSH pull, because a pull would give the
+streamer a way into the host that holds the Gmail app password while the streamer is the one holding
+the channel's OAuth token. `bin/yt_heartbeat.py` is one stdlib-only file for both ends, so the wire
+format has one implementation:
+
+- **`serve` (the watchdog host).** One `POST /heartbeat` behind a bearer token compared in constant
+  time, an 8 KB body cap, an atomic write (temp file + `os.replace`) at mode 600, and 401/404/405 for
+  everything else — one log line per accept and per reject. A malformed request cannot take the
+  listener down, and a **bind failure exits non-zero**: a listener that is silently not listening is
+  worse than no listener at all.
+- **`push` (the streamer).** Timestamp, host, uptime, free disk MB, publisher liveness, the recorded
+  network state and the current broadcast id. The token comes from a **file or the environment and
+  never from argv** — argv is readable through `ps`, the same rule this project already applies to
+  the camera credentials.
+
+`stream.sh` starts the pusher **only when `HEARTBEAT_URL` is set**, refuses to start it when the
+token file is unreadable, logs the signal ON or OFF explicitly, and reaps it in the TERM/INT trap.
+An unconfigured install stays silent, which is safe because **an absent heartbeat file never
+alerts** — only a stale one does. That asymmetry is the safety property the template encodes:
+`conf/watchdog.env.example` ships `WATCH_HEARTBEAT=""`, `tests/t07_watchdog.sh` pins it, and a fresh
+clone cannot page anyone.
+
+**The limit — arming is a deliberate, ordered operator step.** Uncomment the `WATCH_HEARTBEAT` path
+on the watchdog host, restart the watchdog, and only once the pushes are arriving: an armed watchdog
+in front of a streamer that never pushed is a **real page for a healthy streamer**, because the file
+really is stale. The two places to look are `heartbeat: dead-man signal ON` in the streamer's log
+and `accept … bytes from 100.x` in `journalctl -u ytlive-heartbeat`.
+
 ## Files in this release
 
 | File | Change |
@@ -155,11 +197,16 @@ suite.
 | `conf/stream.env.example` | `CLOCK_RETRY_EVERY="30"`, `CLOCK_RETRY_WINDOW="300"`, `VOD_MISSING_RETRIES="2"`, `VOD_MAX_PROBES="10"`, `CHECK_TIMEOUT="420"`, each with the reasoning beside it |
 | `bin/status.sh` | T-08: counts the `FRAGMENT:` lines in `log/stream.log` and warns on the health page, so a short VOD is explained where a human looks, naming what can still fragment (a stall or an OOM kill; a dead-camera restart no longer can) |
 | `tests/t14_monitor_beat.sh` | **new** — 25 checks: the heartbeat exists and is fresh (< 2 s) at the instant the grader runs, on more than one iteration; the graded status still lands; `CHECKING` is not a graded status; `beat_sleep` keeps beating through a long backoff; `CHECK_TIMEOUT < MONITOR_STALE` read from the sources; a hanging pass is killed, returns nothing and exits non-zero; and both directions of the dead-camera guard (T-20, T-08) |
-| `tests/t15_resilience.sh` | **new** — 21 checks: the pending list through verified / MISSING twice / never-resolving / adopted from the history / probe count carried / idempotent add; the clock adoption behaviourally (a new broadcast adopts its real start, an unchanged one re-uses the stored clock and costs no API call); the bounce uses the pidfile and `await_broadcast` no longer kills `$PUBPID`; both restart paths arm the retry; the `FRAGMENT:` line exists and `status.sh` counts it (T-12, T-08, T-19) |
-| `docs/files.md` | `log/vod_pending` added to the runtime-state list, with why it is not derived from the trimmed `rotation_history.log` |
-| `AGENTS.md` | the suite count: 520 → **569** checks |
-| `README.md` | the suite count: 520 → **569** checks |
-| `RELEASE.md` | the suite count: 520 → **569** checks |
+| `tests/t15_resilience.sh` | **new** — 23 checks: the pending list through verified / MISSING twice / never-resolving / adopted from the history / probe count carried / idempotent add; the clock adoption behaviourally (a new broadcast adopts its real start, an unchanged one re-uses the stored clock and costs no API call); the bounce uses the pidfile and `await_broadcast` no longer kills `$PUBPID`; both restart paths arm the retry; the `FRAGMENT:` line exists, `status.sh` counts it, and `ROTATE_MIN_INTERVAL` outlasts a whole `await_broadcast` (T-12, T-08, T-19) |
+| `bin/yt_heartbeat.py` | **new** — the dead-man transport in one stdlib-only file: `serve` (bearer token in constant time, 8 KB cap, atomic 0600 write, 401/404/405, non-zero exit on bind failure) and `push` (timestamp, host, uptime, disk MB, publisher liveness, network state, broadcast id; token from file or env, never argv) (T-34) |
+| `bin/stream.sh` | T-34: `start_heartbeat` starts the pusher only when `HEARTBEAT_URL` is set, refuses to start when the token file is unreadable, logs ON/OFF, and the TERM/INT trap reaps it |
+| `conf/stream.env.example` | T-34: `HEARTBEAT_URL` (empty = the signal is OFF), `HEARTBEAT_TOKEN_FILE`, `HEARTBEAT_INTERVAL` (300 s) |
+| `conf/watchdog.env.example` | T-34: the receive side (`HEARTBEAT_BIND`, `HEARTBEAT_PORT`, `HEARTBEAT_STATE_FILE`, `HEARTBEAT_TOKEN_FILE`) and `WATCH_HEARTBEAT=""` **shipped empty on purpose** — an absent file never alerts, an armed watchdog with no pusher is a page for a healthy streamer |
+| `conf/ytlive-heartbeat.service` | **new** — the systemd unit for the listener, modelled on the watchdog's, ordered `Before=ytlive-watchdog.service` |
+| `tests/t16_heartbeat.sh` | **new** — 54 checks: a **real** listener against a **real** pusher on loopback — token accept/reject, method and path rejection (including HEAD), the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is missing, and that the token never appears in the process arguments |
+| `docs/files.md` | `log/vod_pending` added to the runtime-state list, with why it is not derived from the trimmed `rotation_history.log`; the heartbeat's `log/heartbeat.log` and the host-side state file |
+| `AGENTS.md` | the suite count: 520 → **627** checks |
+| `README.md` | the suite count: 520 → **627** checks |
 | `tests/t11_paths_pids.sh` | grew to 38: every script tracked 755 is now asserted, because `install.sh` chmods `bin/*.sh` and `bin/*.py`, so the 644 `bin/cam_time.py` of 2.6 left a deployed tree that could never be clean |
 | `log/vod_pending` (**runtime state, gitignored**) | the recordings still awaiting a verdict, one `<id> <probes>` per line; bounded by `VOD_MISSING_RETRIES` / `VOD_MAX_PROBES`, and adopted from the history on an install that predates it (T-12) |
 
@@ -171,7 +218,7 @@ the total below is the sum of the per-file counts.
 
 | Test file | Checks | Result |
 |---|---|---|
-| `tests/t01_syntax.sh` | 53 | all passed |
+| `tests/t01_syntax.sh` | 55 | all passed |
 | `tests/t02_monitor_classify.sh` | 12 | all passed |
 | `tests/t03_files.sh` | 22 | all passed |
 | `tests/t04_token.sh` | 13 | all passed |
@@ -185,31 +232,42 @@ the total below is the sum of the per-file counts.
 | `tests/t12_deploy.sh` | 57 | all passed |
 | `tests/t13_quota.sh` | 21 | all passed |
 | `tests/t14_monitor_beat.sh` | 25 | all passed |
-| `tests/t15_resilience.sh` | 21 | all passed |
-| **Total** | **569** | **`SUITE PASSED`** |
+| `tests/t15_resilience.sh` | 23 | all passed |
+| `tests/t16_heartbeat.sh` | 54 | all passed |
+| **Total** | **627** | **`SUITE PASSED`** |
 
-- The project's own suite, serially: **checked** — 569 checks, all passing. The runner reports
+- The project's own suite, serially: **checked** — 627 checks, all passing. The runner reports
   `ALL PASSED (N checks)` per file and `SUITE PASSED` at the end.
-- `tests/t15_resilience.sh` (new): **checked** — 21 checks. The pending list through every outcome
+- `tests/t15_resilience.sh` (new): **checked** — 23 checks. The pending list through every outcome
   (an id only in `vod_pending` is verified and dropped; a MISSING is recorded, re-probed once and
   then dropped at `VOD_MISSING_RETRIES`; an unresolved id is bounded at `VOD_MAX_PROBES` and says
   so; a history id is adopted; the probe count is carried forward; the add is idempotent and an
   empty id is not recorded), the clock adoption behaviourally, the wiring for the pidfile bounce
-  and the two retry sites, and that `status.sh` counts the `FRAGMENT:` lines.
+  and the two retry sites, that `status.sh` counts the `FRAGMENT:` lines, and that
+  `ROTATE_MIN_INTERVAL` outlasts a whole `await_broadcast`.
 - `tests/t14_monitor_beat.sh` (new): **checked** — 25 checks. The heartbeat existed and was under
   2 s old at the instant the grading command ran, on a later iteration too; the graded status
   overwrote it afterwards; `CHECKING` is not a `yt_check.py` status; `beat_sleep` wrote one beat per
   30 s chunk; `CHECK_TIMEOUT < MONITOR_STALE` as read from the sources; a hanging pass was killed at
   the ceiling, returned no output and exited non-zero; and the dead-camera guard held the restart
   with the camera down while the same picture restarted it with the camera up.
+- `tests/t16_heartbeat.sh` (new): **checked** — 54 checks, and **behavioural rather than mocked**: a
+  real `yt_heartbeat.py serve` on loopback against a real `push`, so the wire format is exercised
+  end to end. Token accept/reject and an absent header; a non-POST method (including HEAD) and a
+  wrong path rejected 404/405; a body over the 8 KB cap rejected 413; the state file written
+  atomically at mode 600; the pusher degrading gracefully when every runtime file is missing; and
+  the token appearing in no process's argv. `stream.sh`'s side is checked from the source: the
+  pusher starts only with a non-empty `HEARTBEAT_URL`, an unreadable token file refuses the start,
+  the trap reaps the pid, and the ON/OFF line is logged.
 - `tests/t11_paths_pids.sh`: grew to **38** — every script tracked 755, which is what caught the
   644 `bin/cam_time.py` of the 2.6 tree.
 - `bin/status.sh` (the T-08 surface): **checked** — its syntax is parsed by t01 and t11, and t15
   asserts the `FRAGMENT:` count is wired. That is a **source assertion**, not an execution against a
   log that actually holds fragments: no check here proves the warning renders correctly against a
   real `stream.log`.
-- `AGENTS.md`, `README.md` and `RELEASE.md`: **checked** — all three now state the credential-free
-  suite is **569** checks (they said 520 for 2.6).
+- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **627**
+  checks (they said 520 for 2.6, and then 569 while the t15 FRAGMENT checks and t16 were still
+  uncounted).
 - `bin/smoke_test.sh`: **not checked** — it needs `conf/yt_oauth.json`, which is gitignored and in
   no archive, so it cannot pass inside a release. It is not a release gate.
 - The dead-camera guard against a **real camera**: **not checked** — t14 uses a stubbed `nc`, a
@@ -229,11 +287,16 @@ The channel is live, so this is a normal deploy: `bin/status.sh` and `bin/smoke_
 streamer first, then `bin/deploy-release.sh --tag v2.7`. Read
 [Updating and rollback](https://github.com/Pummelchen/YTLive_Laundry/wiki/Updating-and-Rollback)
 first. There is no config migration: every new tunable has a default in the scripts, so an
-unchanged `conf/stream.env` keeps working. Three things are worth checking after the first restart:
+unchanged `conf/stream.env` keeps working. Four things are worth checking after the first restart:
 
 - `log/vod_pending` should exist and hold one `<id> <probes>` line per recording still awaiting a
   verdict; each rotation adds one and a settled one leaves. An absent file just means nothing has
   rotated since the deploy. `log/vod_status` is still the verdict record.
+- The dead-man signal (T-34) is **installed but not armed**: the listener on the watchdog host runs,
+  and the streamer's pusher starts only once `HEARTBEAT_URL` is set and a token file exists. Arm it
+  in that order — pusher first, watchdog second — and confirm the pushes are arriving
+  (`log/heartbeat.log` on the streamer, `journalctl -u ytlive-heartbeat` on the host) **before**
+  pointing `WATCH_HEARTBEAT` at the state file. Arming first pages for a healthy streamer.
 - `log/monitor.heartbeat` should read `CHECKING` **while a pass is running** and the graded status
   (`OK`, `FROZEN`, …) between passes. In `conf/stream.env`, `CHECK_TIMEOUT` must stay below
   `MONITOR_STALE`; if a heartbeat older than `MONITOR_STALE` (600 s) is ever seen, the monitor is
