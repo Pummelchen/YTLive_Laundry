@@ -73,7 +73,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 701 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 707 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -138,7 +138,7 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 701 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 707 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone

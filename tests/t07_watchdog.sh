@@ -259,6 +259,30 @@ ck(wd.http_channel_state(C) == "unknown", "HTTP reader: a network error is unkno
 wd.urllib.request.urlopen = http_stub(ValueError("unexpected body"))
 ck(wd.http_channel_state(C) == "unknown", "HTTP reader: any exception becomes unknown without escaping")
 
+# The shape measured on 2026-09-20, when the old single marker vanished and this reader went
+# blind from the watchdog host. Both directions must be POSITIVE evidence: a live channel serves
+# a VIDEO page, a channel that is not broadcasting serves its CHANNEL page for /live.
+wd.urllib.request.urlopen = http_stub(
+    '<html>ytInitialPlayerResponse {"videoViewCountRenderer":{"isLive":true},'
+    '"liveIndicatorText":"LIVE","videoDetails":{}} "playabilityStatus":{}</html>')
+ck(wd.http_channel_state(C) == "live",
+   "HTTP reader: the 2026-09 video page (isLive:true + liveIndicatorText) reads live")
+wd.urllib.request.urlopen = http_stub(
+    '<html>{"channelMetadataRenderer":{"title":"a channel"}}'
+    '<link rel="canonical" href="https://www.youtube.com/channel/UCabc"></html>')
+ck(wd.http_channel_state(C) == "offline",
+   "HTTP reader: the channel page served for /live reads offline (nothing is broadcasting)")
+# The dangerous half: absence of a live marker is NOT enough. A page that is neither shape (a
+# further markup change) must stay unknown, or a live stream would be paged as dark.
+wd.urllib.request.urlopen = http_stub('<html>{"someFutureRenderer":{"live":false}}</html>')
+ck(wd.http_channel_state(C) == "unknown",
+   "HTTP reader: neither shape (a future markup change) is unknown, NOT offline")
+# And a channel page that somehow still carries video-page keys is not trusted either.
+wd.urllib.request.urlopen = http_stub(
+    '<html>{"channelMetadataRenderer":{}} "playabilityStatus":{}</html>')
+ck(wd.http_channel_state(C) == "unknown",
+   "HTTP reader: channel-page and video-page keys together are contradictory, so unknown")
+
 # Both URL shapes must be built and actually requested.
 Cid = cfg(WATCH_CHANNEL="UC" + "a" * 22)
 ck(C.channel_url == "https://www.youtube.com/@ternaklaundrybengkong/live",
@@ -268,10 +292,18 @@ ck(Cid.channel_url == "https://www.youtube.com/channel/UC" + "a" * 22 + "/live",
 seen = {}
 def _capture(req, timeout=None):
     seen["url"] = req.full_url
-    return _FakeResp(b'"isLiveNow":true')
+    seen["headers"] = {k.lower(): v for k, v in req.header_items()}
+    return _FakeResp(b'"isLive":true')
 wd.urllib.request.urlopen = _capture
 wd.http_channel_state(Cid)
 ck(seen.get("url") == Cid.channel_url, "HTTP reader fetches the channel-id URL it was given")
+# The consent cookie is what stops a European address being answered with the consent wall, and
+# the language pin stops the surrounding markup (and its key names) varying by IP. Measured
+# 2026-09-20: without the cookie the same URL returned a 302 and this reader stayed blind.
+ck("socs=cai" in (seen.get("headers", {}).get("cookie") or "").lower(),
+   "HTTP reader sends the consent cookie, so a European address gets the page and not the wall")
+ck((seen.get("headers", {}).get("accept-language") or "").startswith("en"),
+   "HTTP reader pins an English Accept-Language so the key names it matches do not vary by IP")
 wd.urllib.request.urlopen = _real_urlopen
 
 # the combination rule: either live wins, only TWO offline reads agree on offline

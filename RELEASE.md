@@ -247,7 +247,7 @@ live.
 - **§1.5's four gates, mapped to this repository.**
   - *Lint* — the syntax gate: `zsh -n` per shell file and `ast.parse` per Python module. There
     has never been another linter here, so this is the whole of it.
-  - *Test suite* — `tests/run.sh`, 701 checks, run serially, reporting the count that passed. It
+  - *Test suite* — `tests/run.sh`, 707 checks, run serially, reporting the count that passed. It
     was added in 2.0; 1.0 has none, and its notes record that as **not checked** rather than
     implying a green run.
   - *Parity / golden* — the archive hash-match: for this project "the output is unchanged" means

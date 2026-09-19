@@ -84,13 +84,23 @@ OFFLINE_SIGNS = ("not currently live", "does not have a live", "is not live",
                  "not currently streaming", "this live event will begin",
                  "the channel is not currently live")
 
-# The public channel page carries this JSON flag: true while the channel is broadcasting,
-# false when it is not. Verified by hand against the live shop channel on 2026-09-19, and it
-# is the whole reason the second reader can exist without yt-dlp. Whitespace is stripped from
-# the body before the search so a reformatted "isLiveNow": true still matches; anything else
-# (a consent wall, a bot check, a markup change) is UNKNOWN, never offline.
-LIVE_MARKER = '"isLiveNow":true'
+# The keys the public /<channel>/live document is read by. Measured from the watchdog host on
+# 2026-09-20, when the old single marker stopped appearing entirely and this reader went blind:
+#
+#   LIVE     a video page - `"isLive":true` inside videoViewCountRenderer, plus liveIndicatorText,
+#            videoDetails and playabilityStatus
+#   OFFLINE  the channel page YouTube serves for /live when nothing is broadcasting -
+#            channelMetadataRenderer and a canonical /channel/UC… link, and none of the video keys
+#
+# Whitespace is stripped from the body before the search, so a reformatted `"isLive": true`
+# matches. `"isLiveNow"` is kept because older page variants used it. A document that fits
+# NEITHER shape - a consent wall, a bot check, a further markup change, an error - is UNKNOWN,
+# never offline: reporting a false offline would page for a healthy stream.
+LIVE_MARKERS = ('"isLive":true', '"isLiveNow":true')
+LIVE_INDICATOR = "liveIndicatorText"
 DARK_MARKER = '"isLiveNow":false'
+CHANNEL_PAGE_MARKER = "channelMetadataRenderer"
+VIDEO_PAGE_MARKER = "playabilityStatus"
 
 # A page this size is already far past the marker; the cap keeps a pathological response from
 # pulling all of memory into a watchdog that has to stay small.
@@ -274,26 +284,49 @@ def http_channel_state(cfg):
     and made its recovery mail 5 h 21 m late. This read shares no code, no credential and no
     rate limit with yt-dlp, so the two fail independently.
 
-    It deliberately reuses the same three-word vocabulary: a 200 page without the marker (a
-    consent wall, a bot check, a YouTube markup change) is "unknown", NOT evidence that the
-    channel is dark, so it can never page anyone by itself.
+    **Both directions are POSITIVE evidence, and that is the design rule here.** Measured from
+    the off-host watchdog on 2026-09-20, YouTube serves two visibly different documents for
+    `/<channel>/live`:
+
+      * a LIVE channel answers with a **video page**: `"isLive":true` (inside
+        `videoViewCountRenderer`), `liveIndicatorText`, `videoDetails` and `playabilityStatus`;
+      * a channel that is NOT live answers with its **channel page**: `channelMetadataRenderer`
+        and a canonical `/channel/UC…` link, and none of the video-page keys.
+
+    So "offline" requires the channel-page shape - not merely the absence of a live marker -
+    and anything that fits neither shape (a consent wall, a bot check, a markup change, an
+    error) stays "unknown". A false offline would page for a healthy stream, which is the one
+    outcome this reader must never produce. The legacy `"isLiveNow"` markers are still accepted
+    because older page variants used them.
     """
     url = cfg.http_url
     if not url:
         return "unknown"
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": HTTP_UA})
+        # The consent cookie is not optional: without it YouTube answers a European address with
+        # a 302 to the consent wall, and the bot-check page has neither shape. A stable
+        # Accept-Language keeps the surrounding markup (and its key names) from varying by IP.
+        req = urllib.request.Request(url, headers={
+            "User-Agent": HTTP_UA,
+            "Accept-Language": "en-US,en;q=0.9",
+            "Cookie": "SOCS=CAI; CONSENT=YES+cb",
+        })
         with urllib.request.urlopen(req, timeout=cfg.num("WATCH_HTTP_TIMEOUT")) as resp:
             raw = resp.read(HTTP_MAX_BYTES)
         text = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
     except Exception:                   # DNS, TLS, timeout, 403, bot check: all "not known"
         return "unknown"
-    # Collapse whitespace so `"isLiveNow": true` matches too; the page is one huge minified
-    # JSON blob in practice, but a reformat must not read as "the lookup failed".
+    # Collapse whitespace so `"isLive": true` matches too; the page is one huge minified JSON
+    # blob in practice, but a reformat must not read as "the lookup failed".
     compact = re.sub(r"\s+", "", text)
-    if LIVE_MARKER in compact:
+    if any(m in compact for m in LIVE_MARKERS):
         return "live"
     if DARK_MARKER in compact:
+        return "offline"              # an explicit "nothing live here" from an older variant
+    # The channel-page shape: two independent channel-page keys, no video-page keys at all.
+    if (CHANNEL_PAGE_MARKER in compact
+            and VIDEO_PAGE_MARKER not in compact
+            and LIVE_INDICATOR not in compact):
         return "offline"
     return "unknown"
 

@@ -9,6 +9,38 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.10 — 2026-09-20
+
+**The off-host watchdog's channel reader was blind, and it is readable again.** The second reader
+(this one has no credential and no rate limit in common with yt-dlp) looked for a single marker,
+`"isLiveNow":true`, which YouTube no longer serves. On 2026-09-19/20 that left the watchdog
+reporting `channel unknown` for hours and emailing "the watchdog is blind" — a true alarm, because
+while it lasts nothing is watching the channel. The first reader could not cover for it either:
+from the watchdog host, yt-dlp is answered with **"Sign in to confirm you're not a bot"**, while
+the identical command on the streamer resolves the channel fine, so the block is specific to that
+host's address.
+
+Measured from the watchdog host, YouTube now serves two visibly different documents for
+`/<channel>/live`:
+
+- a **live** channel gets a *video page*: `"isLive":true` (inside `videoViewCountRenderer`),
+  `liveIndicatorText`, `videoDetails`, `playabilityStatus`;
+- a channel that is **not** broadcasting gets its *channel page*: `channelMetadataRenderer` and a
+  canonical `/channel/UC…` link, and none of the video-page keys;
+- a European address additionally gets a **302 to the consent wall** unless the request carries a
+  consent cookie, and the bot-check page has neither shape.
+
+So the reader now: sends `Cookie: SOCS=CAI; CONSENT=YES+cb` and a pinned
+`Accept-Language: en-US`, accepts `"isLive":true`/`"isLiveNow":true`/`liveIndicatorText` as LIVE,
+and requires the **channel-page shape** (`channelMetadataRenderer`, with no `playabilityStatus`)
+for OFFLINE. Both directions are now positive evidence, and anything that fits neither shape stays
+`UNKNOWN` — because a false offline would page for a healthy stream, the one outcome this reader
+must never produce. Verified from the watchdog host: `live` for this channel, `offline` for two
+channels that are not broadcasting.
+
+Suite: **707 checks** (t07 159). The combination rule is unchanged: either reader saying live wins,
+only two agreeing offline reads is offline, and one failing reader can never page anyone.
+
 ## 2.9 — 2026-09-19
 
 **One bug in 2.8, found by running its own documented check.** `bin/harden-host.sh --check` is
