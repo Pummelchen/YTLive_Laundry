@@ -148,6 +148,16 @@ packs it, so a release cannot ship a tree that fails either.
 
 ## Traps
 
+- **The heartbeat token lives in a mode 600 file and is NEVER passed on a command line
+  (T-34).** `bin/stream.sh` starts `bin/yt_heartbeat.py push` with `--token-file
+  "$HEARTBEAT_TOKEN_FILE"`, never the secret itself, because argv is world-readable through
+  `ps` — the same rule the camera credentials follow. On the watchdog host,
+  `bin/yt_heartbeat.py serve` is what enforces the rest: it requires the bearer token on
+  every `POST /heartbeat` (constant-time compare, 401 otherwise) and binds the **tailnet
+  address only** (`HEARTBEAT_BIND`, never `0.0.0.0`). Plain HTTP on the tailnet is correct
+  because WireGuard encrypts it; do not add TLS. The push direction is deliberate: the
+  watchdog host holds the Gmail app password and must never be able to reach into the
+  streamer. `conf/*.token` is gitignored.
 - **`CAM_LINK_TIMEOUT="45"` is declared in `conf/stream.env.example` but read by no
   script.** It is one of the dead knobs listed below, and its old comment claimed the
   watchdog watched the camera's TCP session "instead" of the output frame counter -

@@ -58,6 +58,20 @@ CLOCK_RETRY_AT=0                  # epoch of the next re-adopt attempt (0 = not 
 CLOCK_RETRY_END=0                 # epoch after which the retry gives up
 : ${CLOCK_RETRY_EVERY:=30}        # seconds between attempts while armed
 : ${CLOCK_RETRY_WINDOW:=300}      # give up this long after the restart
+# --- dead-man signal into the external watchdog (T-34) ---------------------------------------
+# The streamer PUSHES a small status JSON to a listener on the watchdog host
+# (bin/yt_heartbeat.py serve, the ytlive-heartbeat unit there); the listener writes the file
+# the watchdog reads as WATCH_HEARTBEAT. Push, not pull, on purpose: the watchdog host holds
+# the Gmail app password and must never be able to reach into this Mac.
+#
+# OPT-IN, deliberately. A heartbeat that is configured but never delivered makes the off-host
+# watchdog alert "the streamer app has gone silent" on a HEALTHY stream - and an ABSENT
+# heartbeat file is silent by design (bin/yt_watchdog.py treats it as an unconfigured
+# deployment, never an outage), so an install with these empty cannot page anyone by accident.
+HEARTBEATPID=""
+: ${HEARTBEAT_URL:=}                                  # e.g. http://100.99.149.11:8787/heartbeat
+: ${HEARTBEAT_TOKEN_FILE:=}                           # mode 600 file; the token is NEVER argv
+: ${HEARTBEAT_INTERVAL:=300}                          # must stay well under WATCH_HEARTBEAT_MAX
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
 # No notifications and no log-reading: this Mac is unattended. Nothing here may depend on a
 # human noticing anything, so every failure path must keep retrying rather than report.
@@ -170,6 +184,38 @@ check_monitor() {
   else
     log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED."
   fi
+}
+
+# Start the dead-man pusher (bin/yt_heartbeat.py push) beside the network watchdog. It is
+# started ONLY when HEARTBEAT_URL is set: an unconfigured install must stay silent, and the
+# token is passed as a FILE PATH, never as a value (argv is world-readable via ps).
+start_heartbeat() {
+  HEARTBEATPID=""
+  if [[ -z "${HEARTBEAT_URL:-}" ]]; then
+    log "heartbeat: dead-man signal OFF (no HEARTBEAT_URL) - the watchdog's stale-heartbeat rule stays disabled, which is safe because an absent file never alerts"
+    return 0
+  fi
+  if [[ ! -x "$BASE/bin/yt_heartbeat.py" ]]; then
+    log "heartbeat: HEARTBEAT_URL is set but $BASE/bin/yt_heartbeat.py is missing or not executable - THE DEAD-MAN SIGNAL WILL GO STALE"
+    return 0
+  fi
+  # A URL and no usable secret would start a pusher that exits on its first push, and the
+  # heartbeat file would then never appear - which the watchdog reads as "unconfigured" and
+  # stays SILENT about. Refuse to start and say so, so the failure is in the log rather than
+  # hidden behind a signal that looks deliberately off.
+  if [[ -n "${HEARTBEAT_TOKEN_FILE:-}" && ! -r "$HEARTBEAT_TOKEN_FILE" ]]; then
+    log "heartbeat: HEARTBEAT_URL is set but the token file $HEARTBEAT_TOKEN_FILE is not readable - NOT starting the pusher; the dead-man signal stays off"
+    return 0
+  fi
+  if [[ -z "${HEARTBEAT_TOKEN_FILE:-}" && -z "${HEARTBEAT_TOKEN:-}" ]]; then
+    log "heartbeat: HEARTBEAT_URL is set but no HEARTBEAT_TOKEN_FILE (and no HEARTBEAT_TOKEN) - NOT starting the pusher; the dead-man signal stays off"
+    return 0
+  fi
+  local args=( push --url "$HEARTBEAT_URL" --base "$BASE" --loop "$HEARTBEAT_INTERVAL" )
+  [[ -n "${HEARTBEAT_TOKEN_FILE:-}" ]] && args+=( --token-file "$HEARTBEAT_TOKEN_FILE" )
+  python3 "$BASE/bin/yt_heartbeat.py" "${args[@]}" >>"$BASE/log/heartbeat.log" 2>&1 &
+  HEARTBEATPID=$!
+  log "heartbeat: dead-man signal ON -> $HEARTBEAT_URL every ${HEARTBEAT_INTERVAL}s (pid $HEARTBEATPID); the watchdog alerts if these stop for WATCH_HEARTBEAT_MAX"
 }
 
 [[ -z "$YT_KEY" ]] && { log "FATAL: YT_KEY empty in $CONF"; exit 1; }
@@ -917,7 +963,11 @@ if [[ "${NET_WATCH:-yes}" == "yes" && -x "$BASE/bin/net_watch.sh" ]]; then
   "$BASE/bin/net_watch.sh" loop >>"$BASE/log/net_events.log" 2>&1 & NETWATCHPID=$!
   log "network watchdog started (pid $NETWATCHPID) - see log/net_events.log"
 fi
-trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID ${NETWATCHPID:+"$NETWATCHPID"} $PUBPID 2>/dev/null; exit 0' TERM INT
+# The dead-man signal. Same place as the other background loop, and reaped by the same trap:
+# a pusher left behind after a restart would keep the watchdog's heartbeat fresh while the
+# new streamer was broken, which is the one lie the watchdog must never be told.
+start_heartbeat
+trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID ${NETWATCHPID:+"$NETWATCHPID"} ${HEARTBEATPID:+"$HEARTBEATPID"} $PUBPID 2>/dev/null; exit 0' TERM INT
 
 start_publisher
 BROADCAST_STARTED=$(date +%s)

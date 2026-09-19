@@ -159,37 +159,88 @@ WATCH_SMTP_PASS="<16-char app password>"   # myaccount.google.com/apppasswords
 
 ### The heartbeat (dead-man signal)
 
-`WATCH_HEARTBEAT` names a file on the **watchdog host**; the streaming application touches it
-on every successful loop. If the file exists but its modification time is older than
-`WATCH_HEARTBEAT_MAX` (default 900 s = 15 min), the application itself is presumed silent and
-that is reported — independently of the channel read, and *even while the channel read is
+`WATCH_HEARTBEAT` names a file on the **watchdog host**; `bin/yt_heartbeat.py serve` writes it
+on every accepted push from the streamer. If the file exists but its modification time is older
+than `WATCH_HEARTBEAT_MAX` (default 900 s = 15 min), the application itself is presumed silent
+and that is reported — independently of the channel read, and *even while the channel read is
 `UNKNOWN`*. That is the point: it is the one signal that does not depend on YouTube, on
 `yt-dlp`, or on the channel page at all.
 
-Two honest limits:
+Three honest limits:
 
-- **The file's contents are ignored; only its mtime matters.** There is nothing to parse and
-  nothing to forge beyond a `touch`.
+- **The file's contents are ignored; only its mtime matters.** The watchdog only stats it. The
+  body is stored so a human debugging a stale heartbeat can see what the streamer thought was
+  true when it last pushed, and for no other reason.
 - **An absent file is not an outage.** `WATCH_HEARTBEAT=""` (the shipped default) disables the
   signal, and a configured path whose file has never appeared is reported as `absent` and
   never pages. Otherwise every host that had not wired the delivery up would alarm forever,
   and "the heartbeat is missing" would be indistinguishable from "someone unset it".
+- **Once `WATCH_HEARTBEAT` is set, a dead listener is an alarm.** If `ytlive-heartbeat` stops,
+  the file stops being written, goes stale and the watchdog reports "the streamer's application
+  has gone silent" — for a streamer that may be perfectly healthy. The alarm is *real* (the file
+  really is stale); it is just not the outage it looks like. That is the price of a signal whose
+  failure mode is "no news", and it is why the unit restarts immediately and logs to the journal.
 
-**Delivery is not implemented here.** Something has to carry a tick from the streamer to the
-watchdog host. There are exactly two reasonable shapes, and neither exists in this repository
-yet:
+#### The transport: the streamer PUSHES
 
-1. **Push** — a small authenticated HTTP endpoint on the watchdog host that the streamer
-   `PUT`s to on each loop; the endpoint touches the file. Needs a listener and a shared
-   secret, and the listener becomes a new thing to secure.
-2. **Pull** — a restricted SSH pull from the watchdog host on an `authorized_keys` entry with
-   a forced command that does nothing but `touch <the heartbeat file>` (plus
-   `no-port-forwarding`, `no-pty`). No listener and no shared secret beyond the key, but it
-   needs the watchdog host to hold a key the streamer accepts, in the reverse of the usual
-   direction.
+The operator chose **push** over pull (tracker row T-34). It is implemented by `bin/yt_heartbeat.py`,
+which contains both halves so the wire format has exactly one implementation:
 
-Whichever is chosen, the watchdog side is already finished: point `WATCH_HEARTBEAT` at the
-file and it will notice when the ticks stop.
+- **`yt_heartbeat.py push`** runs on the streamer, started by `bin/stream.sh` beside the network
+  watchdog. It POSTs a small JSON document to the listener and repeats every
+  `HEARTBEAT_INTERVAL` (default 300 s). It is **opt-in**: `HEARTBEAT_URL=""` (the shipped
+  default) means no pusher and no heartbeat. That default is deliberate — a heartbeat that is
+  configured but never delivered would page a human about a healthy streamer, while an absent
+  file is deliberately silent, so an unconfigured install is safe.
+- **`yt_heartbeat.py serve`** runs on the watchdog host as `conf/ytlive-heartbeat.service`. It
+  accepts `POST /heartbeat` with `Authorization: Bearer <token>`, compares the token with
+  `hmac.compare_digest`, caps the body at 8 KB, and writes the body atomically
+  (`mkstemp` + `os.replace`, mode 0600) to the state file. Wrong or missing token is 401, another
+  path is 404, another method is 405, an oversized body is 413. Every accept and every rejection
+  is one journal line naming the remote address — never the body, never the token.
+
+The token is a shared secret in a **mode 600 file** on each side: `conf/heartbeat.token` on the
+streamer (`HEARTBEAT_TOKEN_FILE`) and `/var/ytlive-watchdog/conf/heartbeat.token` on the watchdog
+host (`HEARTBEAT_TOKEN_FILE` in `conf/watchdog.env`). It is **never** passed on a command line:
+argv is world-readable through `ps`, which is the same rule the camera credentials follow, so
+`stream.sh` passes the *path*. The listener binds the **tailnet address only**
+(`HEARTBEAT_BIND="100.99.149.11"`, never `0.0.0.0`); WireGuard already encrypts the tailnet, so
+plain HTTP is correct here and TLS would be ceremony.
+
+**Why push and not pull.** The direction is the whole security argument. This host holds the
+Gmail app password and the streamer holds a YouTube OAuth refresh token, so a pull — the watchdog
+host reaching into the streamer — would let a compromised watchdog host touch the streamer's
+credentials as well; tracker row T-23 is about exactly that. With push, the streamer is the only
+side that initiates: it can post a status and nothing more, and the watchdog host never dials it.
+
+Two honest limits of the transport:
+
+- **An unreachable VPS means the heartbeat goes stale and the watchdog alerts.** That is the
+  *intended* failure direction: silence from the streamer is reported rather than hidden. It
+  does mean a VPS outage or a firewall mistake pages a human about a healthy stream, so the
+  alert text says "heartbeat stale", not "channel dark", and the channel/host signals are
+  checked independently.
+- **The listener is one more process to keep running.** It must be enabled at boot
+  (`systemctl enable --now ytlive-heartbeat`) or the heartbeat dies with the first reboot. The
+  unit restarts on exit and the `[Install]` section is required, for the same reason
+  `ytlive-watchdog.service` documents: without it systemd reports the unit as `static` and
+  creates no boot symlink.
+
+The wire format (JSON body; every field degrades to `null` rather than raising):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `ts` | int | epoch seconds when the payload was built |
+| `host` | str | the streamer's hostname |
+| `uptime_s` | int / null | seconds since boot |
+| `disk_free_mb` | int / null | free MB on the volume holding the checkout |
+| `publisher` | bool | `log/publisher.pid` is alive **and** its command is `ffmpeg` + `rtmp` |
+| `publisher_pid` | int / null | that pid, so a mismatch is visible |
+| `net_state` | str / null | first two fields of `log/net_state` (`"<state> <epoch>"`) |
+| `broadcast` | str / null | first field of `log/broadcast_started` (the broadcast id) |
+
+The listener does not parse the body — the watchdog only reads the mtime — so there is nothing
+to execute and nothing to forge beyond the token.
 
 ## Operating it
 
@@ -219,6 +270,34 @@ socket).
 | `WATCH_HTTP_URL` | _(derived)_ | Optional override of the page the direct reader fetches. |
 | `WATCH_HEARTBEAT` | `""` | Path to the app's heartbeat file. Empty = disabled. |
 | `WATCH_HEARTBEAT_MAX` | `900` | A heartbeat older than this is stale and pages. |
+| `HEARTBEAT_BIND` | `100.99.149.11` | Listener bind address (`yt_heartbeat.py serve`). Tailnet only, never `0.0.0.0`. |
+| `HEARTBEAT_PORT` | `8787` | Listener port. Check it is free with `ss -ltn` before starting. |
+| `HEARTBEAT_STATE_FILE` | `/var/ytlive-watchdog/heartbeat` | File the listener writes; should match `WATCH_HEARTBEAT`. |
+| `HEARTBEAT_TOKEN_FILE` | `/var/ytlive-watchdog/conf/heartbeat.token` | Mode 600 bearer token (serve side). |
+
+On the streamer, `conf/stream.env` declares `HEARTBEAT_URL` (empty = off), `HEARTBEAT_TOKEN_FILE`
+(mode 600) and the internal `HEARTBEAT_INTERVAL` (default 300 s).
+
+## Deploying the listener
+
+The watchdog installer installs `bin/yt_watchdog.py` only; the heartbeat listener is a separate
+unit and is installed by hand (tracker row T-34 still has this open — see below):
+
+```bash
+sudo install -m 755 bin/yt_heartbeat.py /var/ytlive-watchdog/bin/yt_heartbeat.py
+sudo install -m 644 conf/ytlive-heartbeat.service /etc/systemd/system/ytlive-heartbeat.service
+# one shared secret, mode 600 on each host:
+sudo sh -c 'openssl rand -hex 24 > /var/ytlive-watchdog/conf/heartbeat.token'
+sudo chmod 600 /var/ytlive-watchdog/conf/heartbeat.token
+ss -ltn | grep 8787                      # must be empty first
+sudo systemctl daemon-reload
+sudo systemctl enable --now ytlive-heartbeat
+journalctl -u ytlive-heartbeat -f        # "listening on 100.99.149.11:8787"
+```
+
+Then copy the same token to the streamer's `conf/heartbeat.token` (mode 600) and set
+`HEARTBEAT_URL="http://100.99.149.11:8787/heartbeat"` in `conf/stream.env`, and restart the
+streamer. The dead-man signal is on when the streamer's log says `heartbeat: dead-man signal ON`.
 
 ## Known limits
 
@@ -233,7 +312,12 @@ socket).
   markup, or that is served as a consent/bot wall, degrades to `UNKNOWN` (never offline); if a
   future layout ever embedded a *recommended* live video's flag on an offline channel page it
   could read `live`, which is why the yt-dlp reader is kept rather than replaced.
-- **The heartbeat needs a delivery mechanism that does not exist here yet** (a push endpoint
-  or a restricted SSH pull, see above). Until it does, leave `WATCH_HEARTBEAT` empty; the
-  watchdog will not pretend an absent file is an outage, but it also cannot report an app
-  that goes quiet unless something is writing the file.
+- **The heartbeat listener is installed by hand.** `bin/watchdog-install.sh` copies only
+  `yt_watchdog.py` and renders only `ytlive-watchdog.service`; teaching it about the heartbeat
+  is not done here. Until an operator runs the four commands above, `WATCH_HEARTBEAT` should
+  stay empty — the watchdog will not pretend an absent file is an outage, but it also cannot
+  report an app that goes quiet unless something is writing the file.
+- **A dead listener looks like a dead streamer.** If `ytlive-heartbeat` crashes and is not
+  restarted, the heartbeat goes stale and the watchdog pages "the streamer's application has
+  gone silent". The alert is true about the file and wrong about the streamer; the journal of
+  `ytlive-heartbeat` is where to look first.

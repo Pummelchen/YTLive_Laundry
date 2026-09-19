@@ -25,6 +25,13 @@
     bin/yt_monitor.sh        the watchdog loop
     bin/yt_watchdog.py       the EXTERNAL watchdog: runs OFF the streamer and emails a human
                              when the channel goes dark (the only code allowed to notify)
+    bin/yt_heartbeat.py      the dead-man heartbeat, both halves in one file so the wire format
+                             has one implementation: `serve` (on the watchdog host) accepts an
+                             authenticated POST and atomically writes the file the watchdog
+                             reads as WATCH_HEARTBEAT; `push` (on the streamer, started by
+                             bin/stream.sh) sends a small status JSON. Stdlib-only and portable.
+                             PUSH, not pull, on purpose - the watchdog host holds the mail
+                             secret and must never reach into the streamer. See docs/watchdog.md.
     bin/watchdog-install.sh  install that watchdog on an always-on host (systemd or launchd)
     bin/deploy-release.sh    deploy a tag with a rollback that covers what install.sh writes
     bin/forensics.sh         read-only evidence for a HOST-level outage - sleep, hang, panic or
@@ -52,7 +59,14 @@
     conf/playlist.txt        the shuffled order (generated)
     conf/watchdog.env.example  tracked template for the external watchdog; the live
                              conf/watchdog.env holds a Gmail app password (chmod 600, gitignored)
+                             and the heartbeat listener's bind/port/state/token-file knobs
     conf/ytlive-watchdog.service  the systemd unit for the always-on watchdog host
+    conf/ytlive-heartbeat.service the systemd unit for the heartbeat listener on that host
+                             (bin/yt_heartbeat.py serve); ExecStart binds the tailnet address
+                             only, and [Install] is required or systemd calls it "static"
+    conf/heartbeat.token     the shared bearer secret (chmod 600, gitignored, NOT tracked) on
+                             the streamer; the watchdog host keeps its own copy under
+                             /var/ytlive-watchdog/conf/. Never on a command line - see AGENTS.md
     docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
                              ...) plus the per-release notes release-notes-vX.Y.md
     docs/v3-datacenter-plan.md          unscheduled v3.0 proposal (push-based SRT, Hetzner SG)

@@ -20,6 +20,14 @@ conf/watchdog.env.bak-*
 # and a refresh token in a public git history is a standing grant to anyone who finds it.
 conf/yt_oauth.json
 
+# The dead-man heartbeat's bearer token (T-34). The streamer POSTs a small status to a listener on
+# the watchdog host over the tailnet, and this token is the only thing that proves the push came
+# from here. It does not control the channel, so it is a lesser secret than the OAuth token - but
+# it is a shared secret, so it is treated the same way: never committed, and mode 600 on both
+# machines. It is read from a FILE, never from a command line, because argv is world-readable
+# through ps. The pattern is deliberately broad so a future *.token cannot be swept in either.
+conf/*.token
+
 .DS_Store
 
 # Python bytecode from running the scripts
