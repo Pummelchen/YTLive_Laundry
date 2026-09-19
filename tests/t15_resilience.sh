@@ -136,5 +136,21 @@ grep -q "grep -c 'FRAGMENT:'" "$REPO_DIR/bin/status.sh" \
   && t_ok "and the health page counts them, so a short VOD is explained where a human looks" \
   || t_bad "fragmentation is logged but never surfaced"
 
+# verify_pending_vods REWRITES the pending file rather than merging it, which is only safe because
+# nothing can append while it runs: the lone appender fires at the END of await_broadcast, and the
+# gap between two rotations is floored by ROTATE_MIN_INTERVAL. If those two ever cross, an id
+# appended mid-probe is lost - the exact bug T-12 fixed, reintroduced. This is the check that fails
+# first when someone edits either knob.
+min_interval=$(sed -n 's/^: ${ROTATE_MIN_INTERVAL:=\([0-9]*\)}.*/\1/p' "$REPO_DIR/bin/stream.sh")
+native_wait=$(sed -n 's/^: ${ROTATE_NATIVE_WAIT:=\([0-9]*\)}.*/\1/p' "$REPO_DIR/bin/stream.sh")
+[[ "$min_interval" == <-> && "$native_wait" == <-> ]] \
+  && t_ok "both knobs are readable from the source ($min_interval / $native_wait)" \
+  || t_bad "could not read ROTATE_MIN_INTERVAL ($min_interval) or ROTATE_NATIVE_WAIT ($native_wait)"
+# worst case for one await_broadcast: the native wait, the 60s ingest bounce, and the API
+# fallback's ingest wait - the last two are literals in the code (60 and INGEST_WAIT 120).
+(( ${min_interval:-0} > ${native_wait:-0} + 180 )) \
+  && t_ok "ROTATE_MIN_INTERVAL (${min_interval}s) outlasts a whole await_broadcast (${native_wait}+180s), which is what makes the pending rewrite safe" \
+  || t_bad "ROTATE_MIN_INTERVAL (${min_interval}s) no longer outlasts await_broadcast (${native_wait}+180s): the pending rewrite can lose an append and must become a merge"
+
 t_teardown
 t_summary

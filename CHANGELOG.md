@@ -66,7 +66,7 @@ owned, and a heartbeat written so late that a healthy monitor could be killed fo
   local: `tests/t14_monitor_beat.sh` reads both numbers out of the sources and fails if they cross,
   and proves behaviourally that a hanging pass is killed at the ceiling, returns nothing, and exits
   non-zero — which the monitor reads as `NOSTATUS` and handles on the never-act path.
-- **Tests.** `tests/t15_resilience.sh` (20 checks) drives the pending list through every outcome —
+- **Tests.** `tests/t15_resilience.sh` (21 checks) drives the pending list through every outcome —
   verified, MISSING twice, never-resolving, adopted from the history, probe count carried forward,
   idempotent add — and tests the clock adoption behaviourally (a new broadcast adopts its real
   start; an unchanged one re-uses the stored clock and costs no API call), plus the source

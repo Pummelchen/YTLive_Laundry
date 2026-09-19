@@ -80,7 +80,7 @@ beat_sleep() {
 # MONITOR_STALE (600s). A pass where everything times out would therefore still age the beat past
 # the threshold and get a HEALTHY monitor killed for being slow - the same defect, one layer down.
 # So the pass runs under a ceiling, which makes the invariant local and provable: CHECK_TIMEOUT
-# must stay below MONITOR_STALE, and tests/t14_monitor_asserts.sh proves it from the sources.
+# must stay below MONITOR_STALE, and tests/t14_monitor_beat.sh proves it from the sources.
 # macOS has no `timeout`, so this is the background-and-kill idiom.
 # The killer's stdio is redirected for a reason: without it the killer inherits the command
 # substitution's pipe and the caller blocks for the whole ceiling even when the pass finished.
@@ -256,6 +256,9 @@ while true; do
         # 2026-09-19: five such restarts inside fifty minutes, all while the camera was
         # unreachable). So check the camera first. The reader reconnects on its own when the camera
         # comes back, and cam_ip_watcher is what re-discovers it after a DHCP move.
+        # LIMIT: this needs an address to probe. If log/cam_ip is empty or missing - a tree that has
+        # never run stream.sh - the guard cannot check anything and falls through to the restart,
+        # which is the safe direction: acting on a bad picture beats ignoring one.
         cam_host=$(<"$CAMIP_FILE" 2>/dev/null)
         if [[ -n "$cam_host" ]] && ! nc -z -G 3 "$cam_host" 554 2>/dev/null; then
           mlog "ACTION: $st for $(( now - bad_since ))s but the CAMERA at $cam_host is not answering on 554 - NOT restarting the publisher: a restart cannot fix the camera and it would fragment the recording. The reader reconnects by itself."
