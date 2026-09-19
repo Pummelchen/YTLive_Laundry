@@ -15,6 +15,7 @@ MLOG="$BASE/log/monitor.log"
 HEARTBEAT="$BASE/log/monitor.heartbeat"
 MON_PID="$BASE/log/monitor.pid"      # our own pid, so stream.sh can restart exactly US
 PUB_PID="$BASE/log/publisher.pid"    # the publisher's pid, written by stream.sh
+CAMIP_FILE="$BASE/log/cam_ip"        # the camera's address, written by stream.sh / cam_ip.py
 mlog() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$MLOG"; }
 # stream.sh's are-you-still-alive check kills a hung monitor by pid. It used to hunt for us with
 # `pkill -9 -f "zsh.*yt_monitor.sh"`, which cannot tell this process from anything else whose
@@ -33,6 +34,10 @@ print -r -- "$$" > "$MON_PID" 2>/dev/null
 : ${BLIND_SECONDS:=300}        # yt-dlp unable to answer before we ask the API instead
 : ${ROTATE_REQUEST_BACKOFF:=900}   # silence after asking for a rotation (must exceed ROTATE_GRACE)
 : ${TOKEN_CHECK_EVERY:=21600}      # re-check OAuth token expiry every 6h (local, no network)
+: ${CHECK_TIMEOUT:=420}            # hard ceiling on ONE grading pass; MUST stay below MONITOR_STALE
+                                   # (600) or a slow pass can still get a healthy monitor killed.
+                                   # yt_check.py's own timeouts can total ~630s, which is why this
+                                   # exists at all - see check_with_ceiling().
 
 # The API is what makes this loop able to FIX things rather than just complain. conf/stream.env
 # is sourced, not exported, so every call has to pass its settings explicitly.
@@ -42,6 +47,16 @@ source "$BASE/bin/lib.sh"      # yt_api_ready(), yt_api_call() - shared with str
 # One line of ground truth for status.sh and for stream.sh's are-you-still-alive check.
 # Silence in monitor.log means "all checks passed", which is indistinguishable from "the
 # monitor died" - this file tells them apart.
+#
+# It is written TWICE per iteration and the ORDER is the whole point: the loop beats CHECKING
+# BEFORE it starts the grading pass, then replaces that with the real status once yt_check.py
+# has answered. stream.sh calls the heartbeat HUNG when its mtime is older than MONITOR_STALE
+# (600s), so if the beat came only AFTER the work, that age would mean "time since the last pass
+# finished" - inflated by CHECK_INTERVAL and by the whole duration of the pass. One slow pass (a
+# yt-dlp resolve that sits on its timeout, a stalled ffmpeg grab, the forced re-resolve in
+# yt_check.py) would then make a perfectly healthy watchdog look hung and the guard would kill
+# the very thing guarding the stream. Beating first makes the age mean what stream.sh is
+# actually testing: how long since this loop last came around.
 beat() { print -r -- "$(date +%s) ${1} ${2:-}" > "$HEARTBEAT" 2>/dev/null; }
 
 # A long backoff is a DELIBERATE silence, and it has to stay distinguishable from a hang.
@@ -56,6 +71,31 @@ beat_sleep() {
     sleep "$chunk"
     left=$(( left - chunk ))
   done
+}
+
+# A hard ceiling on ONE grading pass. Beating before the work (above) stops the age meaning
+# "time since the last pass FINISHED", but it cannot bound the pass itself: yt_check.py's own
+# timeouts add up to about 630s (3x90 for the yt-dlp/ffmpeg calls plus a forced re-resolve that
+# repeats two of them, plus 3x30 for the greyscale caches), which is already longer than
+# MONITOR_STALE (600s). A pass where everything times out would therefore still age the beat past
+# the threshold and get a HEALTHY monitor killed for being slow - the same defect, one layer down.
+# So the pass runs under a ceiling, which makes the invariant local and provable: CHECK_TIMEOUT
+# must stay below MONITOR_STALE, and tests/t14_monitor_asserts.sh proves it from the sources.
+# macOS has no `timeout`, so this is the background-and-kill idiom.
+# The killer's stdio is redirected for a reason: without it the killer inherits the command
+# substitution's pipe and the caller blocks for the whole ceiling even when the pass finished.
+check_with_ceiling() {
+  local ceilin="$1"; shift
+  local outf="${TMPDIR:-/tmp}/ytlive-check.$$"
+  "$@" >"$outf" 2>&1 &
+  local p=$!
+  ( sleep "$ceilin"; kill -TERM "$p" 2>/dev/null; sleep 2; kill -9 "$p" 2>/dev/null ) </dev/null >/dev/null 2>&1 &
+  local k=$!
+  wait "$p" 2>/dev/null; local rc=$?
+  kill -TERM "$k" 2>/dev/null; wait "$k" 2>/dev/null
+  cat "$outf" 2>/dev/null
+  rm -f "$outf"
+  return $rc
 }
 
 
@@ -112,6 +152,12 @@ bad_since=0        # epoch when the current run of bad PICTURE checks started
 off_since=0        # epoch when the channel was first seen OFFLINE
 blind_since=0      # epoch when yt-dlp first failed to answer
 while true; do
+  # BEFORE the work, not after it - see the contract on beat() above. CHECKING is deliberately
+  # NOT one of yt_check.py's statuses, so status.sh (and the off-host watchdog that reads this
+  # same file) can tell "an iteration has started" from "here is what a pass graded". This is
+  # what keeps a single slow pass from making the heartbeat older than MONITOR_STALE and getting
+  # a healthy monitor killed by stream.sh.
+  beat CHECKING "iteration started, grading pass running"
   now=$(date +%s)
   if (( now - last_token_check >= TOKEN_CHECK_EVERY )); then
     check_token; last_token_check=$now
@@ -134,8 +180,9 @@ while true; do
     cp "$BASE/log/basefill.jpg" "$BASE/conf/golden.jpg" && mlog "golden reference refreshed from latest publisher start frame"
   fi
 
-  out=$(BASE="$BASE" YT_CHANNEL="${YT_CHANNEL:-}" YT_WATCH_URL="${YT_WATCH_URL:-}" CORR_MIN="${CORR_MIN:-0.60}" \
-        python3 "$BASE/bin/yt_check.py" 2>&1)
+  out=$(check_with_ceiling "$CHECK_TIMEOUT" \
+        env BASE="$BASE" YT_CHANNEL="${YT_CHANNEL:-}" YT_WATCH_URL="${YT_WATCH_URL:-}" CORR_MIN="${CORR_MIN:-0.60}" \
+        python3 "$BASE/bin/yt_check.py")
   st=$(print -r -- "$out" | sed -n 's/.*"status": *"\([A-Z]*\)".*/\1/p')
   now=$(date +%s)
   beat "${st:-NOSTATUS}" "$out"
@@ -202,17 +249,29 @@ while true; do
     (( bad_since == 0 )) && { bad_since=$now; mlog "bad picture, watching it: $out"; }
     if (( now - bad_since >= FAIL_SECONDS )); then
       if [[ "$MONITOR_ACTION" == "restart" ]]; then
-        # Restart exactly the publisher stream.sh started, via its pidfile and an identity check.
-        # This used to be `pkill -9 -f "ffmpeg.*rtmp"`, which matched any ffmpeg whose command
-        # line merely mentioned rtmp - a hand-run diagnostic, or a second copy of the project.
-        # When there is no trustworthy pid, kill NOTHING and say so: a restarted-by-hand publisher
-        # is a deliberate act, and guessing is how a watchdog kills something it does not own.
-        pub_pid_x=""
-        if pub_pid_x=$(pidfile_pid "$PUB_PID" ffmpeg rtmp); then
-          mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - restarting publisher pid $pub_pid_x"
-          kill -9 "$pub_pid_x" 2>/dev/null
+        # A bad picture with a DEAD CAMERA is something a publisher restart cannot fix. The
+        # separate reader holds the last good frame over the top, so the picture stays exactly as
+        # frozen as the camera left it, and a restart only drops the RTMP session - which trips
+        # YouTube's enableAutoStop and FRAGMENTS the recording into short pieces (measured
+        # 2026-09-19: five such restarts inside fifty minutes, all while the camera was
+        # unreachable). So check the camera first. The reader reconnects on its own when the camera
+        # comes back, and cam_ip_watcher is what re-discovers it after a DHCP move.
+        cam_host=$(<"$CAMIP_FILE" 2>/dev/null)
+        if [[ -n "$cam_host" ]] && ! nc -z -G 3 "$cam_host" 554 2>/dev/null; then
+          mlog "ACTION: $st for $(( now - bad_since ))s but the CAMERA at $cam_host is not answering on 554 - NOT restarting the publisher: a restart cannot fix the camera and it would fragment the recording. The reader reconnects by itself."
         else
-          mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - no usable pid in $PUB_PID; killed nothing"
+          # Restart exactly the publisher stream.sh started, via its pidfile and an identity check.
+          # This used to be `pkill -9 -f "ffmpeg.*rtmp"`, which matched any ffmpeg whose command
+          # line merely mentioned rtmp - a hand-run diagnostic, or a second copy of the project.
+          # When there is no trustworthy pid, kill NOTHING and say so: a restarted-by-hand publisher
+          # is a deliberate act, and guessing is how a watchdog kills something it does not own.
+          pub_pid_x=""
+          if pub_pid_x=$(pidfile_pid "$PUB_PID" ffmpeg rtmp); then
+            mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - restarting publisher pid $pub_pid_x"
+            kill -9 "$pub_pid_x" 2>/dev/null
+          else
+            mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - no usable pid in $PUB_PID; killed nothing"
+          fi
         fi
       else
         mlog "ACTION: log-only mode, not restarting"

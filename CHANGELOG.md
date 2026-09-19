@@ -9,6 +9,73 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.7 — 2026-09-19
+
+**Four silent failure modes in the stream's own restarts and bookkeeping: a stale rotation clock, a
+recording whose verdict fell out of a trimmed log, a bounce that signalled a pid it no longer
+owned, and a heartbeat written so late that a healthy monitor could be killed for being slow.**
+
+- **T-08 — a restart can no longer leave the rotation loop holding a dead broadcast's age.** A
+  publisher death or a stall makes `stream.sh` restart ffmpeg, and YouTube's `enableAutoStop` closes
+  the old broadcast about 9 s after ingest stops — so the successor is brand new while
+  `BROADCAST_STARTED` still described the old one. That variable was only re-adopted by housekeep,
+  every 300 s, so for up to five minutes the loop could decide an eight-hour segment was already
+  past its cut and **fire a rotation early, cutting a second short recording out of the same
+  session**. Any restart now arms a **bounded** retry (`CLOCK_RETRY_EVERY` 30 s, `CLOCK_RETRY_WINDOW`
+  300 s) that re-adopts the clock the moment the successor appears, and names what happened when
+  the broadcast id changes: `FRAGMENT: the restart closed broadcast X early, so its recording is a
+  partial segment and Y is a fresh one`. The retry stops on its own whether or not the id changed,
+  and the unchanged path costs no API call because `refresh_broadcast_clock` re-uses the stored
+  clock — that is what makes re-asking affordable.
+  **A restart is also no longer taken for a fault it cannot fix.** When the picture is bad because
+  the **camera** is unreachable, restarting the publisher changes nothing — the reader holds the
+  last frame, so the picture stays as frozen as the camera left it, and the restart only drops the
+  RTMP session, which trips `enableAutoStop` and fragments the recording. Measured 2026-09-19:
+  **five such restarts inside fifty minutes, every one while the camera was down.** The monitor now
+  probes the camera first, refuses the restart, and says so, naming the address. It is a guard, not
+  a mute: with the camera reachable the same bad picture still restarts, and both directions are
+  checked end to end in `tests/t14_monitor_beat.sh`.
+- **T-12 — a recording can no longer lose its verdict to a trimmed log.** `verify_pending_vods`
+  decided which broadcasts to confirm from `rotation_history.log`, which is deliberately trimmed to
+  the last 100 rotations. An id whose verdict never settled — `yt-dlp` returning "still processing"
+  — therefore fell out of the retried set and **its recording was never confirmed at all**. At the
+  measured ~3 rotations a day the window is about 33 days, which is exactly why this was invisible.
+  The set lives in `log/vod_pending` now, one `<id> <probes>` per line, and it is bounded in both
+  directions: a definitive MISSING is re-probed `VOD_MISSING_RETRIES` (2) times and then dropped
+  with a log line, and an id that never resolves is dropped after `VOD_MAX_PROBES` (10) rather than
+  sitting there forever. An install that predates the file adopts the ids its history still
+  remembers on the first pass.
+- **T-19 — the ingest bounce signals the pid it actually owns.** `await_broadcast` runs in a
+  `( … ) &` subshell, so `$PUBPID` was snapshotted when that subshell was forked. A restart in
+  between made it stale: `kill -9` on a **recycled** pid kills a stranger, and a stale pid that is
+  merely gone makes the bounce a silent no-op while the log claims it happened. It now reads
+  `log/publisher.pid` at the moment of the kill and checks the pid's command first — the same rule
+  the monitor already follows — and says so when there is nothing to bounce.
+- **T-20 — the monitor writes its heartbeat BEFORE the grading pass, not after.** `stream.sh` calls
+  a heartbeat older than `MONITOR_STALE` (600 s) HUNG and kills the monitor so launchd restarts it.
+  The beat came only after the work, so the age meant "time since the last pass finished" — and one
+  slow pass (a `yt-dlp` resolve, a stalled frame grab) made a perfectly healthy monitor look hung.
+  The beat now records that the iteration *started* (`CHECKING`), and the graded status still
+  overwrites it afterwards, so the health page keeps showing the real verdict.
+  **The pass itself is bounded now too**, because beating first fixes the age's *meaning* but not
+  its *bound*: `yt_check.py`'s own timeouts total about **630 s** (3×90 s for the `yt-dlp`/ffmpeg
+  calls, plus a forced re-resolve that repeats two of them, plus 3×30 s for the greyscale caches),
+  which is already longer than `MONITOR_STALE` (600 s) — so a pass where everything times out could
+  still age the beat past the threshold and get a healthy monitor killed for being slow, the same
+  defect one layer down. The pass now runs under `CHECK_TIMEOUT` (420 s), which makes the invariant
+  local: `tests/t14_monitor_beat.sh` reads both numbers out of the sources and fails if they cross,
+  and proves behaviourally that a hanging pass is killed at the ceiling, returns nothing, and exits
+  non-zero — which the monitor reads as `NOSTATUS` and handles on the never-act path.
+- **Tests.** `tests/t15_resilience.sh` (20 checks) drives the pending list through every outcome —
+  verified, MISSING twice, never-resolving, adopted from the history, probe count carried forward,
+  idempotent add — and tests the clock adoption behaviourally (a new broadcast adopts its real
+  start; an unchanged one re-uses the stored clock and costs no API call), plus the source
+  assertions that the bounce uses the pidfile and that both restart paths arm the retry.
+  `tests/t14_monitor_beat.sh` (25 checks) proves the heartbeat is already fresh at the instant the
+  grading command runs, and that the graded status still lands. The suite is now **568 checks**
+  (t01 53, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38, t12 57,
+  t13 21, t14 25, t15 20).
+
 ## 2.6 — 2026-09-19
 
 **The API quota can no longer take the channel dark, drift checking stopped chasing a field that

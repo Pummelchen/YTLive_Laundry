@@ -83,6 +83,10 @@
                              file on purpose, see below),
                              publisher.pid / monitor.pid (so each side can signal exactly the
                              other process instead of pattern-matching a command line),
+                             vod_pending (recordings still awaiting a verdict, as "<id> <probes>";
+                             deliberately NOT derived from rotation_history.log, which is trimmed
+                             to the last 100 rotations - an id whose verdict never settled used to
+                             fall out of the retried set that way),
                              forensics-<stamp>.txt (a saved forensics report)
     ~/Library/Logs/YTLive/   launchd stdout/stderr (outside Downloads on purpose)
 

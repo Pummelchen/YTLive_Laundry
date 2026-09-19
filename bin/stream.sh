@@ -48,6 +48,16 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
 : ${DISK_LOW_MB:=1000}            # free-space floor that makes housekeep cut logs to a quarter
+# T-08. A restart can make YouTube close the old broadcast (autoStop, ~9s after ingest stops), and
+# a fresh one then takes over. BROADCAST_STARTED was only re-adopted by housekeep, every 300s, so
+# the rotation loop could hold the DEAD broadcast's age for up to five minutes - and then fire a
+# rotation early, cutting a second short recording out of the same session. These two are the
+# bounded retry that re-adopts the clock as soon as the new broadcast appears. They are only armed
+# by a restart, and they stop after CLOCK_RETRY_WINDOW seconds whether or not the id changed.
+CLOCK_RETRY_AT=0                  # epoch of the next re-adopt attempt (0 = not armed)
+CLOCK_RETRY_END=0                 # epoch after which the retry gives up
+: ${CLOCK_RETRY_EVERY:=30}        # seconds between attempts while armed
+: ${CLOCK_RETRY_WINDOW:=300}      # give up this long after the restart
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
 # No notifications and no log-reading: this Mac is unattended. Nothing here may depend on a
 # human noticing anything, so every failure path must keep retrying rather than report.
@@ -473,6 +483,14 @@ ROTATE_BLOCKED_UNTIL=0         # set by a refused rotation; the main loop will n
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
 BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
 VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", one line per broadcast
+# T-12. Recordings still awaiting a verdict live HERE, one "<id> <probes>" per line, and not in
+# rotation_history.log - that file is deliberately trimmed to the last 100 rotations, so an id
+# whose verdict never settled (yt-dlp still processing it) used to fall out of the retried set and
+# its recording was never confirmed at all. At ~3 rotations a day the window is ~33 days, which is
+# exactly why this was hard to notice. Bounded, so it cannot grow forever either.
+VOD_PENDING="$BASE/log/vod_pending"
+: ${VOD_MISSING_RETRIES:=2}   # a definitive MISSING is re-probed this many times, then dropped
+: ${VOD_MAX_PROBES:=10}       # an id that never resolves is dropped after this many probes
 THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
 : ${THUMB_DELAY:=3600}                 # wait an hour after a cut before adopting a suggestion
 : ${THUMB_RETRY:=900}                   # if the video is still processing, look again in 15 min
@@ -523,6 +541,9 @@ refresh_broadcast_clock() {
 # light saying otherwise was worse than no light at all.
 record_rotation() {
   print -r -- "$(date '+%Y-%m-%d %H:%M:%S') mode=$1 seconds_to_live=$2 broadcast=$3 ended=${4:-}" >> "$ROTATE_HISTORY"
+  # T-12: the recording to confirm goes into the PENDING list, because the history below is
+  # trimmed and used to be the only place this id was remembered.
+  vod_pending_add "${4:-}"
   # keep it bounded without losing the recent record
   if [[ -s "$ROTATE_HISTORY" ]] && (( $(grep -c '' "$ROTATE_HISTORY") > 200 )); then
     tail -n 100 "$ROTATE_HISTORY" > "$ROTATE_HISTORY.t" && cat "$ROTATE_HISTORY.t" > "$ROTATE_HISTORY"
@@ -565,24 +586,61 @@ vod_duration() {
   rm -f "$err"; return 2          # NA, or the lookup broke - ask again later
 }
 
+vod_pending_add() {   # vod_pending_add ID - remember a recording that still needs a verdict
+  local id="$1"
+  [[ -n "$id" ]] || return 0
+  grep -q "^$id " "$VOD_PENDING" 2>/dev/null && return 0
+  print -r -- "$id 0" >> "$VOD_PENDING"
+}
+
 verify_pending_vods() {
-  [[ -s "$ROTATE_HISTORY" ]] || return 0
-  local id dur now
+  local id tries now dur rc
   now=$(date '+%Y-%m-%d %H:%M:%S')
-  for id in ${(f)"$(sed -n 's/.*ended=\([A-Za-z0-9_-][A-Za-z0-9_-]*\).*/\1/p' "$ROTATE_HISTORY" | sort -u)"}; do
+  # The candidate set is the PENDING FILE first, then anything the (bounded) history still
+  # remembers. The history half is only there so an install that predates vod_pending adopts its
+  # open ids on the first pass; the pending file is what makes this reliable.
+  local -a ids
+  ids=( ${(f)"$(awk '{print $1}' "$VOD_PENDING" 2>/dev/null)"} )
+  ids+=( ${(f)"$(sed -n 's/.*ended=\([A-Za-z0-9_-][A-Za-z0-9_-]*\).*/\1/p' "$ROTATE_HISTORY" 2>/dev/null)"} )
+  (( ${#ids} > 0 )) || return 0
+  : > "$VOD_PENDING.new"
+  for id in ${(u)ids}; do
     [[ -n "$id" ]] || continue
-    # only settled verdicts are final; a MISSING one is re-checked in case it was still
-    # processing when we last looked
+    # only settled verdicts are final; a MISSING or unresolved one is asked again, but a bounded
+    # number of times - an id that never resolves must not sit here forever.
     grep -q "^$id ok " "$VODSTATE" 2>/dev/null && continue
-    dur=$(vod_duration "$id"); local rc=$?
+    tries=$(awk -v i="$id" '$1==i {print $2+0; exit}' "$VOD_PENDING" 2>/dev/null)
+    [[ "$tries" == <-> ]] || tries=0
+    dur=$(vod_duration "$id"); rc=$?
     case $rc in
     0) print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
        log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)" ;;
     1) print -r -- "$id MISSING $now -" >> "$VODSTATE.new"
-       log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late." ;;
-    *) log "VOD: $id not processed yet - will ask again at the next rotation" ;;
+       log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late."
+       tries=$(( tries + 1 ))
+       if (( tries < VOD_MISSING_RETRIES )); then
+         print -r -- "$id $tries" >> "$VOD_PENDING.new"
+       else
+         log "VOD: $id is MISSING after $tries probes - dropping it from the pending list; it is not coming back."
+       fi ;;
+    *) tries=$(( tries + 1 ))
+       if (( tries < VOD_MAX_PROBES )); then
+         print -r -- "$id $tries" >> "$VOD_PENDING.new"
+         log "VOD: $id not processed yet - will ask again at the next rotation (probe $tries of $VOD_MAX_PROBES)"
+       else
+         log "VOD: $id never resolved in $tries probes - dropping it from the pending list. Check it by hand: https://www.youtube.com/watch?v=$id"
+       fi ;;
     esac
   done
+  mv -f "$VOD_PENDING.new" "$VOD_PENDING" 2>/dev/null
+  # That rewrite REPLACES the file, so an append landing during the probes would be lost. It
+  # cannot happen: the only appender is vod_pending_add inside record_rotation, which runs at the
+  # END of await_broadcast's subshell, and this function is called either at startup (nothing else
+  # is running) or from rotate_broadcast BEFORE it starts one. The gap between two rotate_broadcast
+  # calls is bounded below by ROTATE_MIN_INTERVAL (900s) while a whole await_broadcast - native wait
+  # 360s + bounce 60s + the API fallback's ingest wait 120s - is bounded above by about 600s. If
+  # either of those knobs is ever changed so they cross, this must become a merge instead of a
+  # replace, and tests/t15_resilience.sh is where that would be caught.
   [[ -f "$VODSTATE.new" ]] || return 0
   # one line per broadcast, newest verdict wins, bounded
   { cat "$VODSTATE.new"; [[ -f "$VODSTATE" ]] && cat "$VODSTATE"; } 2>/dev/null \
@@ -700,21 +758,29 @@ await_broadcast() {
     # it live. If it has not, bounce the publisher once: a fresh ingest arrival is the event
     # YouTube actually reacts to, and it is what recovered the channel on 2026-09-05.
     took=$(( $(date +%s) - started ))
-    if [[ -n "$PUBPID" ]] && kill -0 "$PUBPID" 2>/dev/null; then
-      log "ROTATE: nothing live after ${took}s - bouncing ingest so YouTube sees a fresh arrival"
+    # T-19. This runs in a `( ... ) &` subshell, and `$PUBPID` was snapshotted when that subshell
+    # was forked. If the publisher was restarted in between, that pid is stale - and `kill -9` on a
+    # RECYCLED pid kills whatever now owns it, while a stale pid that is merely gone makes the
+    # bounce a silent no-op. Read the pid from the pidfile and check its identity instead, which is
+    # the same rule the monitor uses.
+    bounce_pid=$(pidfile_pid "$PUB_PID" ffmpeg rtmp)
+    if [[ -n "$bounce_pid" ]]; then
+      log "ROTATE: nothing live after ${took}s - bouncing ingest (pid $bounce_pid) so YouTube sees a fresh arrival"
       mark_pub_kill "deliberate: ingest bounce - YouTube had not started the bound broadcast"
-      kill -9 "$PUBPID" 2>/dev/null
-      # the publisher watchdog restarts it within 5s, which re-runs prepare_broadcast
-      sleep 60
-      n=$(yt_live_id)
-      if [[ -n "$n" && "$n" != "$old_id" ]]; then
-        took=$(( $(date +%s) - started ))
-        log "LIVE (after ingest bounce): $n after ${took}s - https://www.youtube.com/watch?v=$n"
-        [[ "$ctx" == rotation ]] && record_rotation bounce "$took" "$n" "$old_id"
-        apply_settings "$n"
-        release_monitor
-        exit
-      fi
+      kill -9 "$bounce_pid" 2>/dev/null
+    else
+      log "ROTATE: nothing live after ${took}s and $PUB_PID holds no live publisher - NOT bouncing (there is nothing to bounce; the publisher watchdog restarts it)"
+    fi
+    sleep 60
+    # the publisher watchdog restarts it within 5s, which re-runs prepare_broadcast
+    n=$(yt_live_id)
+    if [[ -n "$n" && "$n" != "$old_id" ]]; then
+      took=$(( $(date +%s) - started ))
+      log "LIVE (after ingest bounce): $n after ${took}s - https://www.youtube.com/watch?v=$n"
+      [[ "$ctx" == rotation ]] && record_rotation bounce "$took" "$n" "$old_id"
+      apply_settings "$n"
+      release_monitor
+      exit
     fi
     took=$(( $(date +%s) - started ))
     if yt_api_ready; then
@@ -881,11 +947,29 @@ while true; do
        && (( $(date +%s) >= ROTATE_BLOCKED_UNTIL )); then
     rotate_broadcast "scheduled ${ROTATE_LABEL} reached"; last=""; stuck=0; continue
   fi
+  # T-08: after a restart, re-adopt the broadcast clock as soon as the successor is live. The id
+  # changes exactly when the restart fragmented the recording, so this both fixes the clock and
+  # names the fragment - "why is this VOD only 40 minutes long" has no other answer in the log.
+  if (( CLOCK_RETRY_END > 0 )) && (( $(date +%s) >= CLOCK_RETRY_AT )); then
+    clock_before=$(sed -n '1s/ .*//p' "$BSTATE" 2>/dev/null)
+    refresh_broadcast_clock
+    clock_after=$(sed -n '1s/ .*//p' "$BSTATE" 2>/dev/null)
+    if [[ -n "$clock_after" && -n "$clock_before" && "$clock_after" != "$clock_before" ]]; then
+      log "FRAGMENT: the restart closed broadcast $clock_before early, so its recording is a partial segment and $clock_after is a fresh one. The rotation clock is now $clock_after's; this line is why the VOD is short."
+      CLOCK_RETRY_END=0
+    elif (( $(date +%s) >= CLOCK_RETRY_END )); then
+      CLOCK_RETRY_END=0    # the broadcast never changed: the restart did not fragment anything
+    else
+      CLOCK_RETRY_AT=$(( $(date +%s) + CLOCK_RETRY_EVERY ))
+    fi
+  fi
   if ! kill -0 "$PUBPID" 2>/dev/null; then
     wait "$PUBPID" 2>/dev/null; local rc=$?
     log "PUBLISHER died rc=$rc - $(pub_death_reason "$rc") - restarting (this does drop the YouTube session briefly)"
     rm -f "$PUB_WHY" 2>/dev/null
-    start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0; continue
+    start_publisher
+    CLOCK_RETRY_AT=$(( $(date +%s) + CLOCK_RETRY_EVERY )); CLOCK_RETRY_END=$(( $(date +%s) + CLOCK_RETRY_WINDOW ))
+    log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0; continue
   fi
   cur=$(grep -a '^frame=' "$PROG" 2>/dev/null | tail -1 | cut -d= -f2)
   if [[ -n "$cur" && "$cur" != "$last" ]]; then last="$cur"; stuck=0
@@ -895,7 +979,9 @@ while true; do
       log "WATCHDOG: publisher output frozen ${stuck}s - restarting publisher"
       mark_pub_kill "deliberate: stall watchdog - output frozen ${stuck}s"
       kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
-      start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0
+      start_publisher
+      CLOCK_RETRY_AT=$(( $(date +%s) + CLOCK_RETRY_EVERY )); CLOCK_RETRY_END=$(( $(date +%s) + CLOCK_RETRY_WINDOW ))
+      log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0
     fi
   fi
 done
