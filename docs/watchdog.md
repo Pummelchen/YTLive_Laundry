@@ -295,9 +295,15 @@ sudo systemctl enable --now ytlive-heartbeat
 journalctl -u ytlive-heartbeat -f        # "listening on 100.99.149.11:8787"
 ```
 
-Then copy the same token to the streamer's `conf/heartbeat.token` (mode 600) and set
-`HEARTBEAT_URL="http://100.99.149.11:8787/heartbeat"` in `conf/stream.env`, and restart the
-streamer. The dead-man signal is on when the streamer's log says `heartbeat: dead-man signal ON`.
+Then arm both sides. On the watchdog host, uncomment `WATCH_HEARTBEAT` in
+`/var/ytlive-watchdog/conf/watchdog.env` and point it at the same path as `HEARTBEAT_STATE_FILE`
+(the template ships it empty so a fresh clone cannot page anyone), then
+`sudo systemctl restart ytlive-watchdog`. On the streamer, copy the same token to
+`conf/heartbeat.token` (mode 600), set `HEARTBEAT_URL="http://100.99.149.11:8787/heartbeat"` in
+`conf/stream.env`, and restart the streamer. The push side is on when the streamer's log says
+`heartbeat: dead-man signal ON`; the receive side is on when
+`journalctl -u ytlive-heartbeat` shows `accept … bytes from 100.x`. Only then is the dead-man
+signal actually covered end to end — the watchdog must not be armed before the pushes arrive.
 
 ## Known limits
 

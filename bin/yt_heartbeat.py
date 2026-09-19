@@ -332,7 +332,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        # A HEAD response has the headers of the GET it mirrors and no body at all.
+        if self.command != "HEAD":
+            self.wfile.write(body)
 
     def _reject(self, code, reason):
         peer = self.client_address[0]

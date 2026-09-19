@@ -88,6 +88,7 @@ call("ok", "/heartbeat", "POST", BODY)
 call("wrong", "/heartbeat", "POST", BODY, auth="not-the-token")
 call("absent", "/heartbeat", "POST", BODY, auth=None)
 call("method", "/heartbeat", "GET", None)
+call("head", "/heartbeat", "HEAD", None)
 call("path", "/nope", "POST", BODY)
 call("big", "/heartbeat", "POST", b"x" * 9000)
 PY
@@ -97,6 +98,7 @@ t_assert_eq "204" "$(rc ok)"     "the right token is accepted (204)"
 t_assert_eq "401" "$(rc wrong)"  "a wrong token is rejected (401)"
 t_assert_eq "401" "$(rc absent)" "an absent Authorization header is rejected (401)"
 t_assert_eq "405" "$(rc method)" "a non-POST method is rejected (405)"
+t_assert_eq "405" "$(rc head)"   "a HEAD is rejected (405) with no response body"
 t_assert_eq "404" "$(rc path)"   "a path other than /heartbeat is rejected (404)"
 t_assert_eq "413" "$(rc big)"    "a body over the 8 KB cap is rejected (413)"
 
