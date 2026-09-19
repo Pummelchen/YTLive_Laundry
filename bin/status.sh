@@ -210,6 +210,18 @@ if [[ -s "$VS" ]]; then
   good=$(grep -c ' ok ' "$VS"); miss=$(grep -c ' MISSING ' "$VS")
   (( miss == 0 )) && ok "${good} recordings saved and reviewable, none lost" \
                   || bad "${miss} recording(s) NOT reviewable - the cut is happening too late"
+  # The first verdict is optimistic and minutes old: YouTube keeps re-encoding and trims the head,
+  # so the PUBLISHED duration can fall afterwards. recheck_final_vods() reads it once it settles
+  # and files `short` (under the 8h00m floor) or `gone`. Measured 2026-09-20: a segment verified
+  # 8h4m at the cut published at 7h53m47s and nothing noticed. Both are alarms here.
+  short=$(grep -c ' short ' "$VS"); gone=$(grep -c ' gone ' "$VS")
+  if (( short > 0 || gone > 0 )); then
+    bad "${short} short / ${gone} gone recording(s) - the published duration is below the floor or the video is no longer available:"
+    grep -E ' short | gone ' "$VS" | head -3 | sed 's/^/        /'
+    print "        (the wall clock is ${ROTATE_LABEL:-8h03m}; YouTube's own trim is what makes the published number smaller)"
+  else
+    ok "no published recording has come out short or gone missing"
+  fi
 else
   print "  (nothing verified yet - the first check runs at the rotation after next)"
 fi

@@ -23,11 +23,18 @@ CALLS="$T_BASE/log/calls.log"
 VODF="$T_BASE/vod_funcs.zsh"
 { t_extract_fn "$REPO_DIR/bin/stream.sh" vod_pending_add
   t_extract_fn "$REPO_DIR/bin/stream.sh" verify_pending_vods
+  t_extract_fn "$REPO_DIR/bin/stream.sh" vod_state_merge
+  t_extract_fn "$REPO_DIR/bin/stream.sh" vod_schedule_recheck
+  t_extract_fn "$REPO_DIR/bin/stream.sh" recheck_final_vods
+  t_extract_fn "$REPO_DIR/bin/stream.sh" register_predecessor
   printf "BASE='%s'\n" "$T_BASE"
   printf "VODSTATE='%s/log/vod_status'\n" "$T_BASE"
   printf "VOD_PENDING='%s/log/vod_pending'\n" "$T_BASE"
+  printf "VOD_RECHECK='%s/log/vod_recheck'\n" "$T_BASE"
+  printf "BSTATE='%s/log/broadcast_started'\n" "$T_BASE"
   printf "ROTATE_HISTORY='%s/log/rotation_history.log'\n" "$T_BASE"
-  printf "VOD_MISSING_RETRIES=2\nVOD_MAX_PROBES=3\nCALLS='%s'\n" "$CALLS"
+  printf "ROTATE_LABEL='8h03m'\n"
+  printf "VOD_MISSING_RETRIES=2\nVOD_MAX_PROBES=3\nVOD_MIN_SECONDS=28800\nVOD_RECHECK_AFTER=86400\nCALLS='%s'\n" "$CALLS"
   cat <<'EOF'
 log() { print -r -- "$*" >> "$CALLS"; }
 vod_duration() { print -r -- "${VOD_DUR:-123}"; return ${VOD_RC:-0}; }
@@ -90,6 +97,55 @@ reset_vod
 t_assert_eq "1" "$(grep -c '^Dup ' "$T_BASE/log/vod_pending")" "vod_pending_add is idempotent"
 /bin/zsh -c "source '$VODF'; vod_pending_add ''" >/dev/null 2>&1
 t_assert_eq "1" "$(grep -c '' "$T_BASE/log/vod_pending")" "and an empty id is not recorded"
+
+# --- (d) the PUBLISHED duration, and the segments no rotation ever closed (2026-09-20) ---------
+# A rotation registers the recording it closes. A broadcast closed by YouTube's autoStop instead -
+# a publisher death, a crash, a reboot - used to be registered NOWHERE, so its recording was never
+# verified: D9kF4Rf9uPU, created by the post-outage recovery start, has no verdict and now answers
+# "Video unavailable". And the first verdict is optimistic: YouTube trims the head afterwards, so a
+# segment verified 8h4m published at 7h53m47s with nothing noticing.
+reset_vod
+: > "$T_BASE/log/vod_recheck"
+print -r -- "PrevBroadca 1789000000" > "$T_BASE/log/broadcast_started"
+/bin/zsh -c "source '$VODF'; register_predecessor" >/dev/null 2>&1
+pending_has "PrevBroadca" && t_ok "the broadcast that was live when the process last stopped is registered for verification" \
+                         || t_bad "a broadcast closed outside a rotation is never registered (the D9kF4Rf9uPU bug)"
+
+# A recording published under the floor is SHORT, not ok - at the cut and after it settles.
+reset_vod
+: > "$T_BASE/log/vod_recheck"
+print -r -- "ShortOne 0" > "$T_BASE/log/vod_pending"
+run_vod 0 28200        # 7h50m, under the 8h00m floor
+status_has "ShortOne short" && t_ok "a recording under the 8h00m floor is filed SHORT, not ok" \
+                            || t_bad "a short recording was filed as ok"
+t_assert_contains "$(cat "$CALLS")" "is SHORT" "and the log says so, with the id"
+
+# An ok recording is scheduled for a second look, because the published duration can still fall.
+reset_vod
+: > "$T_BASE/log/vod_recheck"
+print -r -- "Settles 0" > "$T_BASE/log/vod_pending"
+run_vod 0 29000
+grep -q "^Settles " "$T_BASE/log/vod_recheck" && t_ok "a verified recording is scheduled for its finalised-duration re-check" \
+                                              || t_bad "no re-check was scheduled, so a later trim goes unnoticed"
+
+# The re-check itself: the same id, probed again when it is due, and the verdict REWRITTEN.
+run_final() {  # run_final RC DUR - run recheck_final_vods with the re-check due now
+  BASE="$T_BASE" VOD_RC="$1" VOD_DUR="${2:-123}" /bin/zsh -c "source '$VODF'; print -r -- \"Settles 1\" > \"\$VOD_RECHECK\"; recheck_final_vods" >/dev/null 2>&1
+}
+run_final 0 28427      # 7h53m47s - the measured trim
+status_has "Settles short" && t_ok "a settled recording that came out short overwrites its ok verdict with SHORT" \
+                           || t_bad "the finalised short duration was not recorded"
+t_assert_contains "$(cat "$CALLS")" "VOD-FINAL" "and the log names it as the final verdict"
+
+run_final 1 0          # now unavailable
+status_has "Settles gone" && t_ok "a published recording that becomes unavailable is filed GONE" \
+                          || t_bad "a vanished recording was not recorded"
+
+run_final 0 29000      # settled and whole
+status_has "Settles ok" && t_ok "a settled recording above the floor stays ok" \
+                        || t_bad "a good finalised recording was not recorded as ok"
+grep -q "^Settles " "$T_BASE/log/vod_recheck" && t_bad "a settled id is still waiting for a re-check" \
+                                              || t_ok "and a settled id leaves the re-check list"
 
 # --- (b) the restart clock ----------------------------------------------------------------
 CLKF="$T_BASE/clock_funcs.zsh"

@@ -9,6 +9,52 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.11 — 2026-09-20
+
+**The published recording is now verified, not assumed — and it is verified without a single new
+credential.** Three fixes, all reachable from what the project already has: the streamer's own
+yt-dlp (its address is not bot-checked), the heartbeat push it already sends, and no reading of
+YouTube from the watchdog host at all.
+
+- **A recording closed outside a rotation was never verified.** `log/vod_pending` was fed only by
+  `record_rotation`, so a broadcast that YouTube closed by **autoStop** instead — a publisher
+  death, a crash, a reboot — was registered nowhere and its recording was never checked. Measured
+  2026-09-20: **D9kF4Rf9uPU**, created by the post-outage recovery start rather than by a rotation,
+  has no verdict anywhere and now answers *"Video unavailable"* — and **nothing noticed**.
+  `register_predecessor()` now registers the broadcast that was live when the process last
+  stopped, read from `log/broadcast_started` *before* the clock file is rewritten, so every
+  segment enters the list no matter which path closed it.
+- **The first verdict is optimistic, and nothing re-read it.** The duration is taken minutes after
+  the cut, and YouTube keeps re-encoding and trims the head afterwards. Measured across five
+  segments: published **8h02m–8h03m** against an 8h03m wall (trim 0.1–1.1 min) — *except* one that
+  was verified **8h4m** at the cut and read **7h53m47s** hours later (trim 10.5 min). Nothing
+  noticed that either. `recheck_final_vods()` now re-reads the published duration
+  `VOD_RECHECK_AFTER` (24 h) later and files **`short`** (under the new **8h00m floor**,
+  `VOD_MIN_SECONDS`) or **`gone`** instead of leaving the optimistic `ok` in place. It is a
+  detection, not a repair: the recording is already published by then, and what the alarm changes
+  is the next cut.
+- **The two surfaces that needed the answer.** `bin/status.sh` reports short and gone recordings
+  as failures ("N short / M gone — the published duration is below the floor or the video is no
+  longer available", with the ids), and the **heartbeat payload carries `vod_problem`**, so the
+  off-host watchdog learns about it through the push it already receives. `bin/yt_watchdog.py`
+  alerts on it as its **own episode** — reported while the channel is live, unable to hide or be
+  hidden by a dark alert — and believes it only while the push is fresh.
+- **The watchdog's alert body no longer advises a setting this hardware cannot have.**
+  `T-29` measured that `autorestart` is accepted and ignored on this MacBookAir7,2, yet the dark
+  alert still told the operator to apply `pmset … autorestart`. It now says plainly that
+  **autorestart is NOT SUPPORTED here**, so a power cut leaves the machine off, and that the
+  2026-09-18 cause was a network failure which the `pmset` work does not cover.
+- **The alert body can name the segment again.** The watchdog host's yt-dlp is bot-blocked, so the
+  primary reader cannot report a video id and alerts said `video id : none`. The streamer already
+  pushes its own broadcast id, so that is used as the display fallback — no credential, and no
+  fragile scraping (the page's first `videoId` is a *related* video, measured).
+
+**No new Google authorization is involved anywhere in this change**, by operator policy: the VPS's
+datacenter address is bot-checked and any account login expires, so the fixes use the streamer's
+existing access and the existing push instead.
+
+Suite: **738 checks** (t07 174, t15 32, t16 61).
+
 ## 2.10 — 2026-09-20
 
 **The off-host watchdog's channel reader was blind, and it is readable again.** The second reader

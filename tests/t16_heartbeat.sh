@@ -37,6 +37,71 @@ free_port() {
 }
 PORT=$(free_port)
 
+# --- the recording problem travels in the push, so the off-host watchdog needs no credential -----
+# The streamer is the only side that can read the published recording (its address is not
+# bot-checked), so it reports the problem in the payload instead of the watchdog asking YouTube.
+# Only a FRESH push is believed, and only short/gone/MISSING are problems - ok is not.
+empt=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(repr(m.vod_problem('$T_BASE')))
+" 2>&1)
+t_assert_contains "$empt" "''" "no vod_status means no recording problem to report"
+
+now=$(date '+%Y-%m-%d %H:%M:%S')
+print -r -- "Seg1 ok $now 8h03m" > "$T_BASE/log/vod_status"
+get=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(m.vod_problem('$T_BASE'))
+")
+t_assert_eq "" "$get" "an ok recording is not a problem"
+
+print -r -- "Seg2 short $now 7h53m" >> "$T_BASE/log/vod_status"
+get=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(m.vod_problem('$T_BASE'))
+")
+t_assert_contains "$get" "short Seg2 7h53m" "a short published recording is reported, with its id and duration"
+t_assert_contains "$get" "8h00m floor" "and names the floor it broke"
+
+# Most recent wins: an older problem must not displace a newer one.
+print -r -- "Seg3 gone $(date -v-2S '+%Y-%m-%d %H:%M:%S') -" >> "$T_BASE/log/vod_status"
+get=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(m.vod_problem('$T_BASE'))
+")
+t_assert_contains "$get" "short Seg2" "an older problem does not displace the newest one"
+
+# And when the newest IS a vanished recording, that is what gets reported.
+print -r -- "Seg3 gone $(date '+%Y-%m-%d %H:%M:%S') -" > "$T_BASE/log/vod_status"
+get=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(m.vod_problem('$T_BASE'))
+")
+t_assert_contains "$get" "gone Seg3" "a recording that became unavailable is reported as gone"
+
+print -r -- "Seg4 short 2020-01-01 00:00:00 7h00m" >> "$T_BASE/log/vod_status"
+get=$(BASE="$T_BASE" python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('hb', '$HB')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print(m.vod_problem('$T_BASE'))
+")
+if print -r -- "$get" | grep -q "Seg4"; then
+  t_bad "an ancient recording problem is still being reported"
+else
+  t_ok "a problem older than the window is forgotten, so it cannot page forever"
+fi
+
 # --- the token comparison is constant-time in the source --------------------------------
 grep -q 'hmac.compare_digest' "$SRC" \
   && t_ok "the token is compared with hmac.compare_digest, not ==" \
@@ -151,7 +216,7 @@ t_assert_eq "0" "$?" "the pusher exits 0 even with no runtime files at all"
 EMPTY=$(python3 -c "
 import json
 d = json.load(open('$STATE'))
-for k in ('uptime_s','publisher','publisher_pid','net_state','broadcast'):
+for k in ('uptime_s','publisher','publisher_pid','net_state','broadcast','vod_problem'):
     print('%s=%s' % (k, d.get(k)))
 ")
 t_assert_contains "$EMPTY" "publisher=False" "a missing publisher.pid degrades to publisher=False"
@@ -175,7 +240,7 @@ t_assert_eq "0" "$?" "the pusher exits 0 against a live listener"
 FIELDS=$(python3 -c "
 import json
 d = json.load(open('$STATE'))
-for k in ('ts','host','uptime_s','disk_free_mb','publisher','publisher_pid','net_state','broadcast'):
+for k in ('ts','host','uptime_s','disk_free_mb','publisher','publisher_pid','net_state','broadcast','vod_problem'):
     print('%s=%s' % (k, d.get(k)))
 ")
 fv() { print -r -- "$FIELDS" | sed -n "s/^$1=//p"; }

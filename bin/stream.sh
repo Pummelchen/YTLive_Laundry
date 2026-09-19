@@ -537,6 +537,15 @@ VODSTATE="$BASE/log/vod_status"        # "<id> <verdict> <checked> <duration>", 
 VOD_PENDING="$BASE/log/vod_pending"
 : ${VOD_MISSING_RETRIES:=2}   # a definitive MISSING is re-probed this many times, then dropped
 : ${VOD_MAX_PROBES:=10}       # an id that never resolves is dropped after this many probes
+# The floor a PUBLISHED recording has to clear, and the second look that checks it. The first
+# verdict is taken minutes after the cut, from the machine that closed the broadcast, and it is
+# optimistic: YouTube keeps re-encoding and trims the head, so the number can fall afterwards.
+# Measured 2026-09-20 over five segments: published 8h02m-8h03m against an 8h03m wall (trim
+# 0.1-1.1 min), EXCEPT one that was verified 8h4m at the cut and read 7h53m47s a few hours later
+# (trim 10.5 min). Nothing re-read it, so nothing noticed. This is that second read.
+: ${VOD_MIN_SECONDS:=28800}   # 8h00m - below this the recording is SHORT, and that is an alarm
+: ${VOD_RECHECK_AFTER:=86400} # re-read the published duration this long after the first verdict
+VOD_RECHECK="$BASE/log/vod_recheck"    # "<id> <due epoch>": ids awaiting their finalised duration
 THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
 : ${THUMB_DELAY:=3600}                 # wait an hour after a cut before adopting a suggestion
 : ${THUMB_RETRY:=900}                   # if the video is still processing, look again in 15 min
@@ -639,6 +648,70 @@ vod_pending_add() {   # vod_pending_add ID - remember a recording that still nee
   print -r -- "$id 0" >> "$VOD_PENDING"
 }
 
+register_predecessor() {   # register the broadcast that was live when this process last stopped
+  # A ROTATION registers the recording it closes, and that used to be the only way an id entered
+  # vod_pending. A broadcast closed by YouTube's own autoStop instead - a publisher death, a
+  # crash, a reboot - was never registered and therefore never verified at all. Measured
+  # 2026-09-20: D9kF4Rf9uPU, created by the post-outage recovery start rather than by a rotation,
+  # has no verdict anywhere and now answers "Video unavailable" - and nothing noticed.
+  #
+  # Must run BEFORE the clock file is rewritten by refresh_broadcast_clock(), which is where the
+  # predecessor's id still lives.
+  local id
+  [[ -f "$BSTATE" ]] || return 0
+  id=$(awk 'NR==1 {print $1}' "$BSTATE" 2>/dev/null)
+  [[ ${#id} -eq 11 && "$id" == [A-Za-z0-9_-]* ]] || return 0
+  vod_pending_add "$id"
+  log "VOD: registered $id - the broadcast that was live when this process last stopped - for verification"
+}
+
+vod_schedule_recheck() {   # vod_schedule_recheck ID - make sure the PUBLISHED duration is read too
+  local id="$1" due
+  [[ -n "$id" ]] || return 0
+  grep -q "^$id " "$VOD_RECHECK" 2>/dev/null && return 0
+  due=$(( $(date +%s) + VOD_RECHECK_AFTER ))
+  print -r -- "$id $due" >> "$VOD_RECHECK"
+}
+
+vod_state_merge() {   # one line per broadcast, newest verdict wins, bounded
+  [[ -f "$VODSTATE.new" ]] || return 0
+  { cat "$VODSTATE.new"; [[ -f "$VODSTATE" ]] && cat "$VODSTATE"; } 2>/dev/null \
+    | awk '!seen[$1]++' | head -50 > "$VODSTATE.t"
+  mv -f "$VODSTATE.t" "$VODSTATE"; rm -f "$VODSTATE.new"
+}
+
+recheck_final_vods() {
+  # The first verdict is taken minutes after the cut and is optimistic: YouTube keeps re-encoding
+  # and trims the head, so the published number can fall afterwards. Measured 2026-09-20 over five
+  # segments: 8h02m-8h03m against an 8h03m wall (trim 0.1-1.1 min), except one verified 8h4m at
+  # the cut that read 7h53m47s hours later (trim 10.5 min). Nothing re-read it, so nothing
+  # noticed. This reads the settled duration and files SHORT (under VOD_MIN_SECONDS) or GONE.
+  [[ -f "$VOD_RECHECK" ]] || return 0
+  local id due now dur rc stamp kept=0
+  now=$(date +%s); stamp=$(date '+%Y-%m-%d %H:%M:%S')
+  : > "$VOD_RECHECK.new"
+  while read -r id due; do
+    [[ -n "$id" && "$due" == <-> ]] || continue
+    if (( due > now )); then print -r -- "$id $due" >> "$VOD_RECHECK.new"; kept=$(( kept + 1 )); continue; fi
+    dur=$(vod_duration "$id"); rc=$?
+    case $rc in
+      0) if (( dur < VOD_MIN_SECONDS )); then
+           print -r -- "$id short $stamp $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+           log "VOD-FINAL: $id is SHORT - YouTube publishes $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m, under the ${VOD_MIN_SECONDS}s floor (wall was ${ROTATE_LABEL}). https://www.youtube.com/watch?v=$id"
+         else
+           print -r -- "$id ok $stamp $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+           log "VOD-FINAL: $id settled at $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m - finalised, above the floor"
+         fi ;;
+      1) print -r -- "$id gone $stamp -" >> "$VODSTATE.new"
+         log "VOD-FINAL: $id is GONE - the published recording is no longer available. https://www.youtube.com/watch?v=$id" ;;
+      *) print -r -- "$id $due" >> "$VOD_RECHECK.new"; kept=$(( kept + 1 )) ;;   # not settled: wait
+    esac
+  done < "$VOD_RECHECK"
+  mv -f "$VOD_RECHECK.new" "$VOD_RECHECK" 2>/dev/null
+  vod_state_merge
+  (( kept == 0 )) || log "VOD-FINAL: $kept recording(s) still awaiting a settled duration"
+}
+
 verify_pending_vods() {
   local id tries now dur rc
   now=$(date '+%Y-%m-%d %H:%M:%S')
@@ -654,13 +727,30 @@ verify_pending_vods() {
     [[ -n "$id" ]] || continue
     # only settled verdicts are final; a MISSING or unresolved one is asked again, but a bounded
     # number of times - an id that never resolves must not sit here forever.
-    grep -q "^$id ok " "$VODSTATE" 2>/dev/null && continue
+    # Settled verdicts are final and are not re-probed here - the second look lives in
+    # recheck_final_vods(), which reads the PUBLISHED duration later. An id that was verified ok
+    # before that existed still gets scheduled, so an install picks this up on its next pass.
+    if grep -qE "^$id (ok|short|gone) " "$VODSTATE" 2>/dev/null; then
+      if grep -q "^$id ok " "$VODSTATE" 2>/dev/null; then
+        local seen_at age
+        seen_at=$(awk -v i="$id" '$1==i {print $3" "$4; exit}' "$VODSTATE" 2>/dev/null)
+        age=$(( $(date +%s) - $(date -j -f "%Y-%m-%d %H:%M:%S" "$seen_at" +%s 2>/dev/null || print 0) ))
+        (( age >= 0 && age < VOD_RECHECK_AFTER * 2 )) && vod_schedule_recheck "$id"
+      fi
+      continue
+    fi
     tries=$(awk -v i="$id" '$1==i {print $2+0; exit}' "$VOD_PENDING" 2>/dev/null)
     [[ "$tries" == <-> ]] || tries=0
     dur=$(vod_duration "$id"); rc=$?
     case $rc in
-    0) print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
-       log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)" ;;
+    0) if (( dur < VOD_MIN_SECONDS )); then
+         print -r -- "$id short $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+         log "VOD: $id is SHORT - $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m is saved and reviewable, but it is under the ${VOD_MIN_SECONDS}s floor (wall was ${ROTATE_LABEL}). https://www.youtube.com/watch?v=$id"
+       else
+         print -r -- "$id ok $now $(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m" >> "$VODSTATE.new"
+         log "VOD: $id is saved and reviewable ($(( dur / 3600 ))h$(( (dur % 3600) / 60 ))m)"
+         vod_schedule_recheck "$id"
+       fi ;;
     1) print -r -- "$id MISSING $now -" >> "$VODSTATE.new"
        log "VOD: recording for $id is NOT available - that stream cannot be reviewed. If this repeats, the cut is happening too late."
        tries=$(( tries + 1 ))
@@ -688,10 +778,7 @@ verify_pending_vods() {
   # either of those knobs is ever changed so they cross, this must become a merge instead of a
   # replace, and tests/t15_resilience.sh is where that would be caught.
   [[ -f "$VODSTATE.new" ]] || return 0
-  # one line per broadcast, newest verdict wins, bounded
-  { cat "$VODSTATE.new"; [[ -f "$VODSTATE" ]] && cat "$VODSTATE"; } 2>/dev/null \
-    | awk '!seen[$1]++' | head -50 > "$VODSTATE.t"
-  mv -f "$VODSTATE.t" "$VODSTATE"; rm -f "$VODSTATE.new"
+  vod_state_merge
 }
 
 
@@ -913,6 +1000,7 @@ rotate_broadcast() {
   # Before cutting again, confirm the recording the LAST cut was supposed to produce
   # actually exists. Eight hours is ample processing time.
   verify_pending_vods
+  recheck_final_vods
 
   old_id=$(yt_live_id)
   schedule_thumbnail "$old_id"
@@ -969,11 +1057,13 @@ fi
 start_heartbeat
 trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID ${NETWATCHPID:+"$NETWATCHPID"} ${HEARTBEATPID:+"$HEARTBEATPID"} $PUBPID 2>/dev/null; exit 0' TERM INT
 
+register_predecessor      # BEFORE the clock file is rewritten: see the function
 start_publisher
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's
 verify_pending_vods         # catch up on any recording we have not confirmed yet
+recheck_final_vods          # and read the PUBLISHED duration of the ones that have settled
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 

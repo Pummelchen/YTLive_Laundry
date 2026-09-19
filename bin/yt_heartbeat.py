@@ -217,6 +217,47 @@ def publisher_state(base):
     return all(n in cmd for n in PUB_NEEDLES), pid
 
 
+def vod_problem(base, window=86400):
+    """The most recent recording problem YouTube published, or "".
+
+    Read from log/vod_status ("<id> <verdict> <checked> <duration>"), which the streamer writes
+    when it verifies a recording at the cut and again once the published duration has settled.
+    Only `short` (below the 8h00m floor), `gone` (published and now unavailable) and `MISSING`
+    (never published) are problems; `ok` is not.
+
+    A recording can come out short AFTER the cut-time verdict: measured 2026-09-20, one segment
+    was verified 8h4m and read 7h53m47s hours later. The streamer re-reads it and records that
+    here, which is how the off-host watchdog learns about it without any credential, any API call
+    and without reading YouTube itself. The window stops an old problem from paging forever.
+    """
+    try:
+        with open(os.path.join(base, "log", "vod_status")) as fh:
+            lines = fh.readlines()
+    except OSError:
+        return ""
+    newest = None
+    for line in lines:
+        parts = line.split()
+        if len(parts) < 5 or parts[1] not in ("short", "gone", "MISSING"):
+            continue
+        try:
+            when = time.mktime(time.strptime(parts[2] + " " + parts[3], "%Y-%m-%d %H:%M:%S"))
+        except ValueError:
+            continue
+        if time.time() - when > window:
+            continue
+        if newest is None or when > newest[0]:
+            newest = (when, parts[0], parts[1], parts[4])
+    if newest is None:
+        return ""
+    _, vid, verdict, dur = newest
+    if verdict == "MISSING":
+        return f"missing {vid} - YouTube never published it"
+    if verdict == "gone":
+        return f"gone {vid} - published, then unavailable"
+    return f"short {vid} {dur} - under the 8h00m floor"
+
+
 def build_payload(base):
     """The wire document. Every read degrades to null; this function does not raise."""
     running, pid = publisher_state(base)
@@ -229,6 +270,9 @@ def build_payload(base):
         "publisher_pid": pid,
         "net_state": first_fields(os.path.join(base, "log", "net_state"), 2),
         "broadcast": first_fields(os.path.join(base, "log", "broadcast_started"), 1),
+        # A recording that came out short or vanished, so the off-host watchdog can alert on it
+        # without a credential and without reading YouTube: the streamer already knows.
+        "vod_problem": vod_problem(base),
     }
 
 

@@ -469,6 +469,22 @@ def heartbeat_state(cfg):
     return "stale", age
 
 
+def vod_state(heartbeat, payload):
+    """The streamer's most recent recording problem, or None.
+
+    Same freshness rule as the disk figure: only a FRESH push is believed, because an old
+    "short <id>" would page about a recording that a later good segment has already superseded.
+    None means "no problem to report" - an empty string, a missing field, a stale file or a
+    disabled signal all mean the same thing here, and none of them is a fault.
+    """
+    if heartbeat != "fresh" or not isinstance(payload, dict):
+        return None
+    problem = payload.get("vod_problem")
+    if not isinstance(problem, str) or not problem.strip():
+        return None
+    return problem.strip()
+
+
 def disk_state(cfg, heartbeat, payload):
     """The pusher's free-space figure as a plain value for decide(), or None.
 
@@ -504,6 +520,8 @@ def new_state():
         "last_heartbeat_state": None,
         "last_heartbeat_age": None,
         "disk": None,               # {"free_mb","min_mb","threshold","since","alerted_at"}
+        "vod": None,                # {"problem","since","alerted_at"} - a published-recording fault
+        "last_broadcast": None,     # the streamer's own broadcast id, for display when vid is unknown
         "last_error": None,
         "checks": 0,
     }
@@ -533,7 +551,7 @@ def save_state(path, state):
 # --------------------------------------------------------------------------------------
 # The decision, as a pure function of (time, state, signals, config)
 # --------------------------------------------------------------------------------------
-def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None, disk=None):
+def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None, disk=None, vod=None):
     """Return (new_state, actions). Pure - no clock, no network, no I/O - so the whole
     alerting policy is testable without waiting 15 minutes or touching YouTube.
 
@@ -610,6 +628,25 @@ def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=N
                 actions.append(dict(kind="disk_recover", free_mb=free_mb, threshold=threshold))
             s["disk"] = {"free_mb": free_mb, "min_mb": disk.get("min_mb"), "threshold": threshold,
                          "since": None, "alerted_at": None}
+
+    # --- a recording problem YouTube published: its own episode, like the disk -----------------
+    # Reported from the same push and independently of the outage story: a healthy live stream
+    # whose last recording came out short is exactly the case that has to be visible (it is the
+    # only symptom of a bad cut, and the reason this exists is that nothing noticed a 10.5-minute
+    # trim for hours). Own `alerted_at`, so it can neither hide nor be hidden by a dark alert.
+    if vod is None:
+        prior = s.get("vod")
+        if isinstance(prior, dict) and prior.get("since") is not None:
+            actions.append(dict(kind="vod_recover", problem=prior.get("problem"), for_s=now - prior["since"]))
+            s["vod"] = dict(prior, since=None, alerted_at=None)
+    else:
+        prior = s.get("vod") if isinstance(s.get("vod"), dict) else {}
+        since = prior.get("since") or now
+        alerted_at = prior.get("alerted_at")
+        s["vod"] = {"problem": vod, "since": since, "alerted_at": alerted_at}
+        if alerted_at is None or (now - alerted_at) >= remind:
+            s["vod"]["alerted_at"] = now
+            actions.append(dict(kind="vod", problem=vod, for_s=now - since))
 
     if channel == "live":
         s["dark_since"] = None
@@ -757,6 +794,16 @@ def human_heartbeat(state, cfg):
     return "unknown"
 
 
+def human_vod(state):
+    """One line for the recording problem the streamer reported, or its absence."""
+    entry = state.get("vod")
+    if not isinstance(entry, dict) or not entry.get("problem"):
+        return "no problem reported by the streamer"
+    since = entry.get("since")
+    age = f" (first seen {human_duration(max(0, int(time.time()) - since))} ago)" if since else ""
+    return f"{entry['problem']}{age}"
+
+
 def program_version(cfg):
     """The release this install came from, written by watchdog-install.sh, or "unknown".
 
@@ -835,6 +882,21 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
     elif action.get("of") == "silent":
         subject = "[YTLive] streamer heartbeat is back"
         head = "The streamer's heartbeat file is being updated again; the app is alive."
+    elif kind == "vod":
+        problem = action.get("problem") or "a recording problem"
+        subject = f"[YTLive] recording problem: {problem.split(' - ')[0]}"
+        head = (f"The streamer reports a published-recording problem: **{problem}**. The channel "
+                f"itself may be perfectly live - this is about the 8-hour segment, not the stream. "
+                f"The published duration is what YouTube finally serves, and it can fall after the "
+                f"cut-time verdict: measured 2026-09-20 one segment was verified 8h4m and settled "
+                f"at 7h53m47s, and nothing noticed for hours. Check the segment and the rotation "
+                f"wall clock (ROTATE_HOURS/ROTATE_MINUTES) with bin/status.sh.")
+    elif kind == "vod_recover":
+        subject = "[YTLive] recording problem cleared"
+        head = (f"The recording problem reported earlier is gone: the last published segment is "
+                f"whole again (or a newer, complete one has replaced it in the report). Nothing to "
+                f"do unless it repeats.")
+
     elif kind == "disk_low":
         free = action.get("free_mb")
         limit = action.get("threshold")
@@ -864,7 +926,8 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         f"host state    : {host}" + (f" ({seen})" if seen else ""),
         f"heartbeat     : {human_heartbeat(state, cfg)}",
         f"disk          : {human_disk(state, cfg)}",
-        f"video id      : {vid or 'none'}",
+        f"recordings    : {human_vod(state)}",
+        f"video id      : {vid or state.get('last_broadcast') or 'none'}",
         f"now           : {human_time(time.time(), cfg)}",
     ]
     if state.get("dark_since") and kind == "dark":
@@ -886,9 +949,13 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         "  4. Then check conf/yt_oauth.json is still valid:  bin/yt_api.py token",
         "",
         "Known cause of the 2026-09-18 outage: the streamer lost its transport (DNS and its",
-        "own LAN) while it stayed awake and logging; it was dark ~19h26m. docs/known-issues.md",
-        "records the pmset hardening for the separate power class: sudo pmset -c sleep 0",
-        "disablesleep 1  (plus autorestart after power loss).",
+        "own LAN) while it stayed awake and logging; it was dark ~19h26m. That is a network",
+        "failure, not a power one, so the pmset hardening does not cover it.",
+        "",
+        "For the separate POWER class, bin/harden-host.sh --check is the record: SleepDisabled",
+        "is applied, and autorestart is NOT SUPPORTED by this hardware (a root write is accepted",
+        "and ignored - measured 2026-09-19), so a power cut leaves the Mac off until someone is",
+        "on site. Do not chase autorestart; only a UPS would change that.",
         "",
         f"-- {cfg['WATCH_HOST'] or 'ytlive'} watchdog on {os.uname().nodename}",
     ]
@@ -1013,10 +1080,17 @@ def check_once(cfg, state):
     if channel == "live" and vid:
         state["last_video"] = vid
     now = int(time.time())
-    # The push that proves the app is alive also carries its free-space figure, so the disk
-    # rule needs no second mechanism and no network: one file, one read, two facts.
-    disk = disk_state(cfg, heartbeat, heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip()))
-    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age, disk)
+    # The push that proves the app is alive also carries its free-space figure AND the recording
+    # problem the streamer found, so neither rule needs a second mechanism, a credential or a
+    # network call from this host: one file, one read, three facts.
+    payload = heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip())
+    disk = disk_state(cfg, heartbeat, payload)
+    vod = vod_state(heartbeat, payload)
+    if isinstance(payload, dict) and payload.get("broadcast"):
+        # Display only: when the primary reader cannot name the video (it is bot-blocked from this
+        # address), the alert can still say WHICH segment, because the streamer pushed its id.
+        state["last_broadcast"] = payload.get("broadcast")
+    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age, disk, vod)
     return new, actions, channel, host, host_last_seen, vid, heartbeat, heartbeat_age
 
 
@@ -1081,7 +1155,8 @@ def render_status(cfg, state, channel, host, host_last_seen, vid):
         f"  host state     : {host}" + (f"  {seen}" if seen else ""),
         f"  heartbeat      : {human_heartbeat(state, cfg)}",
         f"  disk           : {human_disk(state, cfg)}",
-        f"  video id       : {vid or 'none'}",
+        f"  recordings     : {human_vod(state)}",
+        f"  video id       : {vid or state.get('last_broadcast') or 'none'}",
         f"  dark since     : {human_time(state.get('dark_since'), cfg)}",
         f"  unknown since  : {human_time(state.get('unknown_since'), cfg)}",
         f"  silent since   : {human_time(state.get('silent_since'), cfg)}",

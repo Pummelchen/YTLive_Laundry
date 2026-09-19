@@ -63,7 +63,7 @@ def cfg(**over):
 
 C = cfg()
 
-def run(seq, c=None, hb="disabled", disk=None):
+def run(seq, c=None, hb="disabled", disk=None, vod=None):
     c = c or C
     st = wd.new_state(); out = []
     for item in seq:
@@ -71,9 +71,10 @@ def run(seq, c=None, hb="disabled", disk=None):
         h = item[3] if len(item) > 3 else hb
         age = item[4] if len(item) > 4 else None
         d = item[5] if len(item) > 5 else disk
+        v = item[6] if len(item) > 6 else vod
         if isinstance(h, tuple):
             h, age = h
-        st, acts = wd.decide(t, st, ch, host, c, h, age, d)
+        st, acts = wd.decide(t, st, ch, host, c, h, age, d, v)
         out.append([a["kind"] for a in acts])
     return out, st
 
@@ -214,6 +215,48 @@ ck(out[0] == ["silent"], "a stale push yields the silent alert")
 off = cfg(WATCH_DISK_MIN_MB="0")
 out, st = run([(0, "live", "live", "fresh", 30, None)], c=off)
 ck(out[0] == [], "WATCH_DISK_MIN_MB=0 disables the disk rule")
+
+# --- a published-recording problem: its own episode, reported while the channel is live ---------
+# The streamer is the only side that can read the published recording, so the problem arrives in
+# the heartbeat push (no credential here, no reading YouTube from a bot-checked address). It is
+# reported even when everything else is healthy, because a short or vanished recording IS the
+# symptom - and it keeps its own episode so it can neither hide nor be hidden by an outage.
+SHORT = "short ycAbb2G_Q2U 7h53m - under the 8h00m floor"
+out, st = run([(0, "live", "live", "fresh", 30, None, SHORT), (60, "live", "live", "fresh", 30, None, SHORT)])
+ck(out[0] == ["vod"], "a short published recording alerts even while the channel is perfectly live")
+ck(out[1] == [], "and does not repeat on the very next check")
+ck(st["last_alert_kind"] is None,
+   "a recording alert does not claim the outage episode (so a later dark still alerts at once)")
+out, st = run([(0, "live", "live", "fresh", 30, None, SHORT), (23000, "live", "live", "fresh", 30, None, SHORT)])
+ck(out[1] == ["vod"], "an unresolved recording problem is reminded after WATCH_REMIND")
+out, st = run([(0, "live", "live", "fresh", 30, None, SHORT), (100, "live", "live", "fresh", 30, None, None)])
+ck(out[1] == ["vod_recover"], "the problem clearing reports a recovery once")
+ck(st["vod"]["since"] is None, "and clears the episode so a later one is new")
+
+# The freshness rule: an old push must not page about a recording a later good segment replaced.
+ck(wd.vod_state("stale", {"vod_problem": SHORT}) is None,
+   "a stale push's recording problem is not believed")
+ck(wd.vod_state("fresh", {"vod_problem": ""}) is None and wd.vod_state("fresh", {}) is None,
+   "an empty or absent field is no problem at all")
+
+# The alert body must name the segment even when the primary reader cannot (its address is
+# bot-checked): the streamer pushes the broadcast id, and that is the display fallback.
+st2 = wd.new_state(); st2["last_broadcast"] = "Fo0bJ7V28zU"
+subj_v, body_v = wd.compose({"kind": "vod", "problem": SHORT, "for_s": 60}, st2, "unknown", "live", None, None, C)
+ck("recording" in subj_v.lower(), "the recording subject says what it is about")
+ck("7h53m" in body_v, "and the body carries the published duration")
+ck("Fo0bJ7V28zU" in body_v, "the video id falls back to the id the streamer pushed")
+ck("no problem reported" in wd.human_vod(wd.new_state()), "status says so when there is no problem")
+
+# The old advice must be gone: it told the operator to apply `autorestart`, which this hardware
+# cannot do (measured 2026-09-19), so the alert sent them after something that cannot work.
+_, body_d = wd.compose({"kind": "dark", "dark_for": 1200}, wd.new_state(), "offline", "live", None, None, C)
+if "plus autorestart after power loss" in body_d:
+    ck(False, "the alert body still advises the unsupported autorestart setting")
+else:
+    ck(True, "the alert body no longer advises the unsupported autorestart setting")
+ck("NOT SUPPORTED" in body_d, "it says plainly that autorestart is unsupported on this hardware")
+ck("network" in body_d.lower(), "and does not present the pmset work as the fix for a network outage")
 
 # UNKNOWN is still not DARK: the original rule must survive the new signal.
 out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")])
