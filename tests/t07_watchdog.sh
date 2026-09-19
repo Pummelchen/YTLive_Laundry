@@ -493,6 +493,34 @@ acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.loa
 t_assert_eq "" "$acts" "once: a malformed push body is silent, never a disk alert"
 t_assert_contains "$out" '"heartbeat": "fresh"' "once: a malformed body still counts as a fresh heartbeat"
 
+# `status` must be a LIVE page: it recomputes the heartbeat, so it must recompute the disk level
+# from the same file. Measured on the real host: a freshly installed watchdog printed
+# "disk : unavailable" while a fresh push carrying 165357 MB sat right there, because status
+# replayed the loop's last persisted state instead of reading the file.
+write_status() {  # write_status [extra VAR=VALUE ...]
+  env "$@" \
+    BASE="$T_BASE" HOME="$T_BASE/home" PATH="$STUBS:$PATH" \
+    WATCH_CHANNEL="@ternaklaundrybengkong" WATCH_HOST="ternak-macbook" \
+    WATCH_YTDLP="yt-dlp" WATCH_TAILSCALE="tailscale" \
+    WATCH_HTTP_URL="file://$HTTP_PAGE" \
+    WATCH_STATE_DIR="$T_BASE/log/wd-status" WATCH_ALERT_MODE="file" \
+    WATCH_ALERT_DIR="$T_BASE/log/alerts" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    python3 "$T_BASE/bin/yt_watchdog.py" status 2>&1
+}
+print -r -- '{"ts":1,"disk_free_mb":165357,"publisher":true}' > "$HB"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+t_assert_contains "$out" "165,357 MB free" "status reads the disk level out of a fresh push, not the loop's memory"
+t_assert_contains "$out" "alert under 2,000 MB" "status names the floor it would alert at"
+
+print -r -- '{"ts":1,"disk_free_mb":500}' > "$HB"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+t_assert_contains "$out" "ok 500 MB free" "status shows a below-floor reading as a live number (LOW is the alert episode, which the loop owns)"
+
+touch -t 202001010000 "$HB"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+t_assert_contains "$out" "unavailable" "status does not believe a stale push's disk figure"
+
 # --- the installer must not use the macOS system python, and must give the job a PATH -------
 # /usr/bin/python3 is the Xcode Command Line Tools build - 3.9.6, measured on this project's
 # machines on 2026-09-19 - and trusting it is exactly what broke the 2026-09-17 deploy. For a

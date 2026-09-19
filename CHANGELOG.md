@@ -130,8 +130,8 @@ dead-man signal the watchdog has watched for since 2.4 that nothing ever wrote.*
   grading command runs, and that the graded status still lands. `tests/t16_heartbeat.sh` (54 checks)
   drives a **real listener against a real pusher on loopback**: token accept/reject, method and path
   rejection, the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is
-  missing, and that the token never appears in the process arguments. The suite is now **655
-  checks** (t01 55, t02 12, t03 22, t04 17, t05 15, t06 21, t07 144, t08 46, t09 42, t10 63, t11 38,
+  missing, and that the token never appears in the process arguments. The suite is now **659
+  checks** (t01 55, t02 12, t03 22, t04 17, t05 15, t06 21, t07 148, t08 46, t09 42, t10 63, t11 38,
   t12 57, t13 21, t14 25, t15 23, t16 54).
 
 ## 2.6 — 2026-09-19

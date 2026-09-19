@@ -244,8 +244,8 @@ hash the file against a checkout.
 | `conf/ytlive-heartbeat.service` | **new** — the systemd unit for the listener, modelled on the watchdog's, ordered `Before=ytlive-watchdog.service` |
 | `tests/t16_heartbeat.sh` | **new** — 54 checks: a **real** listener against a **real** pusher on loopback — token accept/reject, method and path rejection (including HEAD), the 8 KB cap, atomic 0600 writes, graceful degradation when every runtime file is missing, and that the token never appears in the process arguments |
 | `docs/files.md` | `log/vod_pending` added to the runtime-state list, with why it is not derived from the trimmed `rotation_history.log`; the heartbeat's `log/heartbeat.log` and the host-side state file |
-| `AGENTS.md` | the suite count: 520 → **655** checks |
-| `README.md` | the suite count: 520 → **655** checks |
+| `AGENTS.md` | the suite count: 520 → **659** checks |
+| `README.md` | the suite count: 520 → **659** checks |
 | `tests/t11_paths_pids.sh` | grew to 38: every script tracked 755 is now asserted, because `install.sh` chmods `bin/*.sh` and `bin/*.py`, so the 644 `bin/cam_time.py` of 2.6 left a deployed tree that could never be clean |
 | `log/vod_pending` (**runtime state, gitignored**) | the recordings still awaiting a verdict, one `<id> <probes>` per line; bounded by `VOD_MISSING_RETRIES` / `VOD_MAX_PROBES`, and adopted from the history on an install that predates it (T-12) |
 
@@ -263,7 +263,7 @@ the total below is the sum of the per-file counts.
 | `tests/t04_token.sh` | 17 | all passed |
 | `tests/t05_rotation_gate.sh` | 15 | all passed |
 | `tests/t06_install.sh` | 21 | all passed |
-| `tests/t07_watchdog.sh` | 144 | all passed |
+| `tests/t07_watchdog.sh` | 148 | all passed |
 | `tests/t08_hosttools.sh` | 46 | all passed |
 | `tests/t09_net.sh` | 42 | all passed |
 | `tests/t10_camtools.sh` | 63 | all passed |
@@ -273,9 +273,9 @@ the total below is the sum of the per-file counts.
 | `tests/t14_monitor_beat.sh` | 25 | all passed |
 | `tests/t15_resilience.sh` | 23 | all passed |
 | `tests/t16_heartbeat.sh` | 54 | all passed |
-| **Total** | **655** | **`SUITE PASSED`** |
+| **Total** | **659** | **`SUITE PASSED`** |
 
-- The project's own suite, serially: **checked** — 655 checks, all passing. The runner reports
+- The project's own suite, serially: **checked** — 659 checks, all passing. The runner reports
   `ALL PASSED (N checks)` per file and `SUITE PASSED` at the end.
 - `tests/t15_resilience.sh` (new): **checked** — 23 checks. The pending list through every outcome
   (an id only in `vod_pending` is verified and dropped; a MISSING is recorded, re-probed once and
@@ -303,7 +303,7 @@ the total below is the sum of the per-file counts.
   online, that it never says `EXPIRED` and never tells the operator to re-auth on age alone, and
   that age alone is the only case where the message says so. Measured on the live streamer:
   `token` → `probe LIVE`, `status.sh --no-net` → `WARN` (it used to be a red `FAIL`).
-- The disk rule: **checked behaviourally, at both levels** — `tests/t07_watchdog.sh` (grew to 144)
+- The disk rule: **checked behaviourally, at both levels** — `tests/t07_watchdog.sh` (grew to 148)
   drives `decide()` as a pure function for the crossing, the reminder, the recovery, the switch
   (`WATCH_DISK_MIN_MB=0`) and the unusable-number cases, and then runs the **real** `yt_watchdog.py
   once` against a real heartbeat file whose body carries `disk_free_mb`, so the figure genuinely
@@ -320,7 +320,7 @@ the total below is the sum of the per-file counts.
   asserts the `FRAGMENT:` count is wired. That is a **source assertion**, not an execution against a
   log that actually holds fragments: no check here proves the warning renders correctly against a
   real `stream.log`.
-- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **655**
+- `AGENTS.md` and `README.md`: **checked** — both now state the credential-free suite is **659**
   checks (they said 520 for 2.6, and then 569 while the t15 FRAGMENT checks and t16 were still
   uncounted).
 - `bin/smoke_test.sh`: **not checked** — it needs `conf/yt_oauth.json`, which is gitignored and in

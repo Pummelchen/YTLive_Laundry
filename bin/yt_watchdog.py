@@ -1035,8 +1035,15 @@ def cmd_status(cfg):
     host, host_last_seen = host_state(cfg)
     heartbeat, heartbeat_age = heartbeat_state(cfg)
     # Show the CURRENT heartbeat, not the last one the loop happened to record, so `status`
-    # is a live page rather than a replay of the previous check.
-    state = dict(state, last_heartbeat_state=heartbeat, last_heartbeat_age=heartbeat_age)
+    # is a live page rather than a replay of the previous check. The disk level comes from the
+    # same file, so it is read live too - otherwise a fresh install (or a loop that has not
+    # run yet) prints "unavailable" while the number is sitting right there.
+    disk = disk_state(cfg, heartbeat, heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip()))
+    entry = state.get("disk") if isinstance(state.get("disk"), dict) else {}
+    state = dict(state, last_heartbeat_state=heartbeat, last_heartbeat_age=heartbeat_age,
+                 disk=(dict(entry, free_mb=disk["free_mb"], min_mb=disk.get("min_mb"),
+                            threshold=disk["threshold"]) if disk else
+                       dict(entry, free_mb=None, threshold=cfg.num("WATCH_DISK_MIN_MB"))))
     print(render_status(cfg, state, channel, host, host_last_seen, vid))
     return 0
 
