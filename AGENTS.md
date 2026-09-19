@@ -200,6 +200,13 @@ packs it, so a release cannot ship a tree that fails either.
   rungs are reachable without handing a launchd agent the account password. No wildcards, no shell,
   no `ALL`, and it is proved with `visudo -cf` BEFORE installation - a malformed file in
   `/etc/sudoers.d` can make sudo refuse every rule, including the one needed to remove it (T-38).
+- **No new Google authorization, ever, by operator policy.** The off-host watchdog runs on a
+  datacenter address that YouTube bot-checks, and any account login there expires and re-creates
+  the problem it was meant to solve. Every fix must ride on what already exists: the **streamer's**
+  own yt-dlp (its address is not blocked), the **heartbeat push** the streamer already sends, and
+  public pages with no auth. So the watchdog host never reads YouTube itself — it reacts to what
+  the streamer reports (free disk, the recording problem, the broadcast id) and to the tailnet.
+  Adding a credential there is a decision for the operator, not a convenience to reach for.
 - **A host line is not a health verdict.** Tailscale reports Go's zero time for an ONLINE peer,
   which is why the status page says `online now` instead of a date; `bin/yt_api.py health` reports
   YouTube's own ingest severity beside it; the monitor's frame grading is a third opinion. Keep
