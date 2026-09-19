@@ -4,8 +4,8 @@
 Everything runs inside main(): this module used to do its work at import time, so merely
 importing it - from a REPL, a test, or another tool that loads bin/*.py - rebooted the
 camera. Discovery is also deferred, because resolving the address hits the network.
-Credentials are accepted on argv for operator convenience but argv is world-readable
-through ps; prefer the CAM_USER/CAM_PASS environment variables.
+USER/PASS are accepted on argv for operator convenience, but argv is world-readable
+through ps, so CAM_USER/CAM_PASS are preferred and win when they are set.
 """
 import base64
 import datetime
@@ -57,8 +57,25 @@ def reboot(host, port, user, pw):
         return 1
 
 
+USAGE = "usage: cam_reboot.py [HOST] [PORT] [USER] [PASS]   (credentials: prefer CAM_USER/CAM_PASS)"
+ARGV_CRED_WARNING = ("warning: USER/PASS on argv are world-readable in ps;"
+                     " prefer CAM_USER/CAM_PASS")
+
+
+def credentials(argv, env):
+    """(user, pw, on_argv). CAM_USER/CAM_PASS are preferred; the positional form still works for
+    compatibility but is visible in ps, so main() warns when it is used."""
+    on_argv = len(argv) > 3
+    user = env.get("CAM_USER") or (argv[3] if len(argv) > 3 else "")
+    pw = env.get("CAM_PASS") or (argv[4] if len(argv) > 4 else "")
+    return user, pw, on_argv
+
+
 def main(argv):
-    base = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
+    base = pathlib.Path(os.environ.get("BASE", str(pathlib.Path(__file__).resolve().parent.parent)))
+    if len(argv) > 5:
+        print(USAGE, file=sys.stderr)
+        return 2
     if len(argv) > 1:
         host = argv[1]
     else:
@@ -68,8 +85,9 @@ def main(argv):
             return 1
         host = found
     port = argv[2] if len(argv) > 2 else "8899"
-    user = argv[3] if len(argv) > 3 else os.environ.get("CAM_USER", "")
-    pw = argv[4] if len(argv) > 4 else os.environ.get("CAM_PASS", "")
+    user, pw, on_argv = credentials(argv, os.environ)
+    if on_argv:
+        print(ARGV_CRED_WARNING, file=sys.stderr)
     return reboot(host, port, user, pw)
 
 

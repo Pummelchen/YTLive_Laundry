@@ -9,7 +9,9 @@ Exit codes: 0 = OK, 1 = MISMATCH/OFFLINE, 2 = COULD NOT FETCH / UNKNOWN
 """
 import subprocess, sys, os, json, time, pathlib, tempfile
 
-BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home()/"Downloads/YTLive")))
+# The checkout this file lives in (BASE still wins when the caller passes it; yt_monitor.sh
+# always does). See the same change in yt_api.py.
+BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path(__file__).resolve().parent.parent)))
 FF   = str(pathlib.Path.home()/".local/bin/ffmpeg")
 YTDLP= str(pathlib.Path.home()/".local/bin/yt-dlp")
 CACHE= BASE/"log/yt_url.cache"

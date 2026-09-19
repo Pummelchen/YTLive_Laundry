@@ -34,7 +34,11 @@
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
     conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,
-                             language, privacy, latency - enforced onto every new broadcast
+                             language, privacy, latency - enforced onto every new broadcast.
+                             TRACKED, and `capture` (which runs at every rotation) writes it
+                             only when the merged content actually changed, so the deployed
+                             checkout stays clean; the capture timestamp goes to
+                             log/broadcast_captured.json instead
     conf/thumbnail.jpg       the golden thumbnail, re-applied at every rotation
     conf/thumbnail_source.jpg  untouched original, so the crop/angle can be redone
     conf/thumbnail_rendered.jpg  YouTube's render of thumbnail.jpg, the compare-render-to-
@@ -66,6 +70,11 @@
                              stream.log's in-place trim keeps only its tail), net_state (the
                              last classification, read by status.sh), net_hold (optional epoch
                              deadline that suspends the network watchdog's actions),
+                             broadcast_captured.json (when and from which broadcast the tracked
+                             reference was last captured - bookkeeping kept out of the tracked
+                             file on purpose, see below),
+                             publisher.pid / monitor.pid (so each side can signal exactly the
+                             other process instead of pattern-matching a command line),
                              forensics-<stamp>.txt (a saved forensics report)
     ~/Library/Logs/YTLive/   launchd stdout/stderr (outside Downloads on purpose)
 
@@ -77,5 +86,7 @@ probes for it by running a temporary launchd job that reads `bin/stream.sh` and
 `conf/stream.env` exactly as launchd will, and refuses `./install.sh --start` until the probe
 passes. The old text here claimed the path was unprotected and needed no grant - that was
 wrong. install.sh can install from any directory (it warns when not at
-`~/Downloads/YTLive`), but `bin/preflight.sh` hardcodes `$HOME/Downloads/YTLive/...` with no
-override, so the supported path is `~/Downloads/YTLive`.
+`~/Downloads/YTLive`), and every script now derives `BASE` from its own location rather than
+assuming that path, so a copy of the tree elsewhere works for interactive use. The supported
+install path is still `~/Downloads/YTLive`, because that is what the launchd agents and the
+Full Disk Access grant are written against.

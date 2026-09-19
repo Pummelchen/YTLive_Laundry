@@ -34,6 +34,12 @@ this camera is unreliable with two:
     pkill -f 'ffmpeg.*rtsp://'      # reader_loop reconnects on its own in ~2s
     ffprobe -rtsp_transport tcp -i "rtsp://$(bin/cam_ip.py)/live/ch00_0"
 
+That `pkill` is a BY-HAND command for a human who can see what it matched, which is why it is
+still written as a pattern: the reader holds no pidfile (only `log/publisher.pid` and
+`log/monitor.pid` exist, so the scripts themselves never have to guess). `-f` matches the full
+command line of every process of every user, so read the match first if anything else on the box
+might be pulling RTSP.
+
 ## Finding the camera  (bin/cam_ip.py)
 The camera is on DHCP and moves after a power cut - it went .2 -> .3 on 2026-08-31 and this
 Mac's own LAN port then took the vacated .2. Anything holding a hardcoded address eventually

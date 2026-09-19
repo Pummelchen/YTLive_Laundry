@@ -73,7 +73,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 326 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 415 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -129,7 +129,7 @@ see the dead-knobs trap below.
 tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
 gate for you, so run them yourself, and always before restarting anything:
 
-    tests/run.sh          # 326 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 415 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -179,8 +179,9 @@ packs it, so a release cannot ship a tree that fails either.
   `bin/shuffle_playlist.sh` is the manual repair.
 - The project **must live at `~/Downloads/YTLive`** — macOS TCC blocks a launchd
   agent in a protected directory without Full Disk Access. `install.sh` probes for
-  that with a temporary plist and refuses `--start` until it passes.
-  `bin/preflight.sh` hardcodes `$HOME/Downloads/YTLive/...` with no override.
+  that with a temporary plist and refuses `--start` until it passes. That is an
+  *install* constraint: every script now derives `BASE` from its own location
+  (`${0:A:h:h}` / `__file__`), so a copy of the tree elsewhere still runs by hand.
 - `conf/stream.env` is **sourced, not exported**, so any value a subprocess needs
   must be passed explicitly — `lib.sh`'s `yt_api_call` exists to do that in one place.
 - **A fresh clone installs but cannot start until the operator supplies credentials.**
@@ -204,11 +205,12 @@ packs it, so a release cannot ship a tree that fails either.
   refuses to cut and stays LIVE until `bin/yt_api.py auth` is re-run.
 - **Destructive commands:** `bin/yt_api.py end` ends the broadcast YouTube is
   currently serving; `ensure-live` creates and deletes broadcasts. `yt_monitor.sh`
-  and `stream.sh` use `pkill -9` against `ffmpeg.*rtmp` and `zsh.*yt_monitor.sh`.
+  and `stream.sh` signal the publisher and the monitor by pid from
+  `log/publisher.pid` / `log/monitor.pid`, never by pattern — see the signalling
+  trap below.
 - **`set -u` only** — no `set -e`, no `pipefail`. It is set in `install.sh` and in
-  every `bin/*.sh` EXCEPT `bin/lib.sh` (which is sourced and inherits the caller's
-  options) and `bin/preflight.sh` (which sets no shell options at all). Failures are
-  handled by explicit checks, never by aborting.
+  every `bin/*.sh` EXCEPT `bin/lib.sh`, which is sourced and inherits the caller's
+  options. Failures are handled by explicit checks, never by aborting.
 - **The monitor's `*` case is for the PICTURE only.** `BLACK`, `FROZEN` and `MISMATCH`
   are the statuses that mean "YouTube is live and showing the wrong thing". Lookup and
   configuration statuses — `UNKNOWN`, `FETCHFAIL`, `NOSTATUS`, `NOGOLDEN`, `NOCONFIG`,
@@ -265,6 +267,24 @@ packs it, so a release cannot ship a tree that fails either.
   gets no default route, so macOS already prefers the working one, and `-ordernetworkservices`
   is one typo away from breaking the only working path). Wired stays first so it becomes
   primary by itself once it holds a real lease — LAN primary, Wi-Fi backup.
+- **BASE comes from the checkout you are in** (`BASE="${BASE:-${0:A:h:h}}"`, or
+  `pathlib.Path(__file__).resolve().parent.parent` in Python), not from a hardcoded
+  `~/Downloads/YTLive`. `bin/preflight.sh` was the one entry point that ignored BASE, so
+  `BASE=... bin/preflight.sh` silently probed the *installed* config. The install still has to
+  **be** at `~/Downloads/YTLive` — that is a TCC constraint on launchd, not a script one — and
+  `install.sh` warns and `bin/preflight.sh` now fails loudly rather than guessing.
+  Regression-guarded in `tests/t11_paths_pids.sh`.
+- **Never signal a process by pattern.** `pkill -9 -f "ffmpeg.*rtmp"` and
+  `pkill -9 -f "zsh.*yt_monitor.sh"` matched the full command line of every process of every
+  user, unanchored — a hand-run diagnostic, a second copy of the project, an editor's subshell.
+  Both sides now write a pidfile (`log/publisher.pid`, `log/monitor.pid`) and signal through
+  `pidfile_pid`, which also checks the pid's command before believing it, because **a pid gets
+  recycled**. When there is no trustworthy pid the watchdog kills *nothing* and says so.
+- **`conf/broadcast_template.json` is TRACKED and is written only when it changes.**
+  `capture` runs at every rotation and its merge is idempotent, so an unconditional write left
+  the deployed checkout permanently dirty and could block a `git pull` there. The capture
+  timestamp goes to `log/broadcast_captured.json` (ignored); a no-op capture writes nothing.
+  Do not "helpfully" put runtime state back into that file.
 - `bin/cam_config.py` reports what the camera has been *told*, not what it delivers:
   the firmware accepts ONVIF encoder writes, reports them back correctly, and
   **ignores them** — the delivered stream stayed at ~2.3 Mbit/s and 14 fps through

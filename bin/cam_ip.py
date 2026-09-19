@@ -19,7 +19,7 @@ The winner is written back to log/cam_ip so the next caller starts at step 2.
 """
 import os, pathlib, re, socket, subprocess, sys
 
-BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
+BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path(__file__).resolve().parent.parent)))
 CAM_IP_FILE = BASE / "log/cam_ip"
 STREAM_ENV  = BASE / "conf/stream.env"
 ONVIF_PORT  = int(os.environ.get("CAM_ONVIF_PORT", "8899"))

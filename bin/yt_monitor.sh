@@ -9,11 +9,17 @@
 #      yt_check.py reports UNKNOWN for that, and UNKNOWN never triggers an action.
 #   3. Act while stream.sh is rotating. log/rotating holds an epoch deadline for that.
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 source "$BASE/conf/stream.env"
 MLOG="$BASE/log/monitor.log"
 HEARTBEAT="$BASE/log/monitor.heartbeat"
+MON_PID="$BASE/log/monitor.pid"      # our own pid, so stream.sh can restart exactly US
+PUB_PID="$BASE/log/publisher.pid"    # the publisher's pid, written by stream.sh
 mlog() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$MLOG"; }
+# stream.sh's are-you-still-alive check kills a hung monitor by pid. It used to hunt for us with
+# `pkill -9 -f "zsh.*yt_monitor.sh"`, which cannot tell this process from anything else whose
+# command line happens to contain that text.
+print -r -- "$$" > "$MON_PID" 2>/dev/null
 
 : ${CHECK_INTERVAL:=10}
 : ${MONITOR_ACTION:=restart}   # "restart" the streamer, or "log" to only report
@@ -196,8 +202,18 @@ while true; do
     (( bad_since == 0 )) && { bad_since=$now; mlog "bad picture, watching it: $out"; }
     if (( now - bad_since >= FAIL_SECONDS )); then
       if [[ "$MONITOR_ACTION" == "restart" ]]; then
-        mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - restarting the publisher"
-        pkill -9 -f "ffmpeg.*rtmp" 2>/dev/null
+        # Restart exactly the publisher stream.sh started, via its pidfile and an identity check.
+        # This used to be `pkill -9 -f "ffmpeg.*rtmp"`, which matched any ffmpeg whose command
+        # line merely mentioned rtmp - a hand-run diagnostic, or a second copy of the project.
+        # When there is no trustworthy pid, kill NOTHING and say so: a restarted-by-hand publisher
+        # is a deliberate act, and guessing is how a watchdog kills something it does not own.
+        pub_pid_x=""
+        if pub_pid_x=$(pidfile_pid "$PUB_PID" ffmpeg rtmp); then
+          mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - restarting publisher pid $pub_pid_x"
+          kill -9 "$pub_pid_x" 2>/dev/null
+        else
+          mlog "ACTION: bad output on YouTube for $(( now - bad_since ))s ($st) - no usable pid in $PUB_PID; killed nothing"
+        fi
       else
         mlog "ACTION: log-only mode, not restarting"
       fi

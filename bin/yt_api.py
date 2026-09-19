@@ -34,9 +34,15 @@ Scope needed: https://www.googleapis.com/auth/youtube
 """
 import calendar, json, os, re, sys, time, pathlib, urllib.request, urllib.parse, urllib.error
 
-BASE  = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
+# The checkout this file lives in, so a copy of the tree on another machine needs no edit; BASE
+# still wins when a caller passes it explicitly (lib.sh's yt_api_call always does). This used to
+# be a hardcoded ~/Downloads/YTLive, which made the module unusable outside that one path.
+BASE  = pathlib.Path(os.environ.get("BASE", str(pathlib.Path(__file__).resolve().parent.parent)))
 CREDS = BASE / "conf/yt_oauth.json"
 TEMPLATE = BASE / "conf/broadcast_template.json"
+# When the reference was last captured, and from what. This is BOOKKEEPING, not configuration, so
+# it lives in log/ (untracked) rather than in the tracked reference - see save_template().
+CAPTURED = BASE / "log/broadcast_captured.json"
 # The channel's branded still, reused at every rotation. Kept in whatever format it was
 # given - PNG included - because re-encoding it is not ours to decide.
 # Order matters: the first that exists wins, so a stray PNG dropped in later would
@@ -524,8 +530,23 @@ def load_template():
 
 
 def save_template(t):
+    """Write the reference, but ONLY when it actually changed. Returns True when it wrote.
+
+    stream.sh captures the outgoing broadcast at EVERY rotation and the merge is idempotent, so
+    this file used to be rewritten with identical content every 8 hours. On the deployed tree that
+    is not harmless: conf/broadcast_template.json is TRACKED, so the checkout was permanently
+    dirty and a `git pull` or `git checkout` in it could refuse or conflict. Skipping a no-op
+    write is what keeps the deployed tree clean, so it is a correctness fix, not an optimisation.
+    """
     TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
-    TEMPLATE.write_text(json.dumps(t, indent=2, ensure_ascii=False))
+    body = json.dumps(t, indent=2, ensure_ascii=False)
+    try:
+        if TEMPLATE.read_text() == body:
+            return False
+    except OSError:
+        pass
+    TEMPLATE.write_text(body)
+    return True
 
 
 def cmd_capture(video_id=None):
@@ -579,10 +600,23 @@ def cmd_capture(video_id=None):
             if cd.get(k) is not None:
                 bc_t[k] = cd[k]; took.append(k)
         bc_t["enableMonitorStream"] = cd.get("monitorStream", {}).get("enableMonitorStream", False)
-    t["_captured_from"] = video_id
-    t["_captured_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    save_template(t)
+    # The capture STAMP is bookkeeping, not configuration. It used to be written into the tracked
+    # reference, which rewrote that file at every rotation and left the deployed checkout dirty
+    # forever. It goes to log/ (untracked) now, and the legacy keys are actively removed from the
+    # reference so a deployed copy converges back to the tracked content and goes clean.
+    t.pop("_captured_from", None)
+    t.pop("_captured_at", None)
+    wrote = save_template(t)
+    stamp_at = time.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        CAPTURED.parent.mkdir(parents=True, exist_ok=True)
+        CAPTURED.write_text(json.dumps({"_captured_from": video_id, "_captured_at": stamp_at},
+                                       indent=2) + "\n")
+    except OSError:
+        pass
     print(json.dumps({"status": "CAPTURED", "from": video_id,
+                      "reference_written": wrote,
+                      "captured_at": stamp_at,
                       "took": len(took), "kept_from_before": kept,
                       "tags": len(vid_t.get("tags") or []),
                       "description_chars": len(vid_t.get("description") or ""),

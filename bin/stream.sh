@@ -9,13 +9,16 @@
 # down by a camera dropout - which is what used to cause ~18s of black on every restart.
 # CCTV audio is deliberately NEVER mapped (privacy).
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 CONF="${CONF:-$BASE/conf/stream.env}"
 LOG="$BASE/log/stream.log"
 PROG="$BASE/log/progress.txt"
 SNAP="$BASE/log/lastframe.jpg"
 BASEIMG="$BASE/log/basefill.jpg"
 CAMIP_FILE="$BASE/log/cam_ip"   # runtime source of truth for the camera address
+PUB_PID="$BASE/log/publisher.pid"  # the publisher's pid, so the monitor can restart exactly IT
+MON_PID="$BASE/log/monitor.pid"    # the monitor's pid, so this script can restart exactly IT
+PUB_WHY="$BASE/log/pub_kill_reason"  # why the publisher was deliberately stopped (see below)
 ROTATE_FLAG="$BASE/log/rotating"    # holds an epoch deadline: the monitor stands down until then
 ROTATE_NOW="$BASE/log/rotate_now"   # touch this file to force a rotation immediately
 YTDLP="$HOME/.local/bin/yt-dlp"
@@ -85,6 +88,32 @@ housekeep() {
   fi
 }
 
+# --- why did the publisher die? --------------------------------------------------------------
+# The log used to say only `PUBLISHER died rc=N`. rc alone does not say WHY: 137 is SIGKILL and
+# could be the rotation, the stall watchdog, an ingest bounce or the shutdown trap, and 224 is
+# ffmpeg's broken pipe because YouTube closed the ingest. The archived audit counted 192 deaths of
+# which rc=224 was the only recurring mode (~1 per 2 days) - and nothing said so.
+# A deliberate kill records its reason in a FILE first, not in a variable, because
+# await_broadcast runs in a subshell and a subshell cannot set the main loop's variables. An
+# unexpected death quotes ffmpeg's own last error line instead, which is the only thing that can
+# explain a death nothing here caused.
+mark_pub_kill() { print -rn -- "$*" > "$PUB_WHY" 2>/dev/null; }
+pub_death_reason() {
+  local rc="$1" why="" last
+  case "$rc" in
+    137) # `$(<file)` on a missing file prints its own error even with 2>/dev/null, so test first.
+         [[ -r "$PUB_WHY" ]] && why=$(<"$PUB_WHY")
+         why="${why:-SIGKILL from outside this script - the monitor's bad-picture restart kills by pid}" ;;
+    224) why="YouTube closed the ingest (ffmpeg broken pipe)" ;;
+    0)   why="ffmpeg exited 0, which should not happen for a live push" ;;
+    *)   why="ffmpeg error" ;;
+  esac
+  print -rn -- "$why"
+  last=$(grep -a . "$BASE/log/publisher.log" 2>/dev/null | tail -1 | cut -c1-200)
+  [[ -n "$last" ]] && print -rn -- " | ffmpeg: $last"
+  return 0
+}
+
 # Watchdog for the watchdog. launchd KeepAlive restarts a monitor that EXITS, but not one
 # that hangs - and a hung monitor is silent in exactly the same way a healthy one is.
 check_monitor() {
@@ -94,8 +123,16 @@ check_monitor() {
   age=$(( $(date +%s) - beat ))
   (( age < MONITOR_STALE )) && return
   if launchctl list 2>/dev/null | grep -q com.user.cctv-monitor; then
-    log "MONITOR: heartbeat is ${age}s old - watchdog is hung. Killing it so launchd restarts it."
-    pkill -9 -f "zsh.*yt_monitor.sh" 2>/dev/null
+    # Kill exactly the monitor, not "anything whose command line mentions yt_monitor.sh".
+    local mon
+    if mon=$(pidfile_pid "$MON_PID" zsh yt_monitor.sh); then
+      log "MONITOR: heartbeat is ${age}s old - watchdog is hung. Killing pid $mon; launchd KeepAlive brings it back."
+      kill -9 "$mon" 2>/dev/null
+    else
+      log "MONITOR: heartbeat is ${age}s old and $MON_PID has no usable pid - kickstarting the launchd job instead."
+      launchctl kickstart -k "gui/$(id -u)/com.user.cctv-monitor" 2>/dev/null \
+        || log "MONITOR: kickstart failed too - THE STREAM IS UNWATCHED."
+    fi
   else
     log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED."
   fi
@@ -329,6 +366,12 @@ start_publisher() {
     -map "[v]" -map 2:a:0 "${VENC[@]}" "${AUD_OUT[@]}" \
     -f flv -flvflags no_duration_filesize "$DEST" 2>>"$BASE/log/publisher.log" &
   PUBPID=$!
+  # Publish the publisher's pid so yt_monitor.sh can restart exactly THIS process. It used to run
+  # `pkill -9 -f "ffmpeg.*rtmp"`, which matches the full command line of every process of every
+  # user - a manual diagnostic ffmpeg, a second copy of the project, or any command that merely
+  # mentions rtmp. `.*` is greedy and unanchored, and `-9` leaves nothing to clean up.
+  print -r -- "$PUBPID" > "$PUB_PID" 2>/dev/null
+  rm -f "$PUB_WHY" 2>/dev/null   # a fresh publisher has no death reason yet
   # Whatever restarted us, YouTube needs time before the channel reads as live again - and
   # long enough to cover the native wait plus an API fallback behind it.
   hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
@@ -606,6 +649,7 @@ await_broadcast() {
     took=$(( $(date +%s) - started ))
     if [[ -n "$PUBPID" ]] && kill -0 "$PUBPID" 2>/dev/null; then
       log "ROTATE: nothing live after ${took}s - bouncing ingest so YouTube sees a fresh arrival"
+      mark_pub_kill "deliberate: ingest bounce - YouTube had not started the bound broadcast"
       kill -9 "$PUBPID" 2>/dev/null
       # the publisher watchdog restarts it within 5s, which re-runs prepare_broadcast
       sleep 60
@@ -702,9 +746,9 @@ rotate_broadcast() {
   log "ROTATE ($why): stopping ingest so YouTube closes broadcast ${old_id:-<none>} and saves it"
   # Cover the whole rotation AND the warm-up that follows it in one hold.
   hold_monitor $(( ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_NATIVE_WAIT + 120 ))
+  mark_pub_kill "deliberate: broadcast rotation ($why)"
   kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
-  # Let YouTube close the broadcast itself - that is what saves the VOD, and with
-  # autoStop=true it takes seconds. Only if it has NOT done so (an older broadcast created
+  # Let YouTube close the broadcast itself - that is what saves the VOD, and with  # autoStop=true it takes seconds. Only if it has NOT done so (an older broadcast created
   # by this script with autoStop off, say) do we end it explicitly.
   local ended=0
   while (( waited < ROTATE_MAX_WAIT )); do
@@ -773,7 +817,8 @@ while true; do
   fi
   if ! kill -0 "$PUBPID" 2>/dev/null; then
     wait "$PUBPID" 2>/dev/null; local rc=$?
-    log "PUBLISHER died rc=$rc - restarting (this does drop the YouTube session briefly)"
+    log "PUBLISHER died rc=$rc - $(pub_death_reason "$rc") - restarting (this does drop the YouTube session briefly)"
+    rm -f "$PUB_WHY" 2>/dev/null
     start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0; continue
   fi
   cur=$(grep -a '^frame=' "$PROG" 2>/dev/null | tail -1 | cut -d= -f2)
@@ -782,6 +827,7 @@ while true; do
     stuck=$(( stuck + 5 ))
     if (( stuck >= STALL_TIMEOUT )); then
       log "WATCHDOG: publisher output frozen ${stuck}s - restarting publisher"
+      mark_pub_kill "deliberate: stall watchdog - output frozen ${stuck}s"
       kill -9 "$PUBPID" 2>/dev/null; wait "$PUBPID" 2>/dev/null
       start_publisher; log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0
     fi

@@ -22,7 +22,7 @@
 # and - the part that was missing - checks that the tooling still works afterwards.
 set -u
 
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 BIN="$HOME/.local/bin"
 LA="$HOME/Library/LaunchAgents"
 LOGS="$HOME/Library/Logs/YTLive"

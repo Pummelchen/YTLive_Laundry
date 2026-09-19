@@ -9,6 +9,78 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.5 — 2026-09-19
+
+**The queue's own top rows, plus the two operational defects the 2.4 investigation left behind:
+a script that would not work anywhere but one directory, watchdogs that killed by pattern, and a
+tracked file that the rotation rewrote every eight hours.**
+
+- **T-14 — every entry point now uses the checkout it is run from.** All of them defaulted `BASE`
+  to a hardcoded `~/Downloads/YTLive` (`BASE="${BASE:-${0:A:h:h}}"`, or
+  `pathlib.Path(__file__).resolve().parent.parent` in Python), so a copy of the tree on another
+  machine read the wrong configuration — and `bin/preflight.sh` ignored `BASE` altogether, which
+  made `BASE=... bin/preflight.sh` silently probe the *installed* config. It also had no shell
+  options and a fixed `$HOME/.local/bin/ffprobe`; it now follows the repo's `set -u` convention,
+  prefers the installer's build and falls back to `PATH`, and fails loudly on an explicitly named
+  ffprobe that does not exist rather than quietly probing with a different binary. The install
+  still has to **be** at `~/Downloads/YTLive` — that is a TCC constraint on launchd, not a script
+  one.
+- **T-15 — camera tools no longer crash on, or leak, their arguments.** `bin/cam_config.py`
+  indexed `sys.argv` with no arity check and resolved the host *at import*, so importing it did
+  network I/O and could `sys.exit`; `bin/onvif_probe.py` ran its whole probe at module level, the
+  exact bug already fixed in `cam_reboot.py`. Both now have a `main()` and an arity check that
+  prints a one-line usage and exits 2 with no traceback. Credentials still work positionally for
+  compatibility but `CAM_USER`/`CAM_PASS` are preferred, and argv credentials print a one-line
+  warning — argv is world-readable through `ps`.
+- **T-16 — nothing is signalled by pattern any more.** `stream.sh` and `yt_monitor.sh` restarted
+  each other with `pkill -9 -f "zsh.*yt_monitor.sh"` and `pkill -9 -f "ffmpeg.*rtmp"`. `-f`
+  matches the full command line of every process of every user, unanchored, so a hand-run
+  diagnostic ffmpeg, a second copy of the project or an editor's subshell could be killed — and
+  `-9` leaves nothing to clean up. Both sides now write a pidfile (`log/publisher.pid`,
+  `log/monitor.pid`) and signal through `pidfile_pid`, which also checks that the pid still looks
+  like the process we mean, because **a pid gets recycled**. When there is no trustworthy pid the
+  monitor kills *nothing* and says so in its log. `stream.sh` falls back to
+  `launchctl kickstart -k` for the hung monitor, and `bin/status.sh` now identifies the publisher
+  instead of accepting any `ffmpeg.*rtmp://` on the machine.
+- **T-17 — one WS-Discovery implementation, as the code always claimed.** `bin/camscan.py`
+  carried its own SOAP/3702 probe while `bin/cam_ip.py` documents `bin/find_cam.py` as the single
+  implementation. `find_cam` grew `discover_replies()` (raw XML, for camscan, which prints the
+  URLs inside the reply) with `discover()` as a filter over it; camscan's duplicate is gone and it
+  now validates its CIDR with `ipaddress.ip_network()` *before* discovery, so a typo exits 2
+  instead of raising `ValueError` after a four-second multicast wait.
+- **T-39 — the deployed tree can be clean again.** `conf/broadcast_template.json` is tracked, and
+  `capture` — which `stream.sh` runs at **every rotation** — wrote a fresh `_captured_from` /
+  `_captured_at` stamp into it each time. The merge is idempotent, so that was a guaranteed
+  modification of a tracked file every eight hours: the deployed checkout was permanently dirty
+  and a `git pull` or `git checkout` in it could refuse or conflict. The stamp moved to
+  `log/broadcast_captured.json` (ignored), the legacy keys are removed from the reference, and
+  `save_template()` now skips the write when the content did not change. **This is a correctness
+  fix, not an optimisation**: a no-op must not modify a tracked file.
+- **T-37 closed as a symptom, not a defect.** The reader churn — `READER: feed from 192.168.1.3
+  ended after Ns`, with a median session of 15 s — was measured at **89–106 restarts per hour
+  during the outage window** and **zero in the 2.5 hours after it**, with the camera answering
+  20/20 pings and the reader up continuously since 16:24. It was the network, not the camera
+  handling. The residual in `reader.log` is occasional H.264 bitstream corruption from the camera
+  and jittery LAN latency (1.7–209 ms), both worth watching but neither a code fault. The reader
+  failure shapes are also now recorded: `Operation timed out` (1217), `Host is down` (75) and
+  `No route to host` (20).
+- **T-26 — a publisher death now says why.** The log said only `PUBLISHER died rc=N`, and rc alone
+  does not say: 137 is SIGKILL and could be the broadcast rotation, the stall watchdog, an ingest
+  bounce or the shutdown trap, while **224 is ffmpeg's broken pipe because YouTube closed the
+  ingest** — the only recurring mode in the archived audit's 192 deaths (~1 per 2 days), and
+  nothing distinguished it. Each deliberate kill now records its reason in `log/pub_kill_reason`
+  first — a *file*, not a variable, because `await_broadcast` runs in a subshell and a subshell
+  cannot set the main loop's variables — and the death line reports it, or quotes ffmpeg's own
+  last error line when nothing here caused the death. An unmarked SIGKILL is attributed to the
+  monitor, which is the only outside killer.
+- **Tests.** `tests/t10_camtools.sh` (50 checks) proves the camera tools' usage errors, that
+  importing them performs no network I/O (with `socket` and `urllib` poisoned to raise), and that
+  `camscan`/`cam_ip` really delegate to `find_cam`. `tests/t11_paths_pids.sh` (37 checks) covers
+  the BASE behaviour end to end — including `preflight.sh` reading another tree's config — the
+  pidfile helpers against a live, a dead and a foreign pid, that a no-op capture never rewrites
+  the tracked reference, and the whole death-reason mapping. The suite is now **415 checks**
+  (t01 48, t02 12, t03 11, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 50, t11 37).
+
 ## 2.4 — 2026-09-19
 
 **The 2026-09-18 outage was not what the 2.2/2.3 documentation said it was, and the fix is a

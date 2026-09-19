@@ -9,7 +9,7 @@
 #
 #   bin/smoke_test.sh        exit 0 = safe to restart
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 cd "$BASE" || exit 2
 fails=0
 ok()   { print -- "  \033[32mPASS\033[0m  $*"; }

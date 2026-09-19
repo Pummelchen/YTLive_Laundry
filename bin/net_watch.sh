@@ -38,7 +38,7 @@
 #         bin/net_watch.sh once    probe once, print the state, exit 0 when OK
 #         bin/net_watch.sh status  human-readable one-screen summary
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 CONF="${CONF:-$BASE/conf/stream.env}"
 STATE_FILE="$BASE/log/net_state"
 EVENTS="$BASE/log/net_events.log"

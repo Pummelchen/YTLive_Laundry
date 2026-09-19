@@ -7,8 +7,9 @@
 # what YouTube itself thinks.
 #   --no-net   skip the YouTube API call (everything else is local and instant)
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 source "$BASE/conf/stream.env"
+source "$BASE/bin/lib.sh"      # pidfile_pid(): identify a process before believing it is ours
 NET=yes; [[ "${1:-}" == "--no-net" ]] && NET=no
 # no -r here: print -r is raw and would emit the escape codes literally
 ok()   { print -- "  \033[32mOK\033[0m    $*"; }
@@ -28,14 +29,22 @@ for l in com.user.cctv-stream com.user.cctv-monitor; do
 done
 
 print "\n=== publisher ==="
-if pgrep -f "ffmpeg.*rtmp://" >/dev/null 2>&1; then
+# Is the publisher OUR publisher? stream.sh writes its pid and we check the identity too, so a
+# hand-run ffmpeg pushing somewhere else cannot make this page look healthy - which a bare
+# `pgrep -f "ffmpeg.*rtmp://"` could not distinguish. Falls back to the old probe only when the
+# pidfile is absent (an older stream.sh), and says so.
+pubpid=$(pidfile_pid "$BASE/log/publisher.pid" ffmpeg rtmp 2>/dev/null)
+if [[ -z "$pubpid" ]] && pgrep -f "ffmpeg.*rtmp://" >/dev/null 2>&1; then
+  pubpid=unknown; warn "an ffmpeg pushing to rtmp is running but $BASE/log/publisher.pid has no usable pid"
+fi
+if [[ -n "$pubpid" ]]; then
   f1=$(grep -a '^frame=' "$BASE/log/progress.txt" 2>/dev/null | tail -1 | cut -d= -f2)
   sleep 2
   f2=$(grep -a '^frame=' "$BASE/log/progress.txt" 2>/dev/null | tail -1 | cut -d= -f2)
-  if [[ -n "$f2" && "$f2" != "$f1" ]]; then ok "pushing to YouTube (frame $f1 -> $f2)"
-  else bad "ffmpeg is running but the frame counter is STUCK at ${f1:-?}"; fi
+  if [[ -n "$f2" && "$f2" != "$f1" ]]; then ok "pushing to YouTube (pid ${pubpid}, frame $f1 -> $f2)"
+  else bad "the publisher is running (pid ${pubpid}) but the frame counter is STUCK at ${f1:-?}"; fi
 else
-  bad "no publisher ffmpeg running - nothing is being sent to YouTube"
+  bad "no publisher running (log/publisher.pid has no live ffmpeg pid) - nothing is being sent to YouTube"
 fi
 
 print "\n=== watchdog heartbeat ==="

@@ -2,7 +2,7 @@
 # Build a randomized concat playlist from the MP3 library.
 # Usage: shuffle_playlist.sh          (uses MP3_DIR from stream.env)
 set -u
-BASE="${BASE:-$HOME/Downloads/YTLive}"
+BASE="${BASE:-${0:A:h:h}}"   # the checkout this script lives in (a launchd install is ~/Downloads/YTLive)
 source "$BASE/conf/stream.env"
 
 # ROTATE_HOURS is normally declared in stream.env, which is SOURCED and not exported, so a

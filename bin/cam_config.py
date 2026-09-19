@@ -8,17 +8,40 @@
 The address is resolved, never hardcoded - see cam_ip.py. This file used to hold
 192.168.1.2, which stopped being the camera on 2026-08-31 and had become this Mac's own
 LAN port, so `set` would have been writing to the wrong device entirely.
+
+Everything runs inside main(): resolving the address hits the network and can fail, so merely
+importing this module - a REPL, a test, another tool that loads bin/*.py - must do neither.
+That is the same import-time bug class cam_reboot.py had; see its docstring.
 """
 import os, pathlib, urllib.request, re, sys, importlib.util
 
-BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path.home() / "Downloads/YTLive")))
-_spec = importlib.util.spec_from_file_location("cam_ip", BASE / "bin/cam_ip.py")
-_cam_ip = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_cam_ip)
-HOST, _how = _cam_ip.resolve(need_onvif=True)
-if not HOST:
-    sys.exit(f"camera not reachable on ONVIF - tried: {_how}")
+USAGE = ("usage: cam_config.py get"
+         " | cam_config.py set <token> <fps> <bitrate_kbps> <quality> <govlength>"
+         " | cam_config.py bitrate <token> <kbps>")
+
+BASE = pathlib.Path(os.environ.get("BASE", str(pathlib.Path(__file__).resolve().parent.parent)))
 PORT = os.environ.get("CAM_ONVIF_PORT", "8899")
-MEDIA = f"http://{HOST}:{PORT}/onvif/media_service"
+MEDIA = ""   # set by main() once the camera answers; call() reads it
+
+
+def _resolve_media(base):
+    """Load cam_ip.py by path and resolve the address. Called only from main(): the load is
+    cheap, resolve() is the part that probes the network."""
+    spec = importlib.util.spec_from_file_location("cam_ip", base / "bin/cam_ip.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    host, how = mod.resolve(need_onvif=True)
+    if not host:
+        print(f"camera not reachable on ONVIF - tried: {how}", file=sys.stderr)
+        return None
+    return f"http://{host}:{PORT}/onvif/media_service"
+
+
+def usage_error(msg=None):
+    if msg:
+        print(f"cam_config.py: {msg}", file=sys.stderr)
+    print(USAGE, file=sys.stderr)
+    return 2
 
 def call(action, body):
     env = ('<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Body '
@@ -78,25 +101,51 @@ def set_config(tok, fps, br, q, gov, interval=None):
     return ok
 
 
-if sys.argv[1] == "get":
-    x = get()
-    if "__ERR__" in x: print(x[:300]); sys.exit(1)
-    show(x)
-elif sys.argv[1] == "set":
-    set_config(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
-elif sys.argv[1] == "bitrate":
-    # Minimal delta: read what is there, change one number, write it back.
-    tok, kbps = sys.argv[2], sys.argv[3]
-    x = get()
-    blk = [b for b in re.findall(r'<trt:Configurations.*?</trt:Configurations>', x, re.S)
-           if f'token="{tok}"' in b]
-    if not blk:
-        sys.exit(f"token {tok} not found")
-    b = blk[0]
-    cur = lambda t, d=None: (re.search(rf'<tt:{t}>(.*?)</tt:{t}>', b, re.S).group(1)
-                             if re.search(rf'<tt:{t}>(.*?)</tt:{t}>', b, re.S) else d)
-    print(f"  {tok}: bitrate {cur('BitrateLimit')} -> {kbps} kbps "
-          f"(fps={cur('FrameRateLimit')} quality={cur('Quality')} gov={cur('GovLength')} "
-          f"interval={cur('EncodingInterval')} all preserved)")
-    set_config(tok, cur("FrameRateLimit"), kbps, cur("Quality"), cur("GovLength"),
-               interval=cur("EncodingInterval"))
+def main(argv):
+    global MEDIA
+    if len(argv) < 2:
+        return usage_error()
+    cmd = argv[1]
+    if cmd == "get":
+        if len(argv) != 2:
+            return usage_error("get takes no arguments")
+    elif cmd == "set":
+        if len(argv) != 7:
+            return usage_error("set needs <token> <fps> <bitrate_kbps> <quality> <govlength>")
+    elif cmd == "bitrate":
+        if len(argv) != 4:
+            return usage_error("bitrate needs <token> <kbps>")
+    else:
+        return usage_error(f"unknown command: {cmd}")
+
+    MEDIA = _resolve_media(BASE)
+    if not MEDIA:
+        return 1
+
+    if cmd == "get":
+        x = get()
+        if "__ERR__" in x: print(x[:300]); return 1
+        show(x)
+    elif cmd == "set":
+        set_config(argv[2], argv[3], argv[4], argv[5], argv[6])
+    else:
+        # Minimal delta: read what is there, change one number, write it back.
+        tok, kbps = argv[2], argv[3]
+        x = get()
+        blk = [b for b in re.findall(r'<trt:Configurations.*?</trt:Configurations>', x, re.S)
+               if f'token="{tok}"' in b]
+        if not blk:
+            sys.exit(f"token {tok} not found")
+        b = blk[0]
+        cur = lambda t, d=None: (re.search(rf'<tt:{t}>(.*?)</tt:{t}>', b, re.S).group(1)
+                                 if re.search(rf'<tt:{t}>(.*?)</tt:{t}>', b, re.S) else d)
+        print(f"  {tok}: bitrate {cur('BitrateLimit')} -> {kbps} kbps "
+              f"(fps={cur('FrameRateLimit')} quality={cur('Quality')} gov={cur('GovLength')} "
+              f"interval={cur('EncodingInterval')} all preserved)")
+        set_config(tok, cur("FrameRateLimit"), kbps, cur("Quality"), cur("GovLength"),
+                   interval=cur("EncodingInterval"))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

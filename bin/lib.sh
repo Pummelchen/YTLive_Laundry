@@ -23,3 +23,29 @@ yt_api_call() {
   YT_TOKEN_WARN_DAYS="${YT_TOKEN_WARN_DAYS:-2}" \
   python3 "$YT_API" "$@" 2>&1
 }
+
+# --- signalling a process, exactly ---------------------------------------------------------
+# Both scripts used to restart each other with `pkill -9 -f "<pattern>"`. `-f` matches the FULL
+# command line of every process of every user, unanchored, so `ffmpeg.*rtmp` also matched a
+# manual diagnostic ffmpeg, a second copy of the project, or an editor's subshell - and `-9`
+# leaves the victim no chance to clean up. A pidfile plus an identity check is exact, and the
+# check matters because a pid can be recycled between being written and being read.
+pid_is() {   # pid_is PID NEEDLE...  -> true when the pid is alive AND its command has every NEEDLE
+  local pid="$1"; shift
+  [[ "$pid" == <-> ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  local cmd
+  cmd=$(ps -p "$pid" -o command= 2>/dev/null) || return 1
+  local n
+  for n in "$@"; do [[ "$cmd" == *"$n"* ]] || return 1; done
+  return 0
+}
+
+pidfile_pid() {   # pidfile_pid FILE NEEDLE...  -> prints the pid iff it is alive and matches
+  local f="$1"; shift
+  [[ -r "$f" ]] || return 1
+  local pid
+  pid=$(<"$f")
+  pid_is "$pid" "$@" || return 1
+  print -r -- "$pid"
+}
