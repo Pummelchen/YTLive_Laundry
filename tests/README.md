@@ -40,9 +40,10 @@ live publisher. The stub logs the call and exits 1. Only a test that explicitly 
 | `t07_watchdog.sh` | The external watchdog (`bin/yt_watchdog.py`) and its alert policy, as a pure function of time and two stubbed signals: a short rotation gap must not alert, `UNKNOWN` is never treated as darkness, an undeliverable alert is spooled rather than dropped, and the channel and host signals stay independent. |
 | `t08_hosttools.sh` | The two host tools. `bin/harden-host.sh`: the dry run writes nothing, `--check` fails on an unhardened host and passes on a hardened one, half-hardened is still a failure, and `--go` refuses without root — all against a `pmset` stub that reports its two keys **only when enabled**, which is how macOS behaves and is what makes an absent key a failure rather than an unknown. And `bin/forensics.sh` gathers the sleep/memory/disk/panic evidence while changing nothing. |
 
-The suite prints one line per check and exits non-zero if any failed. It is not wired to CI —
-there is no `.github/` in this repository — so run it yourself before pushing, and always before
-restarting the stream.
+The suite prints one line per check and exits non-zero if any failed. It now runs in CI
+(`.github/workflows/ci.yml`, macOS runners) on every push to `main` and on pull requests, so a
+regression is caught before it lands — but run it yourself anyway before pushing, and always
+before restarting the stream.
 
 ## Adding a test
 

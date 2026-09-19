@@ -43,6 +43,15 @@ TEMPLATE = BASE / "conf/broadcast_template.json"
 # When the reference was last captured, and from what. This is BOOKKEEPING, not configuration, so
 # it lives in log/ (untracked) rather than in the tracked reference - see save_template().
 CAPTURED = BASE / "log/broadcast_captured.json"
+# YouTube gives one 10,000-unit pool per project per day, resetting at midnight Pacific. The
+# 2026-09-16 audit measured a worst case of 10,290 units/day here - over budget - and, worse, the
+# code did NOT stop on `403 quotaExceeded`: `prepare` failed but ffmpeg restarted anyway, so the
+# channel went dark at that rotation. This file is the cooldown that makes the exhausted state
+# visible to every later call FOR FREE (the check is local and happens before the request, so it
+# spends nothing) and lets the rotation REFUSE to cut rather than cut into a state where no
+# successor broadcast can be created. It expires by time, and a fresh 403 re-arms it.
+QUOTA_FILE = BASE / "log/quota_exhausted"
+QUOTA_COOLDOWN = int(os.environ.get("YT_QUOTA_COOLDOWN", "21600"))   # 6h
 # The channel's branded still, reused at every rotation. Kept in whatever format it was
 # given - PNG included - because re-encoding it is not ours to decide.
 # Order matters: the first that exists wins, so a stray PNG dropped in later would
@@ -78,6 +87,53 @@ TOKEN_WARN_DAYS = float(os.environ.get("YT_TOKEN_WARN_DAYS", "2"))   # days left
 def die(msg, code=2):
     print(json.dumps({"status": "ERROR", "msg": msg}))
     sys.exit(code)
+
+
+def quota_record():
+    """The armed quota cooldown, or {} when the API may be called. Never raises."""
+    try:
+        r = json.loads(QUOTA_FILE.read_text())
+        if int(r.get("until", 0)) > int(time.time()):
+            return r
+    except Exception:
+        pass
+    return {}
+
+
+def quota_arm(detail):
+    """Record that the pool is empty until now+QUOTA_COOLDOWN. Returns the deadline."""
+    until = int(time.time()) + QUOTA_COOLDOWN
+    try:
+        QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
+        QUOTA_FILE.write_text(json.dumps({"until": until, "armed_at": int(time.time()),
+                                          "detail": detail[:300]}, indent=2) + "\n")
+    except OSError:
+        pass
+    return until
+
+
+def die_quota(detail=""):
+    """Refuse to spend quota, and say so in a shape callers can act on.
+
+    This is deliberately NOT {"status":"ERROR"}: an exhausted pool is a known, temporary state
+    with a known remedy, and stream.sh's rotation preflight has to tell it apart from a dead
+    credential - both mean "do not cut", but only one needs a human.
+    """
+    r = quota_record()
+    print(json.dumps({"status": "QUOTA",
+                      "msg": "YouTube Data API quota is exhausted - no request was made",
+                      "until": r.get("until"), "reset_in_s": max(0, int(r.get("until", 0)) - int(time.time())),
+                      "detail": (detail or r.get("detail", ""))[:200],
+                      "hint": "rotations are refused while this lasts (ROTATE_WITHOUT_API=no); the channel stays live"}))
+    sys.exit(2)
+
+
+def cmd_quota():
+    """Free check: is the pool usable? Spends nothing, so a rotation can ask every time."""
+    if quota_record():
+        die_quota()
+    print(json.dumps({"status": "OK", "msg": "no quota cooldown is armed"}))
+    return 0
 
 
 def load_creds():
@@ -180,6 +236,10 @@ def probe_refresh_token():
 
 
 def api(method, path, token, params=None, body=None):
+    # Spend nothing while the cooldown is armed: this check is local and free, which is the whole
+    # point - a retry loop against an empty pool cannot make it refill and only wastes the day.
+    if quota_record():
+        die_quota(f"{method} {path} skipped")
     url = f"{API}/{path}"
     if params:
         url += "?" + urllib.parse.urlencode(params)
@@ -194,6 +254,10 @@ def api(method, path, token, params=None, body=None):
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         detail = e.read().decode()[:500]
+        # Arm the cooldown the moment the pool is empty, BEFORE raising: every later caller then
+        # fails fast and for free instead of burning what is left of the day on retries.
+        if "quotaExceeded" in detail:
+            quota_arm(f"{method} {path} -> HTTP {e.code}")
         # Surface YouTube's own reason - these are the messages worth acting on
         # (quota exceeded, livePermissionBlocked, errorStreamInactive, ...).
         raise RuntimeError(f"{method} {path} -> HTTP {e.code}: {detail}")
@@ -1246,6 +1310,8 @@ def main():
             return cmd_end()
         if cmd == "token":
             return cmd_token(offline="--offline" in sys.argv)
+        if cmd == "quota":
+            return cmd_quota()
         if cmd == "prepare":
             if "--dry-run" in sys.argv:
                 tok = access_token(); st = stream_for_key(tok, read_key())
@@ -1273,7 +1339,7 @@ def main():
                                       force="--force" in sys.argv)
         if cmd in ("apply", "enforce"):
             return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | quota | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

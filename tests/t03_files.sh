@@ -85,5 +85,63 @@ t_assert_eq "$prog_before" "$prog_after" "housekeep never trims log/progress.txt
 (( hlog_after < hlog_before )) && t_ok "housekeep did trim publisher.log ($hlog_before -> $hlog_after)" \
                                || t_bad "housekeep did not trim publisher.log - the check above is vacuous"
 
+# --- (c) the disk guard must ACT on a slow decline, not only report it -------------------
+# A full volume is the one failure nothing in this project can recover from: ffmpeg's -progress
+# write fails, the frame counter stalls, the watchdog restarts the publisher every 30s, and yt-dlp
+# goes with it. So below DISK_LOW_MB housekeep cuts every log to a quarter of its budget and drops
+# the regenerable caches - while never touching the filler stills (losing them degrades the next
+# publisher start) or progress.txt (ffmpeg writes it at a fixed offset).
+fakebin="$T_BASE/fakebin"; mkdir -p "$fakebin"
+cat > "$fakebin/df" <<'STUB'
+#!/bin/zsh
+print -r -- "Filesystem 1024-blocks Used Avail Capacity Mounted on"
+print -r -- "/dev/disk1 1000000 900000 ${FAKE_AVAIL_KB:-900000} 90% /"
+STUB
+chmod +x "$fakebin/df"
+
+HOUSEH="$T_BASE/house.zsh"
+{ t_extract_fn "$REPO_DIR/bin/stream.sh" trim_log
+  t_extract_fn "$REPO_DIR/bin/stream.sh" housekeep
+  print -r -- "BASE='$T_BASE'"
+  print -r -- "LOG_MAX_BYTES=1024"
+  print -r -- "LOG_MAX_BYTES_STREAM=4096"
+  print -r -- "HOME='$T_BASE/home'"
+  print -r -- 'log() { print -r -- "LOG: $*"; }'
+} > "$HOUSEH"
+
+disk_artifacts() {
+  for f in yt_lastpull.jpg yt_prevpull.jpg golden_gray.cache yt_url.cache basefill.jpg lastframe.jpg; do
+    print -r -- x > "$T_BASE/log/$f"
+  done
+  python3 -c "open('$T_BASE/log/progress.txt','w').write('frame=1\n'*300)"
+  python3 -c "open('$T_BASE/log/stream.log','w').write('x'*16384)"
+}
+run_house() { BASE="$T_BASE" PATH="$fakebin:$STUBS:$PATH" FAKE_AVAIL_KB="$1" /bin/zsh -c "source '$HOUSEH'; housekeep"; }
+
+disk_artifacts
+out=$(run_house 2000000)   # ~1953 MB free: healthy (the stub reports 1024-byte blocks)
+t_assert_contains "$out" "trimmed stream.log" "a healthy disk still trims logs"
+if print -r -- "$out" | grep -q 'cutting every log'; then
+  t_bad "the disk guard fired on a healthy volume"
+else
+  t_ok "the disk guard stays quiet when there is plenty of space"
+fi
+t_assert_file "$T_BASE/log/yt_url.cache" "and leaves the regenerable caches alone"
+
+disk_artifacts
+out=$(run_house 512000)   # 500 MB free: below the floor
+t_assert_contains "$out" "cutting every log to a quarter" "below DISK_LOW_MB it says what it is doing"
+t_assert_no_file "$T_BASE/log/yt_lastpull.jpg" "and drops the monitor's previous pull"
+t_assert_no_file "$T_BASE/log/yt_url.cache" "and the resolved-URL cache"
+t_assert_file "$T_BASE/log/basefill.jpg" "but NEVER the filler still (losing it degrades the next start)"
+t_assert_file "$T_BASE/log/lastframe.jpg" "nor the last good frame"
+t_assert_eq "$(( 300 * 8 ))" "$(/usr/bin/stat -f %z "$T_BASE/log/progress.txt")" \
+  "and never progress.txt, at any free-space level (ffmpeg writes it at a fixed offset)"
+
+disk_artifacts
+out=$(run_house 102400)   # 100 MB free: critical
+t_assert_contains "$out" "CRITICAL" "below 200 MB it says the failure is now a human's problem"
+t_assert_file "$T_BASE/log/basefill.jpg" "and still keeps the filler still"
+
 t_teardown
 t_summary

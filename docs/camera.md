@@ -16,6 +16,28 @@ It accepts ONVIF encoder writes, reports them back, and then ignores them. Do no
 `cam_config.py get` as a description of the stream - it is a description of what the camera
 has been *told*.
 
+## The burned-in clock is an hour fast, and ONVIF cannot fix it  (measured 2026-09-19)
+The top panel's OSD is the camera's own clock and it renders **UTC+8** (WITA) on a UTC+7 island,
+so the shop's customers see a time that is an hour ahead. `bin/cam_time.py` reads and writes it
+over ONVIF, which is the only open interface here (port 80 and the XM/Dahua CGI are closed):
+
+    bin/cam_time.py get            # utc, local, timezone, dst, type
+    bin/cam_time.py set WIB-7      # NTP on, daylight saving off, zone WIB-7
+
+Measured before and after on the real camera:
+
+| | ONVIF says | the on-screen clock says |
+|---|---|---|
+| before | `timezone PST0PDT`, utc correct | `20:44:21` while local time was `19:45` |
+| after `set WIB-7` | `timezone WIB-7` (accepted, and reads back) | `20:45:47` while local time was `19:46` |
+
+So the write is **accepted, reported back correctly, and ignored by the OSD** - the same lie the
+encoder settings tell. The OSD's own zone is not reachable through ONVIF and both closed
+interfaces are the only other place it could live, so **this is not fixable on this firmware**.
+Do not re-open it as a task; if the camera is ever replaced, check the OSD clock on the new one.
+The UTC clock itself is correct and NTP-synced, so nothing downstream depends on the wrong
+display.
+
     configured                      actually delivered
     bitrate 8192 -> 20480 kbps      2.3 Mbit/s, unchanged by the setting
     fps 30                          14 fps  (r_frame_rate=100/7, avg_frame_rate=14/1)

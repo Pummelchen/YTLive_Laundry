@@ -47,6 +47,7 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 : ${LOG_MAX_BYTES_STREAM:=2097152}
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
+: ${DISK_LOW_MB:=1000}            # free-space floor that makes housekeep cut logs to a quarter
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
 # No notifications and no log-reading: this Mac is unattended. Nothing here may depend on a
 # human noticing anything, so every failure path must keep retrying rather than report.
@@ -68,23 +69,44 @@ trim_log() {
 }
 
 housekeep() {
-  local f
-  # log/progress.txt is deliberately NOT trimmed: ffmpeg writes it at a fixed offset, so
-  # rewriting it underneath would corrupt the frame counter the watchdog below reads. It is
-  # truncated at every publisher start instead, which bounds it to one rotation's worth.
-  trim_log "$BASE/log/stream.log" "$LOG_MAX_BYTES_STREAM"
-  for f in "$BASE/log/publisher.log" "$BASE/log/reader.log" \
-           "$BASE/log/monitor.log" "$HOME/Library/Logs/YTLive/"*.log(N); do
-    trim_log "$f"
-  done
-  # DISK IS THE ONE FAILURE NOTHING HERE CAN RECOVER FROM, and nothing watched it. A full
-  # volume makes ffmpeg's -progress write fail (so the frame counter stops and the watchdog
-  # restarts the publisher every 30s), takes yt-dlp down with it, and leaves a dark channel with
-  # no diagnosis. Report it while there is still time to act; never act on it automatically.
-  local avail_mb
+  local f avail_mb stream_cap other_cap
   avail_mb=$(df -k "$BASE" 2>/dev/null | awk 'NR==2 {print int($4/1024)}')
+  stream_cap=$LOG_MAX_BYTES_STREAM
+  other_cap=$LOG_MAX_BYTES
+  # A SLOW DECLINE IS WORTH ACTING ON BEFORE IT IS WORTH REPORTING. Below DISK_LOW_MB every log is
+  # cut to a quarter of its budget immediately, and the regenerable monitor artifacts are dropped
+  # too. That is safe mid-run: ffmpeg holds the inode of any file it opened, so unlinking one does
+  # not disturb the running publisher, and each is rebuilt on the next pull or resolve.
+  # NOT touched, deliberately: log/basefill.jpg and log/lastframe.jpg (the filler stills - losing
+  # them degrades the next publisher start), the deploy backups under $HOME (they ARE the
+  # rollback), and .git. Those are decisions for a human, not housekeeping.
+  if [[ "$avail_mb" == <-> ]] && (( avail_mb < ${DISK_LOW_MB:-1000} )); then
+    stream_cap=$(( ${LOG_MAX_BYTES_STREAM:-2097152} / 4 ))
+    other_cap=$(( ${LOG_MAX_BYTES:-2097152} / 4 ))
+    log "HOUSEKEEP: ${avail_mb} MB free (< ${DISK_LOW_MB:-1000}) - cutting every log to a quarter of its budget and dropping regenerable caches, to buy time before this becomes a dark channel"
+    for f in "$BASE/log/yt_lastpull.jpg" "$BASE/log/yt_prevpull.jpg" \
+             "$BASE/log/golden_gray.cache" "$BASE/log/yt_url.cache"; do
+      rm -f "$f" 2>/dev/null
+    done
+  fi
+  # log/progress.txt is deliberately NOT trimmed at any free-space level: ffmpeg writes it at a
+  # fixed offset, so rewriting it underneath would corrupt the frame counter the watchdog reads.
+  # It is truncated at every publisher start instead, which bounds it to one rotation's worth.
+  trim_log "$BASE/log/stream.log" "$stream_cap"
+  for f in "$BASE/log/publisher.log" "$BASE/log/reader.log" \
+           "$BASE/log/monitor.log" "$BASE/log/net_events.log" \
+           "$HOME/Library/Logs/YTLive/"*.log(N); do
+    trim_log "$f" "$other_cap"
+  done
+  # DISK IS THE ONE FAILURE NOTHING HERE CAN RECOVER FROM. A full volume makes ffmpeg's -progress
+  # write fail (so the frame counter stops and the watchdog restarts the publisher every 30s),
+  # takes yt-dlp down with it, and leaves a dark channel with no diagnosis.
+  # NOTE the honest limit: the streamer cannot TELL anyone - the off-host watchdog is the only
+  # component allowed to notify (see bin/yt_watchdog.py), and it learns about the disk only when
+  # the channel finally stops. Delivering this number to it is the row the tracker calls "give the
+  # notification path redundancy"; until that exists this line is the record.
   if [[ "$avail_mb" == <-> ]] && (( avail_mb < 200 )); then
-    log "HOUSEKEEP: WARNING - only ${avail_mb} MB free on the volume holding $BASE. A full disk stops the frame counter, the recording and yt-dlp."
+    log "HOUSEKEEP: CRITICAL - only ${avail_mb} MB free on the volume holding $BASE. A full disk stops the frame counter, the recording and yt-dlp, and would need a human on site."
   fi
 }
 
@@ -304,16 +326,45 @@ apply_settings() {
 # what makes "it will be fixed until it is right" true rather than aspirational: a setting
 # changed by hand, or a broadcast that came up wrong, is corrected without anyone noticing.
 : ${ENFORCE_EVERY:=1800}          # seconds between drift checks (0 disables)
+: ${ENFORCE_MAX_ATTEMPTS:=3}      # stop re-enforcing a field that will not persist (see below)
 LAST_ENFORCE=0
+ENFORCE_SIG=""                    # the fixable-drift set we are currently chasing
+ENFORCE_TRIES=0
 enforce_drift() {
   (( ENFORCE_EVERY > 0 )) || return 0
   yt_api_ready || return 0
   [[ -s "$BASE/conf/broadcast_template.json" ]] || return 0
-  local now=$(date +%s) out
+  local now=$(date +%s) out sig
   (( now - LAST_ENFORCE >= ENFORCE_EVERY )) || return 0
   LAST_ENFORCE=$now
   out=$(yt_api_call verify)
-  print -r -- "$out" | grep -q '"status": *"DRIFTED"' || return 0
+  print -r -- "$out" | grep -q '"status": *"DRIFTED"' || { ENFORCE_SIG=""; ENFORCE_TRIES=0; return 0; }
+  # `verify` reports TWO kinds of drift and only one of them can be fixed. `diffs` is
+  # video-level (title, description, tags, thumbnail) and `enforce` can write it. `broadcast_diffs`
+  # is fixed AT CREATION (enableMonitorStream, latencyPreference, ...) and no update can ever
+  # change it for a broadcast that is already live - so enforcing against it can never succeed,
+  # and doing it every ENFORCE_EVERY spends up to ~158 units a shot forever. That loop is the bulk
+  # of the audit's 10,290-unit worst case against a 10,000-unit pool. Report it, never chase it.
+  if print -r -- "$out" | grep -q '"diffs": \[\]'; then
+    if [[ "$ENFORCE_SIG" != "broadcast-only" ]]; then
+      ENFORCE_SIG="broadcast-only"
+      log "DRIFT: only creation-time settings differ and no update can change them - reported once, never enforced: $out"
+    fi
+    ENFORCE_TRIES=0
+    return 0
+  fi
+  # There is something fixable. If the SAME set survives an enforce, the field is one YouTube will
+  # not persist for this broadcast and re-trying is pure waste, so give up loudly and name it.
+  sig=$(print -r -- "$out" | tr -d ' \n' | sed 's/.*"diffs":\[//; s/\].*//')
+  if [[ "$sig" == "$ENFORCE_SIG" ]]; then
+    ENFORCE_TRIES=$(( ENFORCE_TRIES + 1 ))
+    if (( ENFORCE_TRIES > ENFORCE_MAX_ATTEMPTS )); then
+      log "DRIFT: GIVING UP on [$sig] - ${ENFORCE_MAX_ATTEMPTS} enforces did not make it persist, and each retry costs API quota. Fix conf/broadcast_template.json or accept the drift; not trying again until the field set changes."
+      return 0
+    fi
+  else
+    ENFORCE_SIG="$sig"; ENFORCE_TRIES=1
+  fi
   log "DRIFT: $out"
   log "DRIFT: $(yt_api_call enforce)"
 }
@@ -717,6 +768,19 @@ rotate_broadcast() {
   # The countdown is advisory and is reported whether or not the probe succeeds.
   if print -r -- "$pre" | grep -q '"token_warning"'; then
     log "TOKEN WARNING: $pre"
+  fi
+  # The token probe hits the OAuth endpoint, which is NOT the Data API - so it still answers LIVE
+  # when the day's 10,000 units are gone. Cutting on that alone is the audit's quota hole: the cut
+  # happens, `prepare` then cannot create the successor, and the channel goes dark. This check is
+  # local and free, so ask it every rotation.
+  local q
+  q=$(yt_api_call quota)
+  if ! print -r -- "$q" | grep -q '"status": *"OK"'; then
+    rm -f "$ROTATE_NOW"
+    ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
+    LAST_ROTATE=$now
+    log "ROTATE ($why): REFUSED - API quota is exhausted ($q). Staying LIVE: a cut now would leave a broadcast that cannot be created. Next attempt in ${ROTATE_API_RETRY}s."
+    return
   fi
   if print -r -- "$pre" | grep -q '"probe": *"LIVE"'; then
     usable=yes

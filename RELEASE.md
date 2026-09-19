@@ -227,7 +227,7 @@ Leave previous releases' notes and performance tables alone.
 - **§1.5's four gates, mapped to this repository.**
   - *Lint* — the syntax gate: `zsh -n` per shell file and `ast.parse` per Python module. There
     has never been another linter here, so this is the whole of it.
-  - *Test suite* — `tests/run.sh`, 415 checks, run serially, reporting the count that passed. It
+  - *Test suite* — `tests/run.sh`, 520 checks, run serially, reporting the count that passed. It
     was added in 2.0; 1.0 has none, and its notes record that as **not checked** rather than
     implying a green run.
   - *Parity / golden* — the archive hash-match: for this project "the output is unchanged" means
@@ -245,9 +245,12 @@ Leave previous releases' notes and performance tables alone.
   release should not contain a copy of another release. `AUDIT/` is excluded because audit reports
   are not kept in the working tree at all — `release.sh` enforces all three exclusions, so the
   conventions are mechanical rather than hopeful.
-- **No CI.** `.github/` does not exist here, so nothing runs `bin/smoke_test.sh` or `tests/run.sh`
-  automatically; they are local gates only, and a green check elsewhere says nothing about this
-  repository. CodeQL runs from GitHub's dynamic default setup, outside the repo.
+- **CI runs the credential-free suite, and only that.** `.github/workflows/ci.yml` runs
+  `tests/run.sh` on macOS runners for every push to `main` and every pull request; the Linux
+  runners are deliberately not used because the suite is macOS-only. `bin/smoke_test.sh` is
+  **not** in CI — it needs `conf/yt_oauth.json`, which is gitignored — so it stays a by-hand host
+  gate and a green check says nothing about it. CodeQL also runs from GitHub's dynamic default
+  setup, outside the repo.
 - **`bin/smoke_test.sh` cannot pass inside a release.** It needs `conf/yt_oauth.json`, which is
   gitignored and in no archive. Every release's notes therefore record it as **not checked**
   rather than implying it passed.

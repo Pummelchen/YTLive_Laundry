@@ -73,7 +73,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 415 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 520 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -81,7 +81,9 @@ bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass f
 `tests/run.sh` is the gate that always works: it needs no camera, no network, no credentials and
 no `ffmpeg`, runs each case in its own scratch tree under `tests/.tmp/`, and shadows `pkill` with
 a recorder so a mis-scoped test cannot signal the live publisher. Prefer it over
-`bin/smoke_test.sh` when you have no credentials, and run both before restarting anything.
+`bin/smoke_test.sh` when you have no credentials, and run both before restarting anything. It is
+also the CI gate: `.github/workflows/ci.yml` runs it on `macos-latest` for every push to `main`
+and every pull request.
 
 **`smoke_test.sh` fails on a bare clone** (non-zero: exit 2 when `~/Downloads/YTLive`
 does not exist, otherwise exit 1): its 20 syntax checks (11 shell files including
@@ -125,11 +127,18 @@ see the dead-knobs trap below.
 
 ## Gates
 
-**None automatic.** `.github/` does not exist in the repository — no CI workflow is
-tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
-gate for you, so run them yourself, and always before restarting anything:
+**The credential-free suite now runs automatically.** `.github/workflows/ci.yml` is the first
+CI workflow this repository has ever had: it runs `zsh tests/run.sh` on every push to `main`
+and on every pull request, and any non-zero exit fails the job. It runs on `macos-latest` and
+only there — the suite is macOS-only (`zsh` idioms, `stat -f`, `plutil`, and a `pmset` stub
+whose absent keys mean "off"), so a Linux matrix would fail for reasons that are not defects.
+`bin/smoke_test.sh` is deliberately not in CI: it needs `conf/yt_oauth.json`, a real
+gitignored credential, so it cannot pass on a bare clone. GitHub's dynamic CodeQL default
+setup stays active alongside it.
 
-    tests/run.sh          # 415 checks, credential-free; fails if the monitor's classification,
+The gates, still worth running by hand before restarting anything:
+
+    tests/run.sh          # 520 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -284,6 +293,23 @@ packs it, so a release cannot ship a tree that fails either.
   `capture` runs at every rotation and its merge is idempotent, so an unconditional write left
   the deployed checkout permanently dirty and could block a `git pull` there. The capture
   timestamp goes to `log/broadcast_captured.json` (ignored); a no-op capture writes nothing.
+- **The API quota is a hard 10,000 units/day, and running out used to dark the channel.**
+  `yt_api.py verify` reports two kinds of drift and only one is fixable: `diffs` (video-level, which
+  `enforce` can write) and `broadcast_diffs` (fixed **at creation** — no update can ever change
+  them). Enforcing on any `DRIFTED` chased the second kind forever, which is the bulk of the
+  audit's 10,290-unit worst case. On `403 quotaExceeded` a cooldown is now armed in
+  `log/quota_exhausted` and every later call refuses **before** making a request, so a retry loop
+  cannot spend the day. **The rotation asks `yt_api.py quota` separately** — the token probe hits
+  the OAuth endpoint, which is not the Data API and still answers `LIVE` with an empty pool — and
+  refuses to cut when the pool is gone.
+- **The camera's burned-in clock is an hour fast and ONVIF cannot fix it.** `bin/cam_time.py` sets
+  the timezone and the camera accepts it, reports it back and renders UTC+8 anyway, exactly like the
+  encoder settings. Measured 2026-09-19; recorded in `docs/camera.md`. Do not re-open it as a task —
+  the UTC clock is correct and NTP-synced, so nothing downstream depends on the display.
+- **CI exists now, and it is macOS-only.** `.github/workflows/ci.yml` runs `tests/run.sh` on every
+  push to `main` and every pull request. Do not move it to a Linux runner: the suite uses `zsh`
+  idioms, `stat -f`, `plutil` and a `pmset` stub. `bin/smoke_test.sh` is deliberately absent because
+  it needs a gitignored credential.
   Do not "helpfully" put runtime state back into that file.
 - `bin/cam_config.py` reports what the camera has been *told*, not what it delivers:
   the firmware accepts ONVIF encoder writes, reports them back correctly, and

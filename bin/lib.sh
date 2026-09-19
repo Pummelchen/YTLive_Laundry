@@ -21,6 +21,7 @@ yt_api_call() {
   YT_LATENCY="${YT_LATENCY:-normal}" \
   YT_TOKEN_TTL_DAYS="${YT_TOKEN_TTL_DAYS:-7}" \
   YT_TOKEN_WARN_DAYS="${YT_TOKEN_WARN_DAYS:-2}" \
+  YT_QUOTA_COOLDOWN="${YT_QUOTA_COOLDOWN:-21600}" \
   python3 "$YT_API" "$@" 2>&1
 }
 

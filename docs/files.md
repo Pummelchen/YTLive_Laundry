@@ -11,6 +11,10 @@
     bin/cam_ip.py            resolves the camera's address; nothing hardcodes it
     bin/cam_config.py        read/set the ONVIF encoder config (what the camera is TOLD)
     bin/cam_reboot.py        reboot the camera via ONVIF SystemReboot
+    bin/cam_time.py          read/set the camera's clock and timezone over ONVIF. It sets it and
+                             the camera reports the new zone back - and the burned-in OSD still
+                             renders UTC+8, because this firmware ignores the write like it
+                             ignores the encoder settings. See docs/camera.md.
     bin/onvif_probe.py       pull RTSP URLs from an ONVIF camera
     bin/find_cam.py          ONVIF WS-Discovery, used by cam_ip.py as the last resort
     bin/ssh_mesh.sh          build and verify a full SSH key mesh between the Macs
@@ -55,6 +59,10 @@
     docs/task-table-standard.md         the ONE task-table standard: columns, types, statuses,
                              sizes, ownership, and the ordering that is the priority
     tests/                   the credential-free suite: tests/run.sh and its README
+    .github/workflows/ci.yml the ONLY automated gate: runs tests/run.sh on macOS runners for
+                             every push to main and every pull request. Not a Linux job - the
+                             suite is macOS-only - and bin/smoke_test.sh is deliberately absent
+                             from it because it needs a gitignored credential.
     backup/                  frozen snapshots of what was deployed (backup/README.md)
     log/                     runtime state, gitignored. Files the project reads back:
                              broadcast_started (rotation clock), rotating (monitor stand-down

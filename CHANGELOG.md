@@ -9,6 +9,67 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.6 — 2026-09-19
+
+**The API quota can no longer take the channel dark, drift checking stopped chasing a field that
+can never change, the disk guard acts before it reports, and the repository finally has a CI gate.
+One row closed by measurement instead of by code: the camera's clock.**
+
+- **T-06 — the quota hole, and the loop that was filling it.** YouTube gives one 10,000-unit pool
+  per day; the 2026-09-16 audit measured a worst case of **10,290** here, and found something
+  worse than the number: on `403 quotaExceeded` the code **did not stop** — `prepare` failed, ffmpeg
+  restarted anyway, and the channel went dark at that rotation. Two fixes, both regression-guarded
+  in `tests/t13_quota.sh`:
+  - **The driver.** `yt_api.py verify` reports two kinds of drift and only one can be fixed:
+    video-level `diffs` that `enforce` can write, and **`broadcast_diffs`, which are fixed at
+    creation and no update can ever change**. `enforce_drift` enforced on *any* `DRIFTED`, so a
+    creation-time-only difference was chased every 1800 s forever — up to ~158 units a shot, the
+    bulk of the overrun. It now enforces only fixable drift, reports the unfixable kind once, and
+    gives up loudly (`ENFORCE_MAX_ATTEMPTS`, default 3) when the *same* field set survives an
+    enforce — scoped to the set, so a different drift is chased again.
+  - **The hole.** A `403 quotaExceeded` now arms `log/quota_exhausted`, and every later call refuses
+    **before making a request**, so a retry loop cannot spend the rest of the day. `yt_api.py quota`
+    is the free check, and `rotate_broadcast()` asks it — because the token probe hits the OAuth
+    endpoint, which is *not* the Data API and still answers `LIVE` with an empty pool. A rotation
+    with no quota now **refuses to cut** (`ROTATE_WITHOUT_API=no`) instead of cutting into a state
+    where no successor can be created.
+- **T-13 — the disk guard acts before it reports.** Below `DISK_LOW_MB` (1000) `housekeep` now cuts
+  every log to a quarter of its budget and drops the regenerable monitor caches, to buy time; below
+  200 MB it says the failure has become a human's problem. It never touches the filler stills
+  (losing them degrades the next publisher start), never `log/progress.txt` (ffmpeg writes it at a
+  fixed offset), and never a deploy backup or `.git` — those are the rollback, a decision rather
+  than housekeeping. **The honest limit, recorded rather than papered over:** the streamer still
+  cannot *tell* anyone; the off-host watchdog is the only component allowed to notify and it learns
+  about the disk only when the channel finally stops. The **near half is done and the alert half
+  depends on the delivery decision**, so the row moves to `Blocked`/`operator` rather than closing.
+- **T-18 — the first automated gate this repository has ever had.** `.github/workflows/ci.yml` runs
+  `tests/run.sh` on **macOS** runners for every push to `main` and every pull request. macOS only,
+  deliberately: the suite uses `zsh` idioms, `stat -f`, `plutil` and a `pmset` stub, so a Linux job
+  would fail for reasons that are not defects. `bin/smoke_test.sh` is deliberately **not** in CI —
+  it needs `conf/yt_oauth.json` — so it stays a by-hand host gate. `AGENTS.md`, `README.md`,
+  `RELEASE.md` and `tests/README.md` no longer claim there is no CI.
+- **T-28 — `bin/deploy-release.sh` is tested.** `tests/t12_deploy.sh` (57 checks) runs entirely in
+  `tests/.tmp` with a fake `HOME`/`BASE` as siblings and a fake `git` that refuses `checkout`, so no
+  run can reach `./install.sh`; a tripwire would record it if one did. It covers the dry run
+  changing nothing, argument handling, the extracted `ytdlp_works` preflight (including the
+  `ERROR`-with-exit-0 case that blinded `yt-dlp` once), `rollback` restoring the tree **and** the
+  out-of-tree state, the `PARTIAL ROLLBACK` path, the `--go` kill switch, and `--wait-for-cut`
+  rotation detection — which had never been exercised at all.
+- **T-25 closed as not fixable on this firmware, with the evidence.** The camera burns its own clock
+  into the top panel and it renders **UTC+8 on a UTC+7 island**, so every viewer sees a time an hour
+  ahead. `bin/cam_time.py` reads and writes it over ONVIF — the only open interface, since port 80
+  and the XM/Dahua CGI are closed — and on the real camera: ONVIF reported `timezone PST0PDT` with a
+  correct UTC, the OSD read `20:44:21` while local time was `19:45`; after `set WIB-7` ONVIF
+  reported `WIB-7` and the OSD read `20:45:47` while local time was `19:46`. **Accepted, reported
+  back, ignored** — the same lie the encoder settings tell. The UTC clock is correct and NTP-synced,
+  so nothing downstream depends on the wrong display, but the display cannot be fixed from here.
+  Recorded in `docs/camera.md` so it is not re-opened as a task.
+- **Tests.** `tests/t13_quota.sh` (21 checks: the cooldown as pure logic, the refusal to spend, and
+  the drift loop) and `tests/t12_deploy.sh` (57) are new. `tests/t03_files.sh` grew to 22 with the
+  disk guard, and `tests/t10_camtools.sh` to 63 with `cam_time.py`. The suite is now **520 checks**
+  (t01 51, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 37, t12 57,
+  t13 21).
+
 ## 2.5 — 2026-09-19
 
 **The queue's own top rows, plus the two operational defects the 2.4 investigation left behind:

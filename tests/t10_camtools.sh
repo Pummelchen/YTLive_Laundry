@@ -267,5 +267,57 @@ while IFS=$'\t' read -r verdict label; do
   if [[ "$verdict" == "PASS" ]]; then t_ok "$label"; else t_bad "$label"; fi
 done < "$T_RESULTS"
 
+# --- bin/cam_time.py: the camera's clock ----------------------------------------------------
+# The OSD renders the camera's own clock and it is an hour fast (UTC+8 shown on a UTC+7 island).
+# cam_time.py is the only open route to it - ONVIF, because port 80 and the XM/Dahua CGI are
+# closed. Measured on the real camera 2026-09-19: the write is ACCEPTED, reads back as WIB-7, and
+# the on-screen clock does not move - the same lie the encoder settings tell. These checks cover
+# the tool's plumbing, not that outcome (which is recorded in docs/camera.md).
+CT="$REPO_DIR/bin/cam_time.py"
+out=$(python3 "$CT" 2>&1); rc=$?
+t_assert_contains "$out" "usage: cam_time.py" "cam_time.py prints usage with no arguments"
+t_assert_eq "2" "$rc" "and exits 2 rather than raising"
+out=$(python3 "$CT" warp 2>&1); rc=$?
+t_assert_eq "2" "$rc" "cam_time.py rejects an unknown subcommand"
+out=$(python3 "$CT" get extra 2>&1); rc=$?
+t_assert_eq "2" "$rc" "cam_time.py rejects surplus arguments"
+
+CTOUT=$(python3 -c "
+import importlib.util, socket, urllib.request
+def boom(*a, **k): raise AssertionError('import touched the network')
+socket.socket = boom; socket.create_connection = boom; urllib.request.urlopen = boom
+spec = importlib.util.spec_from_file_location('cam_time', '$CT')
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+print('import-ok')
+xml = ('<tt:GetSystemDateAndTimeResponse><tt:SystemDateAndTime>'
+       '<tt:TimeZone><tt:TZ>PST0PDT</tt:TZ></tt:TimeZone>'
+       '<tt:UTCDateTime><tt:Time><tt:Hour>12</tt:Hour><tt:Minute>45</tt:Minute>'
+       '<tt:Second>29</tt:Second></tt:Time><tt:Date><tt:Year>2026</tt:Year>'
+       '<tt:Month>9</tt:Month><tt:Day>19</tt:Day></tt:Date></tt:UTCDateTime>'
+       '</tt:SystemDateAndTime></tt:GetSystemDateAndTimeResponse>')
+print('clock', m._clock(xml, 'UTCDateTime'))
+print('tz', m._field(xml, 'TZ'))
+# cmd_set WRITES and then reads back, so record every call and assert on the first one - the
+# read-back would otherwise be the last thing seen and the set would look like it never happened.
+calls = []
+m.call = lambda url, body, action: (calls.append((url, body, action)), '<ok/>')[1]
+m._resolve = lambda base: 'http://stub/onvif/device_service'
+print('rc', m.main(['cam_time.py', 'set', 'WIB-7']))
+print('calls', len(calls))
+print('tz-sent', '<tt:TZ>WIB-7</tt:TZ>' in calls[0][1])
+print('ntp', '<tds:DateTimeType>NTP</tds:DateTimeType>' in calls[0][1])
+print('dst-off', '<tds:DaylightSavings>false</tds:DaylightSavings>' in calls[0][1])
+print('action', calls[0][2].endswith('SetSystemDateAndTime'))
+" 2>&1)
+t_assert_contains "$CTOUT" "import-ok" "importing cam_time.py touches no network"
+t_assert_contains "$CTOUT" "clock 2026-09-19 12:45:29" "cam_time.py parses the ONVIF DateTime shape"
+t_assert_contains "$CTOUT" "tz PST0PDT" "and the timezone the firmware reports"
+t_assert_contains "$CTOUT" "rc 0" "set succeeds against a stub device service"
+t_assert_contains "$CTOUT" "calls 2" "set writes and then reads back rather than trusting the write"
+t_assert_contains "$CTOUT" "tz-sent True" "set sends the requested timezone"
+t_assert_contains "$CTOUT" "ntp True" "set asks for NTP"
+t_assert_contains "$CTOUT" "dst-off True" "and turns daylight saving off"
+t_assert_contains "$CTOUT" "action True" "against the ONVIF device service"
+
 t_teardown
 t_summary
