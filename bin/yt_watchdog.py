@@ -4,29 +4,42 @@
 WHY THIS EXISTS (2026-09-18 outage)
 -----------------------------------
 Every other program in bin/ runs ON the streamer and assumes the streamer is alive. On
-2026-09-18 at 10:19:54Z the streamer MacBook dropped off the network mid-segment (a shop
-power/router loss, then the Mac slept on battery and never came back). The publisher's own
-watchdog could not help: a process that is not running cannot retry, and launchd cannot
-revive a machine that is off. The channel stayed dark for over ten hours and *nothing said
-anything*, because the design rule was "no notifications - every failure path retries".
+2026-09-18 at 10:19:54Z the streamer MacBook dropped off the network mid-segment because it
+lost its transport - DNS and its own LAN - while it stayed awake and kept logging. The
+publisher's own watchdog could not help: every retry in it was an application-layer retry
+that never touched the network interface. The channel stayed dark for ~19h26m and *nothing
+on the streamer said anything*, because the design rule was "no notifications - every failure
+path retries".
 
 That rule is right for failures the streamer can retry, and helpless for the one class it
 cannot: the host itself. This script closes exactly that hole. It is the only component in
 this repository designed to run OFF the streamer, on an always-on host, and it is allowed
 to notify a human because no amount of retrying on a dead box will ever fix a dead box.
 
-WHAT IT WATCHES - two independent signals
------------------------------------------
-1. The channel, via yt-dlp, which is the ground truth for "is the stream up". The
+WHAT IT WATCHES - independent signals
+-------------------------------------
+1. The channel, TWICE. First via yt-dlp, the ground truth for "is the stream up"; the
    live/offline/unknown split and the OFFLINE_SIGNS phrase list are deliberately the same
    as bin/yt_check.py's: UNKNOWN (the lookup failed) is never evidence that the channel is
    dark, because a yt-dlp rate limit must not become a false alarm any more than it may
-   become a false rotation.
+   become a false rotation. Second, and independently, via a plain HTTPS GET of the public
+   /live page with urllib - no yt-dlp, no cookies, no API key.
+   WHY THE SECOND READER (2026-09-19): during the recovery yt-dlp was rate-limited and
+   returned "unknown" for hours, so the watchdog's ONLY channel signal went blind exactly
+   when it mattered. It raised two "blind" alerts, and its "channel is LIVE again" mail
+   arrived 5 h 21 m after the channel had actually recovered, because the recovery could not
+   be seen until yt-dlp answered again. A second reader over a different transport means one
+   rate-limited tool can no longer blind the watchdog on its own.
 2. The streamer host, via `tailscale status --json`. This catches the 2026-09-18 class the
    channel check alone cannot describe, and it cannot be blinded by a YouTube change the
    way yt-dlp can.
+3. The streamer application's heartbeat, if a file is configured (WATCH_HEARTBEAT). Its
+   modification time going stale is positive evidence that the app has gone silent, which
+   is a different failure from "the channel is dark" and the channel read cannot always
+   describe it. A heartbeat that is absent is treated as an unconfigured deployment, never
+   as an outage: a watchdog must not page someone for a signal nobody wired up.
 
-Neither signal is trusted alone. The channel is what gets alerted on; the host presence
+None of them is trusted alone. The channel is what gets alerted on; the host presence
 turns "dark" into a diagnosis (host gone = power/network; host up = publisher, token or
 camera) and covers the case where the lookup itself is failing at the same time.
 
@@ -59,6 +72,7 @@ import smtplib
 import subprocess
 import sys
 import time
+import urllib.request
 from datetime import datetime
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
@@ -70,14 +84,33 @@ OFFLINE_SIGNS = ("not currently live", "does not have a live", "is not live",
                  "not currently streaming", "this live event will begin",
                  "the channel is not currently live")
 
+# The public channel page carries this JSON flag: true while the channel is broadcasting,
+# false when it is not. Verified by hand against the live shop channel on 2026-09-19, and it
+# is the whole reason the second reader can exist without yt-dlp. Whitespace is stripped from
+# the body before the search so a reformatted "isLiveNow": true still matches; anything else
+# (a consent wall, a bot check, a markup change) is UNKNOWN, never offline.
+LIVE_MARKER = '"isLiveNow":true'
+DARK_MARKER = '"isLiveNow":false'
+
+# A page this size is already far past the marker; the cap keeps a pathological response from
+# pulling all of memory into a watchdog that has to stay small.
+HTTP_MAX_BYTES = 2_000_000
+HTTP_UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+           "Chrome/124.0 Safari/537.36")
+
 DEFAULTS = {
-    "WATCH_CHANNEL": "",            # "@handle"; YT_CHANNEL is accepted as a fallback
+    "WATCH_CHANNEL": "",            # "@handle" or a UC... channel id; YT_CHANNEL is a fallback
     "WATCH_HOST": "",               # Tailscale peer name, e.g. "ternak-macbook"
     "WATCH_INTERVAL": "60",
     "WATCH_DARK_GRACE": "900",      # 15 min: comfortably above the ~5 min rotation gap
     "WATCH_HOST_LOST_GRACE": "900",  # host gone + channel unverifiable -> outage
     "WATCH_BLIND_GRACE": "2700",    # 45 min unable to see the channel -> warn anyway
     "WATCH_REMIND": "21600",        # repeat an unresolved alert every 6 h
+    "WATCH_HEARTBEAT": "",          # path to a file the streamer app touches; empty = disabled
+    "WATCH_HEARTBEAT_MAX": "900",   # 15 min without a touch -> the app is silent
+    "WATCH_HTTP": "1",              # second channel reader (direct HTTPS) on by default
+    "WATCH_HTTP_URL": "",           # optional override; default derives from WATCH_CHANNEL
+    "WATCH_HTTP_TIMEOUT": "15",     # short: the loop must not stall on a hanging page
     "WATCH_TZ_OFFSET": "7",         # shop time, WIB
     "WATCH_TZ_LABEL": "WIB",
     "WATCH_ALERT_MODE": "smtp",     # smtp | file | stdout
@@ -128,14 +161,30 @@ class Cfg:
         except (TypeError, ValueError):
             return int(DEFAULTS.get(k, "0"))
 
+    def flag(self, k):
+        """Truthy for anything except "", "0", "no", "off", "false" - so a knob can be turned
+        off in an env file without the parser needing a boolean type."""
+        raw = str(self._v.get(k, DEFAULTS.get(k, ""))).strip().lower()
+        return raw not in ("", "0", "no", "off", "false")
+
     @property
     def channel_url(self):
         h = self["WATCH_CHANNEL"].strip()
         if not h:
             return ""
+        # A raw UC... id is a channel URL in its own right; prefixing "@" would make
+        # "youtube.com/@UC..." which YouTube does not serve. Handles keep the @ form.
+        if re.fullmatch(r"UC[\w-]{22}", h):
+            return f"https://www.youtube.com/channel/{h}/live"
         if not h.startswith("@"):
             h = "@" + h
         return f"https://www.youtube.com/{h}/live"
+
+    @property
+    def http_url(self):
+        """The URL the direct reader fetches. WATCH_HTTP_URL overrides the derived one so the
+        reader can be pointed at a test fixture (or a proxy) without touching the channel."""
+        return (self["WATCH_HTTP_URL"] or "").strip() or self.channel_url
 
 
 def load_env_file(path):
@@ -214,6 +263,65 @@ def channel_state(cfg):
     return None, "unknown"
 
 
+def http_channel_state(cfg):
+    """Return "live" | "offline" | "unknown" from the public channel page over plain HTTPS.
+
+    WHY THIS SECOND READER EXISTS: on 2026-09-19 yt-dlp was rate-limited/bot-checked and
+    answered "unknown" for hours, which blinded the watchdog at the worst possible moment
+    and made its recovery mail 5 h 21 m late. This read shares no code, no credential and no
+    rate limit with yt-dlp, so the two fail independently.
+
+    It deliberately reuses the same three-word vocabulary: a 200 page without the marker (a
+    consent wall, a bot check, a YouTube markup change) is "unknown", NOT evidence that the
+    channel is dark, so it can never page anyone by itself.
+    """
+    url = cfg.http_url
+    if not url:
+        return "unknown"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": HTTP_UA})
+        with urllib.request.urlopen(req, timeout=cfg.num("WATCH_HTTP_TIMEOUT")) as resp:
+            raw = resp.read(HTTP_MAX_BYTES)
+        text = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
+    except Exception:                   # DNS, TLS, timeout, 403, bot check: all "not known"
+        return "unknown"
+    # Collapse whitespace so `"isLiveNow": true` matches too; the page is one huge minified
+    # JSON blob in practice, but a reformat must not read as "the lookup failed".
+    compact = re.sub(r"\s+", "", text)
+    if LIVE_MARKER in compact:
+        return "live"
+    if DARK_MARKER in compact:
+        return "offline"
+    return "unknown"
+
+
+def combine_channel_states(primary, direct):
+    """Either reader saying live wins; BOTH saying offline is offline; anything else unknown.
+
+    The asymmetry is the whole point: "live" is only ever positive evidence, so one confirmed
+    live read is enough, while a single "offline" is not - one reader failing must not become
+    a dark alert. This keeps a yt-dlp rate limit from paging anyone (the pre-existing rule)
+    and extends it to a blocked/failed HTTP read.
+    """
+    if primary == "live" or direct == "live":
+        return "live"
+    if primary == "offline" and direct == "offline":
+        return "offline"
+    return "unknown"
+
+
+def read_channel(cfg):
+    """(video_id, state) from both readers, combined as combine_channel_states() describes.
+
+    The video id can only come from yt-dlp; when only the HTTP reader says live it is None.
+    WATCH_HTTP=0 falls back to the yt-dlp reader alone, which is what the offline tests use.
+    """
+    vid, primary = channel_state(cfg)
+    if not cfg.flag("WATCH_HTTP"):
+        return vid, primary
+    return vid, combine_channel_states(primary, http_channel_state(cfg))
+
+
 def host_state(cfg):
     """(state, last_seen) for the streamer in the tailnet: live | down | unknown.
 
@@ -245,6 +353,35 @@ def host_state(cfg):
     return "unknown", None
 
 
+def heartbeat_state(cfg):
+    """(state, age_seconds) for the streamer application's heartbeat file.
+
+    fresh    - the file exists and was touched within WATCH_HEARTBEAT_MAX seconds
+    stale    - the file exists but is older: positive evidence the app has gone silent
+    absent   - WATCH_HEARTBEAT is set but the file is missing; nothing is writing it
+    disabled - WATCH_HEARTBEAT is unset: this deployment has no dead-man signal
+    unknown  - the file exists but cannot be stat'ed (permissions); never alerts
+
+    The I/O lives here, in the caller's world, so decide() stays a pure function of plain
+    values. "absent" is deliberately NOT "stale": an unconfigured deployment must not page
+    anyone, which would otherwise be a false alarm on every watchdog host that never wired a
+    heartbeat up.
+    """
+    path = cfg["WATCH_HEARTBEAT"].strip()
+    if not path:
+        return "disabled", None
+    try:
+        mtime = pathlib.Path(path).stat().st_mtime
+    except FileNotFoundError:
+        return "absent", None
+    except Exception:
+        return "unknown", None
+    age = int(max(0, time.time() - mtime))
+    if age <= cfg.num("WATCH_HEARTBEAT_MAX"):
+        return "fresh", age
+    return "stale", age
+
+
 # --------------------------------------------------------------------------------------
 # State
 # --------------------------------------------------------------------------------------
@@ -252,6 +389,7 @@ def new_state():
     return {
         "dark_since": None,
         "unknown_since": None,
+        "silent_since": None,
         "live_since": None,
         "last_alert_kind": None,
         "last_alert_at": None,
@@ -259,6 +397,8 @@ def new_state():
         "last_video": None,
         "last_channel_state": None,
         "last_host_state": None,
+        "last_heartbeat_state": None,
+        "last_heartbeat_age": None,
         "last_error": None,
         "checks": 0,
     }
@@ -288,9 +428,15 @@ def save_state(path, state):
 # --------------------------------------------------------------------------------------
 # The decision, as a pure function of (time, state, signals, config)
 # --------------------------------------------------------------------------------------
-def decide(now, state, channel, host, cfg):
+def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None):
     """Return (new_state, actions). Pure - no clock, no network, no I/O - so the whole
-    alerting policy is testable without waiting 15 minutes or touching YouTube."""
+    alerting policy is testable without waiting 15 minutes or touching YouTube.
+
+    `heartbeat` and `heartbeat_age` are plain values read by the caller (heartbeat_state());
+    keeping the file I/O out here is what lets every heartbeat rule below be tested in
+    microseconds. "stale" is positive evidence the streamer app is silent; "fresh",
+    "absent", "disabled" and "unknown" are not.
+    """
     s = dict(state)
     actions = []
     dark_grace = cfg.num("WATCH_DARK_GRACE")
@@ -302,6 +448,8 @@ def decide(now, state, channel, host, cfg):
     s["checks"] = int(s.get("checks") or 0) + 1
     s["last_channel_state"] = channel
     s["last_host_state"] = host
+    s["last_heartbeat_state"] = heartbeat
+    s["last_heartbeat_age"] = heartbeat_age
 
     def due(kind):
         """One alert per episode, then a reminder every `remind` seconds."""
@@ -318,15 +466,41 @@ def decide(now, state, channel, host, cfg):
     if channel == "live":
         s["dark_since"] = None
         s["unknown_since"] = None
+        s["silent_since"] = None
         if s.get("live_since") is None:
             s["live_since"] = now
         # Recovery is only worth a mail if we previously cried wolf about this episode.
-        if s.get("last_alert_kind") in ("dark", "blind"):
-            actions.append(dict(kind="recover"))
+        prior = s.get("last_alert_kind")
+        if prior in ("dark", "blind", "silent"):
+            actions.append(dict(kind="recover", of=prior))
         s["last_alert_kind"] = None
         return s, actions
 
     s["live_since"] = None
+
+    # A stale heartbeat is the dead-man signal: positive evidence the app itself has gone
+    # silent. It is reported even while the channel read is UNKNOWN (that is the whole point
+    # of a second, independent signal), and it takes precedence over the dark/blind story so
+    # the two alert kinds cannot alternate and page twice for one failure. A stale file is
+    # already older than WATCH_HEARTBEAT_MAX, so no extra grace is applied here.
+    if heartbeat == "stale":
+        if s.get("silent_since") is None:
+            s["silent_since"] = now
+        silent_for = now - s["silent_since"]
+        if due("silent"):
+            alert("silent", silent_for=silent_for, heartbeat_age=heartbeat_age,
+                  host_lost=(host == "down"))
+        return s, actions
+
+    # Heartbeat is fresh / absent / disabled / unreadable. A fresh file is proof the app came
+    # back; the others only remove the silent evidence, so drop the episode without claiming
+    # a recovery the file cannot support. Clearing last_alert_kind either way means a future
+    # silent episode alerts immediately rather than waiting out WATCH_REMIND.
+    s["silent_since"] = None
+    if s.get("last_alert_kind") == "silent":
+        if heartbeat == "fresh":
+            actions.append(dict(kind="recover", of="silent"))
+        s["last_alert_kind"] = None
 
     if channel == "offline":
         s["unknown_since"] = None
@@ -419,6 +593,22 @@ def human_duration(seconds):
     return f"{s}s"
 
 
+def human_heartbeat(state, cfg):
+    """One line for status/alert bodies, spelling out why an absent file is not an outage."""
+    hb = state.get("last_heartbeat_state")
+    age = state.get("last_heartbeat_age")
+    limit = human_duration(cfg.num("WATCH_HEARTBEAT_MAX"))
+    if hb == "disabled":
+        return "disabled (WATCH_HEARTBEAT unset - no dead-man signal)"
+    if hb == "absent":
+        return "absent (file not written - not alerting; see docs/watchdog.md)"
+    if hb == "fresh":
+        return f"fresh (last touch {human_duration(age)} ago)"
+    if hb == "stale":
+        return f"STALE (last touch {human_duration(age)} ago, limit {limit})"
+    return "unknown"
+
+
 def compose(action, state, channel, host, host_last_seen, vid, cfg):
     """Subject and body. Written for someone reading it on a phone at 3am: what is wrong,
     since when, whether the box is reachable, and the first thing to do about it."""
@@ -439,6 +629,27 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
                 f"{human_duration(action.get('unknown_for'))}. This is a yt-dlp/lookup "
                 f"failure, not proof the stream is down - but while it lasts nothing is "
                 f"watching.")
+    elif kind == "silent":
+        # Prefer the file's real age for the headline; silent_for can be 0 on the first check
+        # that crosses the limit, and `0 or fallback` would swallow that legitimate value.
+        age = action.get("heartbeat_age")
+        if age is None:
+            age = action.get("silent_for")
+        silent_for = human_duration(age)
+        if action.get("host_lost"):
+            subject = f"[YTLive] streamer SILENT + host unreachable ({silent_for})"
+            head = (f"The streamer's heartbeat file has not been touched for {silent_for}, "
+                    f"and {where} is offline in the tailnet at the same time. The streaming "
+                    f"application looks dead, not merely unpublishable.")
+        else:
+            subject = f"[YTLive] streamer heartbeat stale ({silent_for})"
+            head = (f"The streamer's heartbeat file has not been touched for {silent_for} "
+                    f"(limit {human_duration(cfg.num('WATCH_HEARTBEAT_MAX'))}). That is the "
+                    f"application itself, not the channel: it may be hung, still running but "
+                    f"no longer publishing, or the machine may be gone.")
+    elif action.get("of") == "silent":
+        subject = "[YTLive] streamer heartbeat is back"
+        head = "The streamer's heartbeat file is being updated again; the app is alive."
     else:
         subject = "[YTLive] channel is LIVE again"
         head = "The channel is live again; the outage is over."
@@ -448,6 +659,7 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         "",
         f"channel state : {channel}",
         f"host state    : {host}" + (f" (last seen {human_time(host_last_seen, cfg)})" if host_last_seen else ""),
+        f"heartbeat     : {human_heartbeat(state, cfg)}",
         f"video id      : {vid or 'none'}",
         f"now           : {human_time(time.time(), cfg)}",
     ]
@@ -469,9 +681,10 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         "     before restarting anything.",
         "  4. Then check conf/yt_oauth.json is still valid:  bin/yt_api.py token",
         "",
-        "Known cause of the 2026-09-18 outage: a shop power/router loss, after which the",
-        "Mac ran on battery and slept. docs/known-issues.md records the fix that was never",
-        "applied: sudo pmset -c sleep 0 disablesleep 1  (plus autorestart after power loss).",
+        "Known cause of the 2026-09-18 outage: the streamer lost its transport (DNS and its",
+        "own LAN) while it stayed awake and logging; it was dark ~19h26m. docs/known-issues.md",
+        "records the pmset hardening for the separate power class: sudo pmset -c sleep 0",
+        "disablesleep 1  (plus autorestart after power loss).",
         "",
         f"-- {cfg['WATCH_HOST'] or 'ytlive'} watchdog on {os.uname().nodename}",
     ]
@@ -590,25 +803,28 @@ def flush_spool(cfg):
 # Commands
 # --------------------------------------------------------------------------------------
 def check_once(cfg, state):
-    vid, channel = channel_state(cfg)
+    vid, channel = read_channel(cfg)
     host, host_last_seen = host_state(cfg)
+    heartbeat, heartbeat_age = heartbeat_state(cfg)
     if channel == "live" and vid:
         state["last_video"] = vid
     now = int(time.time())
-    new, actions = decide(now, state, channel, host, cfg)
-    return new, actions, channel, host, host_last_seen, vid
+    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age)
+    return new, actions, channel, host, host_last_seen, vid, heartbeat, heartbeat_age
 
 
 def cmd_once(cfg, as_json=True):
     state = load_state(cfg["WATCH_STATE"])
-    new, actions, channel, host, host_last_seen, vid = check_once(cfg, state)
+    new, actions, channel, host, host_last_seen, vid, heartbeat, heartbeat_age = check_once(cfg, state)
     save_state(cfg["WATCH_STATE"], new)
     if as_json:
         print(json.dumps({
             "channel": channel, "host": host,
+            "heartbeat": heartbeat, "heartbeat_age": heartbeat_age,
             "host_last_seen": host_last_seen, "vid": vid,
             "actions": [a["kind"] for a in actions],
             "dark_since": new.get("dark_since"),
+            "silent_since": new.get("silent_since"),
             "last_alert_kind": new.get("last_alert_kind"),
         }))
     else:
@@ -618,20 +834,25 @@ def cmd_once(cfg, as_json=True):
 
 def cmd_run(cfg):
     log_line(cfg, f"watchdog starting: channel={cfg.channel_url or '(unset)'} "
-                  f"host={cfg['WATCH_HOST'] or '(unset)'} every {cfg.num('WATCH_INTERVAL')}s")
+                  f"host={cfg['WATCH_HOST'] or '(unset)'} "
+                  f"heartbeat={cfg['WATCH_HEARTBEAT'] or '(disabled)'} "
+                  f"every {cfg.num('WATCH_INTERVAL')}s")
     state = load_state(cfg["WATCH_STATE"])
     while True:
         try:
-            state, actions, channel, host, host_last_seen, vid = check_once(cfg, state)
+            (state, actions, channel, host, host_last_seen, vid,
+             heartbeat, heartbeat_age) = check_once(cfg, state)
             save_state(cfg["WATCH_STATE"], state)
             for action in actions:
                 subject, body = compose(action, state, channel, host, host_last_seen, vid, cfg)
-                log_line(cfg, f"action={action['kind']} channel={channel} host={host}")
+                log_line(cfg, f"action={action['kind']} channel={channel} host={host} "
+                              f"heartbeat={heartbeat}")
                 send_alert(cfg, subject, body, action)
             if actions:
                 flush_spool(cfg)
             elif state["checks"] % 60 == 0:
-                log_line(cfg, f"ok channel={channel} host={host} checks={state['checks']}")
+                log_line(cfg, f"ok channel={channel} host={host} heartbeat={heartbeat} "
+                              f"checks={state['checks']}")
         except KeyboardInterrupt:
             log_line(cfg, "watchdog stopping on interrupt")
             return 0
@@ -647,21 +868,27 @@ def render_status(cfg, state, channel, host, host_last_seen, vid):
         f"  host peer      : {cfg['WATCH_HOST'] or '(unset)'}",
         f"  channel state  : {channel}",
         f"  host state     : {host}" + (f"  last seen {human_time(host_last_seen, cfg)}" if host_last_seen else ""),
+        f"  heartbeat      : {human_heartbeat(state, cfg)}",
         f"  video id       : {vid or 'none'}",
         f"  dark since     : {human_time(state.get('dark_since'), cfg)}",
         f"  unknown since  : {human_time(state.get('unknown_since'), cfg)}",
+        f"  silent since   : {human_time(state.get('silent_since'), cfg)}",
         f"  last alert     : {state.get('last_alert_kind') or 'none'} at {human_time(state.get('last_alert_at'), cfg)}",
         f"  alert mode     : {cfg['WATCH_ALERT_MODE']} -> {cfg['WATCH_ALERT_TO'] or '(unset)'}",
         f"  state file     : {cfg['WATCH_STATE']}",
-        f"  thresholds     : dark {human_duration(cfg.num('WATCH_DARK_GRACE'))}, blind {human_duration(cfg.num('WATCH_BLIND_GRACE'))}, remind {human_duration(cfg.num('WATCH_REMIND'))}",
+        f"  thresholds     : dark {human_duration(cfg.num('WATCH_DARK_GRACE'))}, blind {human_duration(cfg.num('WATCH_BLIND_GRACE'))}, heartbeat {human_duration(cfg.num('WATCH_HEARTBEAT_MAX'))}, remind {human_duration(cfg.num('WATCH_REMIND'))}",
     ]
     return "\n".join(lines)
 
 
 def cmd_status(cfg):
     state = load_state(cfg["WATCH_STATE"])
-    vid, channel = channel_state(cfg)
+    vid, channel = read_channel(cfg)
     host, host_last_seen = host_state(cfg)
+    heartbeat, heartbeat_age = heartbeat_state(cfg)
+    # Show the CURRENT heartbeat, not the last one the loop happened to record, so `status`
+    # is a live page rather than a replay of the previous check.
+    state = dict(state, last_heartbeat_state=heartbeat, last_heartbeat_age=heartbeat_age)
     print(render_status(cfg, state, channel, host, host_last_seen, vid))
     return 0
 

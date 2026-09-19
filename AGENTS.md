@@ -36,8 +36,10 @@ RTMP session.
   the only code allowed to notify), `watchdog-install.sh` (installs that watchdog on an
   always-on host as a systemd unit or a LaunchAgent), `lib.sh` (shared API helpers), the
   camera/ONVIF tools (`cam_ip.py`, `camscan.py`, `onvif_probe.py`, `cam_config.py`,
-  `cam_reboot.py`), `forensics.sh` (read-only evidence collector for a host-level outage),
-  `harden-host.sh` (applies and verifies the `pmset` host hardening; dry run by default), and
+  `cam_reboot.py`), `forensics.sh` (read-only evidence collector for a host-level outage,
+  including the Network section), `harden-host.sh` (applies and verifies the `pmset` host
+  hardening; dry run by default), `net_watch.sh` (the TRANSPORT-layer watchdog: probes
+  gateway/DNS/WAN and repairs a lost network; started by `stream.sh`), and
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
   `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
@@ -45,10 +47,8 @@ RTMP session.
   watchdog's `watchdog.env.example` (the tracked template; the live `conf/watchdog.env`
   holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
   unit for the always-on host).
-- `docs/` — 9 design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
-  **`docs/handover-2026-09-19-outage.md` is a LIVE handover for the open 2026-09-18 outage: read it
-  first if the streamer is still offline, and delete it — recording the removal — once the incident
-  is closed.** `docs/v3-datacenter-plan.md` is an unscheduled v3.0 proposal.
+- `docs/` — the design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
+  `docs/v3-datacenter-plan.md` is an unscheduled v3.0 proposal.
   `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
   `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by
@@ -73,7 +73,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 218 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 326 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -129,8 +129,8 @@ see the dead-knobs trap below.
 tracked, and only GitHub's dynamic CodeQL default setup is active. Nothing runs either
 gate for you, so run them yourself, and always before restarting anything:
 
-    tests/run.sh          # 218 checks, credential-free; fails if the monitor's classification
-                          # or the golden-reference bootstrap regress
+    tests/run.sh          # 326 checks, credential-free; fails if the monitor's classification,
+                          # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
 
@@ -241,15 +241,30 @@ packs it, so a release cannot ship a tree that fails either.
   that nothing may depend on a human noticing: there are no notifications, and every
   failure path retries.
 - **The streamer is a single point of failure, and nothing on it can report its own
-  death.** On 2026-09-18 the MacBook lost power and slept at `10:19:54Z` — Tailscale's
-  last contact with it is the same second — and the publisher's watchdog, the monitor,
-  `stream.sh`'s retry loops and launchd's `KeepAlive` all behaved correctly and all were
-  useless: a process that is not running cannot retry, and launchd cannot revive a Mac that
-  is off. The channel stayed dark **10 h 23 m** and nothing said so, which is exactly the
-  class the "no notifications" rule above cannot cover. `bin/yt_watchdog.py` is the
-  deliberate exception — the only thing allowed to notify, and the one thing that must
-  **never** be run on the streamer, nor may its own host be assumed alive.
-  See `docs/watchdog.md`.
+  death.** On 2026-09-18 it dropped off the tailnet mid-segment and the channel was dark
+  **19 h 26 m** and nothing said so — exactly the class the "no notifications" rule above
+  cannot cover. `bin/yt_watchdog.py` is the deliberate exception: the only thing allowed to
+  notify, and the one thing that must **never** be run on the streamer, nor may its own host
+  be assumed alive. See `docs/watchdog.md`.
+- **The recorded cause of that outage was wrong, and the correction matters.** The 2.2/2.3
+  notes, the handover and the wiki all said *a mains interruption while the lid was shut, after
+  which the Mac slept on battery*. The host's own records falsify it: `kern.boottime` is still
+  Mon Aug 31 (uptime 19 days, so no reboot, no panic, no forced power-off and no login window),
+  and a `pmset -g log` window covering 09-12 → 09-19 holds **zero** Sleep/Wake and **zero**
+  AC/battery transitions. The Mac was **awake and logging** 640–760 lines/hour throughout, with
+  `[Errno 8] nodename nor servname provided` and a camera unreachable on the **local** subnet:
+  it lost its **transport** — DNS and its own LAN — not its power. Do not restate the sleep
+  theory; the evidence is in `CHANGELOG.md` under 2.4.
+- **Every retry in this project used to be an *application*-layer retry.** ffmpeg, ONVIF
+  discovery, the OAuth probe and launchd all retried, and not one of them ever touched a
+  network interface — which is why a transport failure was outside the reach of all of them.
+  `bin/net_watch.sh` is that missing bottom layer and `stream.sh` starts it. Two rules are
+  load-bearing and regression-guarded in `tests/t09_net.sh`: it must **never power-cycle a
+  network service** (toggling the USB-Ethernet service on 2026-09-19 killed that adapter's
+  carrier for good) and must **never reorder the service list** (an interface with no router
+  gets no default route, so macOS already prefers the working one, and `-ordernetworkservices`
+  is one typo away from breaking the only working path). Wired stays first so it becomes
+  primary by itself once it holds a real lease — LAN primary, Wi-Fi backup.
 - `bin/cam_config.py` reports what the camera has been *told*, not what it delivers:
   the firmware accepts ONVIF encoder writes, reports them back correctly, and
   **ignores them** — the delivered stream stayed at ~2.3 Mbit/s and 14 fps through

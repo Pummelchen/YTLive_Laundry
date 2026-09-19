@@ -1,5 +1,10 @@
 # YTLive_Laundry 2.2 — the external watchdog and host hardening
 
+> **CORRECTION 2026-09-19 — the cause recorded in this release note was later FALSIFIED.** It was
+> not a shop power/router loss and the Mac did not sleep: it stayed awake and lost its
+> **transport** (DNS and its own LAN), and was dark **~19 h 26 m**, not 10 h 23 m. See
+> `CHANGELOG.md` 2.4 and `docs/release-notes-v2.4.md`.
+
 The streamer went dark for 10h23m on 2026-09-18 and the project's own retry-only design could not
 say so, because the machine that would have said it was the machine that was gone. This release
 adds the one component that watches from outside, and turns the already-documented `pmset` fix

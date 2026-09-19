@@ -73,7 +73,45 @@ if print -r -- "$out" | grep -q 'PreventUserIdleSystemSleep'; then
 else
   t_ok "the sleep filter drops PreventUserIdleSystemSleep noise"
 fi
+
+# --- the panic glob must stay silent when nothing matches ---------------------------------
+# A bare `*.panic` glob made zsh print "no matches found" BEFORE 2>/dev/null could take effect,
+# injecting shell noise into the evidence on exactly the healthy host that has no panics.
+if print -r -- "$out" | grep -q 'no matches found'; then
+  t_bad "a bare glob leaked 'no matches found' into the evidence"
+else
+  t_ok "no unmatched-glob noise in the report"
+fi
+
+# --- the network section: the 2026-09-18 blind spot --------------------------------------
+# On that outage the host never slept, so every other section was empty and forensics had nothing
+# to say about the lost network. tests/stubs/ifconfig supplies a deterministic pair: en0 is
+# `active` with only a 169.254.x.x link-local (the trap), en1 is healthy, so the flag must fire
+# for en0 and not for en1.
+t_assert_contains "$out" "network (the 2026-09-18 blind spot)" "forensics reports the network section"
+t_assert_contains "$out" "interfaces (en*)" "and the interfaces"
+t_assert_contains "$out" "network service order" "and the service order"
+t_assert_contains "$out" "default route" "and the default route"
+t_assert_contains "$out" "effective resolvers" "and the effective resolvers"
+t_assert_contains "$out" "per-service configured DNS" "and the per-service configured DNS"
+t_assert_contains "$out" "Wi-Fi (system_profiler SPAirPortDataType" "and the Wi-Fi signal/noise"
+t_assert_contains "$out" "DHCP (ipconfig getpacket" "and the DHCP lease"
+t_assert_contains "$out" "ARP table" "and the ARP table"
+t_assert_contains "$out" "Tailscale (usually NOT on PATH" "and the Tailscale CLI location"
+t_assert_contains "$out" "LINKED BUT UNUSABLE" "an active link-local is flagged as unusable"
+t_assert_contains "$out" "169.254.13.7" "and the address it judged is printed"
+t_assert_contains "$out" "192.168.1.42" "while the healthy interface's address is printed too"
+traps=$(print -r -- "$out" | grep -c 'LINKED BUT UNUSABLE')
+t_assert_eq 1 "$traps" "the trap fires for the link-local interface only"
+t_assert_contains "$out" "No network" "the legend explains the no-network trap"
+t_assert_contains "$out" "not on the router's LAN" "the legend ties an unresolved gateway to the LAN"
 t_assert_no_file "$STATE/calls.log" "forensics never writes to pmset either"
+# A host missing the network tools must still produce a report: the section is defensive and an
+# aborted collector is worse than a thin one. /sbin and /usr/sbin are dropped, so ifconfig (the
+# stub), networksetup, route, scutil, ipconfig, arp and system_profiler are all absent.
+out2=$(BASE="$T_BASE" HOME="$T_BASE/home" PATH="$STUBS:/bin:/usr/bin" /bin/zsh "$F" 2>&1); rc2=$?
+t_assert_eq 0 $rc2 "forensics still exits 0 when the network tools are missing"
+t_assert_contains "$out2" "network (the 2026-09-18 blind spot)" "and still prints the network section"
 
 # --- --save writes the report and nothing else -------------------------------------------
 rm -f "$T_BASE"/log/forensics-*.txt(N)

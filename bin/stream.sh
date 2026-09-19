@@ -36,6 +36,12 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 # Nothing here used to bound the logs. publisher.log is ffmpeg's stderr and grows forever;
 # a noisy camera can turn that into gigabytes on a machine whose only job is to stay up.
 : ${LOG_MAX_BYTES:=2097152}       # 2 MB per log file
+# stream.log gets a LARGER budget than the rest, and the reason is measured: during the
+# 2026-09-18 outage the reader's reconnect storm wrote ~700 lines/hour, so the 512 KB cap
+# (which keeps only the last half) retained about four hours - the trim erased the FIRST hours
+# of the outage, which are the ones that would have explained it. 2 MB keeps roughly 17h of
+# storm. net_events.log exists so the transitions survive regardless; this only widens the net.
+: ${LOG_MAX_BYTES_STREAM:=2097152}
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
 MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
@@ -46,12 +52,12 @@ MON_HEARTBEAT="$BASE/log/monitor.heartbeat"
 # renaming the file would leave it writing to an unlinked inode forever. Rewriting the same
 # inode keeps every existing writer pointed at the right place.
 trim_log() {
-  local f="$1" sz tmp
+  local f="$1" cap="${2:-$LOG_MAX_BYTES}" sz tmp
   [[ -f "$f" ]] || return 0
   sz=$(/usr/bin/stat -f %z "$f" 2>/dev/null) || return 0
-  (( sz > LOG_MAX_BYTES )) || return 0
+  (( sz > cap )) || return 0
   tmp="${TMPDIR:-/tmp}/ytlive-trim.$$"
-  if tail -c $(( LOG_MAX_BYTES / 2 )) "$f" > "$tmp" 2>/dev/null; then
+  if tail -c $(( cap / 2 )) "$f" > "$tmp" 2>/dev/null; then
     cat "$tmp" > "$f"
     log "HOUSEKEEP: trimmed $(basename $f) from ${sz} to $(/usr/bin/stat -f %z "$f") bytes"
   fi
@@ -63,7 +69,8 @@ housekeep() {
   # log/progress.txt is deliberately NOT trimmed: ffmpeg writes it at a fixed offset, so
   # rewriting it underneath would corrupt the frame counter the watchdog below reads. It is
   # truncated at every publisher start instead, which bounds it to one rotation's worth.
-  for f in "$BASE/log/publisher.log" "$BASE/log/stream.log" "$BASE/log/reader.log" \
+  trim_log "$BASE/log/stream.log" "$LOG_MAX_BYTES_STREAM"
+  for f in "$BASE/log/publisher.log" "$BASE/log/reader.log" \
            "$BASE/log/monitor.log" "$HOME/Library/Logs/YTLive/"*.log(N); do
     trim_log "$f"
   done
@@ -726,7 +733,15 @@ log "two-process: reader -> ${UDP} -> publisher -> youtube; filters: $CHAIN"
 
 reader_loop & READERPID=$!
 cam_ip_watcher & CAMWATCHPID=$!
-trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID $PUBPID 2>/dev/null; exit 0' TERM INT
+# The transport layer. On 2026-09-18 this Mac lost LAN + DNS + internet for 19h26m and stayed
+# AWAKE the whole time; every retry loop above retried the application layer and none of them
+# ever touched the interface. See bin/net_watch.sh for the evidence and the ladder.
+NETWATCHPID=""
+if [[ "${NET_WATCH:-yes}" == "yes" && -x "$BASE/bin/net_watch.sh" ]]; then
+  "$BASE/bin/net_watch.sh" loop >>"$BASE/log/net_events.log" 2>&1 & NETWATCHPID=$!
+  log "network watchdog started (pid $NETWATCHPID) - see log/net_events.log"
+fi
+trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID ${NETWATCHPID:+"$NETWATCHPID"} $PUBPID 2>/dev/null; exit 0' TERM INT
 
 start_publisher
 BROADCAST_STARTED=$(date +%s)

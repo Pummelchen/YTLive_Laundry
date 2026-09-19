@@ -8,7 +8,7 @@ not have to be re-derived. Tracked as **T-32** in the wiki Project-Tracker.
 
 The streamer is one laptop-class Mac in a shop with no power protection, and it is a single point
 of failure for the whole channel. On 2026-09-18 it dropped off the network mid-segment and the
-channel stayed dark 10 h 23 m. Two of the three failure classes involved are host-shaped:
+channel stayed dark ~19 h 26 m. Two of the three failure classes involved are host-shaped:
 
 | Failure | Today | v3.0 |
 |---|---|---|
@@ -16,7 +16,7 @@ channel stayed dark 10 h 23 m. Two of the three failure classes involved are hos
 | Mac is off / unplugged / battery dies | entire channel down | **removed** for the encoder; the shop relay replaces it |
 | Shop power cut | channel down, unnoticed | still down — the camera has no power. **Needs a UPS (T-30)** |
 | Shop internet cut | channel down, unnoticed | still down, but seen in ≤ 15 min and it self-heals when the link returns |
-| Nobody notices | 10 h 23 m | **removed** — the external watchdog (2.2) |
+| Nobody notices | ~19 h 26 m | **removed** — the external watchdog (2.2) |
 
 The honest headline: **v3.0 does not fix the shop's power or its uplink.** The camera and the
 router stay there. What it removes is the fragile *encoder host* — the thing that actually failed

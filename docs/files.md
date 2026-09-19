@@ -26,6 +26,11 @@
     bin/forensics.sh         read-only evidence for a HOST-level outage - sleep, hang, panic or
                              a reboot to a login window; run it BEFORE rebooting
     bin/harden-host.sh       applies and verifies the pmset host hardening (dry run by default)
+    bin/net_watch.sh         the TRANSPORT-layer watchdog: probes gateway/DNS/WAN every 30s and
+                             repairs a lost network after a sustained failure (dns -> renew ->
+                             wifi), rate-limited. Started by stream.sh; `once` and `status` are
+                             safe to run by hand. It never notifies and never power-cycles a
+                             service - see its own header for why both matter.
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
     conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,
@@ -42,8 +47,6 @@
     conf/ytlive-watchdog.service  the systemd unit for the always-on watchdog host
     docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
                              ...) plus the per-release notes release-notes-vX.Y.md
-    docs/handover-2026-09-19-outage.md  LIVE handover for the open 2026-09-18 outage: read first,
-                             delete once the incident is closed
     docs/v3-datacenter-plan.md          unscheduled v3.0 proposal (push-based SRT, Hetzner SG)
     docs/task-table-standard.md         the ONE task-table standard: columns, types, statuses,
                              sizes, ownership, and the ordering that is the priority
@@ -58,6 +61,12 @@
                              yt_url.cache / yt_videoid.cache / golden_gray.cache,
                              yt_lastpull.jpg / yt_prevpull.jpg, and the logs
                              stream.log / monitor.log / publisher.log / reader.log
+                             net_events.log (append-only network transitions and the recovery
+                             actions taken - the durable record of a transport outage, because
+                             stream.log's in-place trim keeps only its tail), net_state (the
+                             last classification, read by status.sh), net_hold (optional epoch
+                             deadline that suspends the network watchdog's actions),
+                             forensics-<stamp>.txt (a saved forensics report)
     ~/Library/Logs/YTLive/   launchd stdout/stderr (outside Downloads on purpose)
 
 ## Why not ~/Downloads

@@ -70,11 +70,20 @@ t_teardown() {
 
 # Extract one shell function's source text, so a single function can be exercised without
 # running the script's main body (which would start processes and talk to the network).
+# Handles the single-line form too (`f() { ...; }`). Without that, the extractor kept reading
+# past a one-line definition until it found some LATER function's closing brace, so a test could
+# quietly exercise the wrong text - or nothing - and still pass.
 t_extract_fn() {   # t_extract_fn FILE FUNCNAME
   awk -v fn="$2" '
-    $0 ~ "^"fn"\\(\\)" { inside=1 }
-    inside { print }
-    inside && /^}/ { exit }
+    inside == 0 && $0 ~ "^"fn"\\(\\)" {
+      inside = 1; print
+      if ($0 ~ /\}[ \t]*$/) exit
+      next
+    }
+    inside == 1 {
+      print
+      if ($0 ~ /^\}/) exit
+    }
   ' "$1"
 }
 

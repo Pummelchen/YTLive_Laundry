@@ -1,5 +1,10 @@
 # YTLive_Laundry 2.3 — host forensics, and a hardening you can verify
 
+> **CORRECTION 2026-09-19 — the cause recorded in this release note was later FALSIFIED.** It was
+> not a mains interruption and the Mac did not sleep: it stayed awake and lost its
+> **transport** (DNS and its own LAN), and was dark **~19 h 26 m**, not 10 h 23 m. See
+> `CHANGELOG.md` 2.4 and `docs/release-notes-v2.4.md`.
+
 2.2 closed the *notification* half of the 2026-09-18 outage: something outside the streamer now
 says when the channel goes dark. 2.3 closes the other two halves — finding out *why* a host died,
 and stopping that particular death from happening again. Full detail is in

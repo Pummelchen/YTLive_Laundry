@@ -30,10 +30,12 @@ the publish click-path; `bin/status.sh` shows the probe result.
 On the streamer there are deliberately no notifications and the logs are the project's own
 bookkeeping, not a report anyone reads: nothing there may depend on a human noticing anything,
 so every failure path retries instead of reporting. Retrying cannot cover the host itself — on
-2026-09-18 the MacBook lost power and slept, the channel stayed dark 10 h 23 m, and nothing said
-so. That one class is reported by the external watchdog ([bin/yt_watchdog.py](bin/yt_watchdog.py),
-[docs/watchdog.md](docs/watchdog.md)), the only component here that runs off the streamer and the
-only one allowed to notify.
+2026-09-18 the MacBook lost its **network** (DNS and its own LAN) while it stayed awake, the
+channel was dark 19 h 26 m, and nothing said so. Two components now cover that class: the
+external watchdog ([bin/yt_watchdog.py](bin/yt_watchdog.py), [docs/watchdog.md](docs/watchdog.md)),
+the only thing here that runs off the streamer and the only one allowed to notify, and
+[bin/net_watch.sh](bin/net_watch.sh), the transport layer underneath the retries, which repairs
+a lost network instead of reporting it ([docs/operations.md](docs/operations.md)).
 
 ## Documentation
 
@@ -53,7 +55,7 @@ only one allowed to notify.
 
 Two gates, and nothing runs either for you — there is no CI:
 
-    tests/run.sh          218 checks, credential-free: no camera, network, ffmpeg or credentials,
+    tests/run.sh          326 checks, credential-free: no camera, network, ffmpeg or credentials,
                           so it is safe to run on the streaming Mac. --list shows what it covers.
     bin/smoke_test.sh     syntax/AST plus the real API commands and prepare --dry-run. Needs
                           conf/yt_oauth.json, so it cannot pass on a bare clone.

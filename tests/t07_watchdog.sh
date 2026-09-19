@@ -63,11 +63,16 @@ def cfg(**over):
 
 C = cfg()
 
-def run(seq, c=None):
+def run(seq, c=None, hb="disabled"):
     c = c or C
     st = wd.new_state(); out = []
-    for t, ch, host in seq:
-        st, acts = wd.decide(t, st, ch, host, c)
+    for item in seq:
+        t, ch, host = item[0], item[1], item[2]
+        h = item[3] if len(item) > 3 else hb
+        age = item[4] if len(item) > 4 else None
+        if isinstance(h, tuple):
+            h, age = h
+        st, acts = wd.decide(t, st, ch, host, c, h, age)
         out.append([a["kind"] for a in acts])
     return out, st
 
@@ -126,10 +131,129 @@ ck(out == [[], []], "a streamer absent from the tailnet while the channel is liv
 out, st = run([(0, "offline", "unknown"), (1000, "offline", "unknown")])
 ck(out[1] == ["dark"], "the channel signal alone still alerts when the host cannot be seen")
 
+# --- the dead-man signal: the streamer application's heartbeat --------------------------
+# WATCH_HEARTBEAT_MAX is the grace: "stale" already means the file is older than that limit,
+# so the first stale check may alert. The failure this catches is the app going quiet while
+# the channel read says nothing useful - the 2026-09-19 defect, where yt-dlp answered
+# UNKNOWN for hours and the watchdog had no independent evidence to fall back on.
+out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")], hb="fresh")
+ck(out == [[], []], "a fresh heartbeat adds no alert")
+
+out, st = run([(0, "unknown", "live")], hb=("stale", 2000))
+ck(out[0] == ["silent"], "a stale heartbeat alerts even while the channel read is UNKNOWN")
+ck(st["silent_since"] == 0, "and the silent clock starts at the first stale observation")
+
+out, st = run([(0, "unknown", "live"), (60, "unknown", "live"), (100, "unknown", "live")],
+              hb=("stale", 2000))
+ck(out[1] == [] and out[2] == [], "a stale heartbeat does not repeat on the very next check")
+out, st = run([(0, "unknown", "live"), (23000, "unknown", "live")], hb=("stale", 2000))
+ck(out[1] == ["silent"], "an unresolved silent app is reminded after WATCH_REMIND")
+
+# Absent is NOT stale: an unconfigured deployment must never page, or every host that never
+# wired up a delivery mechanism would alarm forever.
+out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")], hb="absent")
+ck(out == [[], []], "an absent heartbeat file is unconfigured and never alerts")
+out, st = run([(0, "unknown", "live"), (5000, "unknown", "live")], hb="absent")
+ck(out[1] == ["blind"], "an absent heartbeat does not suppress the ordinary blind warning")
+out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")], hb="disabled")
+ck(out == [[], []], "a disabled heartbeat (WATCH_HEARTBEAT unset) never alerts")
+
+# A heartbeat that resumes is proof the app is back; a stale one that merely stops being
+# readable is not, so absence drops the episode without claiming a recovery.
+out, st = run([(0, "unknown", "live"), (100, "unknown", "live", "fresh")], hb=("stale", 2000))
+ck(out[1] == ["recover"], "a heartbeat that resumes reports a recovery")
+ck(st["last_alert_kind"] is None, "and clears the silent episode")
+out, st = run([(0, "unknown", "live"), (100, "live", "live")], hb=("stale", 2000))
+ck(out[1] == ["recover"], "the channel going live also closes a silent-heartbeat episode")
+
+# The heartbeat still names the host when the box is gone as well: silent + unreachable.
+st2 = wd.new_state()
+st2, a2 = wd.decide(0, st2, "unknown", "down", C, "stale", 2000)
+ck(bool(a2) and a2[0]["kind"] == "silent" and a2[0].get("host_lost") is True,
+   "a stale heartbeat with the host gone is attributed to the host")
+
+# UNKNOWN is still not DARK: the original rule must survive the new signal.
+out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")])
+ck("dark" not in out[0] + out[1], "UNKNOWN alone still never alerts as dark")
+
 # purity: the caller's state must not be mutated
 before = wd.new_state(); snapshot = dict(before)
 wd.decide(0, before, "offline", "down", C)
 ck(before == snapshot, "decide() does not mutate the state it is handed")
+
+# --- the second channel reader: the public /live page over plain HTTPS ------------------
+# On 2026-09-19 yt-dlp was rate-limited and returned UNKNOWN for hours; the direct read is
+# the independent second opinion that keeps the channel signal alive. The body is a stub -
+# nothing here opens a socket - and the SAME live|offline|unknown vocabulary applies, so a
+# failed read can never be mistaken for a dark channel.
+class _FakeResp:
+    def __init__(self, body):
+        self._body = body
+    def read(self, *a):
+        return self._body
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+
+def http_stub(payload):
+    def _open(req, timeout=None):
+        if isinstance(payload, Exception):
+            raise payload
+        return _FakeResp(payload if isinstance(payload, bytes) else payload.encode())
+    return _open
+
+_real_urlopen = wd.urllib.request.urlopen
+wd.urllib.request.urlopen = http_stub('<html>"isLiveNow": true</html>')
+ck(wd.http_channel_state(C) == "live", "HTTP reader: isLiveNow:true reads live (whitespace tolerated)")
+wd.urllib.request.urlopen = http_stub('<html>"isLiveNow":false</html>')
+ck(wd.http_channel_state(C) == "offline", "HTTP reader: isLiveNow:false reads offline")
+wd.urllib.request.urlopen = http_stub("<html>consent wall, no marker</html>")
+ck(wd.http_channel_state(C) == "unknown",
+   "HTTP reader: a page without the marker is unknown, NEVER offline")
+wd.urllib.request.urlopen = http_stub(OSError("blocked / bot check"))
+ck(wd.http_channel_state(C) == "unknown", "HTTP reader: a network error is unknown, not offline")
+wd.urllib.request.urlopen = http_stub(ValueError("unexpected body"))
+ck(wd.http_channel_state(C) == "unknown", "HTTP reader: any exception becomes unknown without escaping")
+
+# Both URL shapes must be built and actually requested.
+Cid = cfg(WATCH_CHANNEL="UC" + "a" * 22)
+ck(C.channel_url == "https://www.youtube.com/@ternaklaundrybengkong/live",
+   "an @handle builds the handle /live URL")
+ck(Cid.channel_url == "https://www.youtube.com/channel/UC" + "a" * 22 + "/live",
+   "a UC... channel id builds the /channel/.../live URL, not @UC...")
+seen = {}
+def _capture(req, timeout=None):
+    seen["url"] = req.full_url
+    return _FakeResp(b'"isLiveNow":true')
+wd.urllib.request.urlopen = _capture
+wd.http_channel_state(Cid)
+ck(seen.get("url") == Cid.channel_url, "HTTP reader fetches the channel-id URL it was given")
+wd.urllib.request.urlopen = _real_urlopen
+
+# the combination rule: either live wins, only TWO offline reads agree on offline
+ck(wd.combine_channel_states("live", "offline") == "live", "combination: yt-dlp live wins over HTTP offline")
+ck(wd.combine_channel_states("offline", "live") == "live", "combination: HTTP live wins over yt-dlp offline")
+ck(wd.combine_channel_states("offline", "offline") == "offline", "combination: both offline is offline")
+ck(wd.combine_channel_states("offline", "unknown") == "unknown",
+   "combination: a yt-dlp offline with an HTTP failure is unknown, not dark")
+ck(wd.combine_channel_states("unknown", "offline") == "unknown",
+   "combination: a yt-dlp failure with an HTTP offline is unknown, not dark")
+ck(wd.combine_channel_states("unknown", "unknown") == "unknown", "combination: two failures stay unknown")
+
+# read_channel wiring, including the WATCH_HTTP=0 fallback the CLI tests use
+_rs, _hs = wd.channel_state, wd.http_channel_state
+wd.channel_state = lambda c: ("vid1", "unknown")
+wd.http_channel_state = lambda c: "live"
+ck(wd.read_channel(C) == ("vid1", "live"), "read_channel: the HTTP reader rescues a yt-dlp unknown")
+wd.channel_state = lambda c: ("vid1", "offline")
+wd.http_channel_state = lambda c: "offline"
+ck(wd.read_channel(C) == ("vid1", "offline"), "read_channel: both readers offline is offline")
+wd.channel_state = lambda c: ("vid1", "offline")
+wd.http_channel_state = lambda c: (_ for _ in ()).throw(AssertionError("HTTP reader was called"))
+ck(wd.read_channel(cfg(WATCH_HTTP="0")) == ("vid1", "offline"),
+   "read_channel: WATCH_HTTP=0 uses the yt-dlp reader alone and opens no socket")
+wd.channel_state, wd.http_channel_state = _rs, _hs
 
 # --- config file parsing ----------------------------------------------------------------
 p = pathlib.Path(scratch, "conf", "wd.env")
@@ -168,6 +292,14 @@ subj_lost, _ = wd.compose({"kind": "dark", "dark_for": 3600, "host_lost": True},
 ck("unreachable" in subj_lost.lower(), "the host-lost subject says the host is unreachable")
 subj_b, _ = wd.compose({"kind": "blind", "unknown_for": 3600}, st, "unknown", "live", None, None, C)
 ck("blind" in subj_b.lower(), "the blind subject says the watchdog cannot see")
+subj_s, _ = wd.compose({"kind": "silent", "silent_for": 3600, "heartbeat_age": 3600},
+                       st, "unknown", "live", None, None, C)
+ck("heartbeat" in subj_s.lower(), "the silent-app subject names the heartbeat")
+subj_s2, _ = wd.compose({"kind": "recover", "of": "silent"}, st, "unknown", "live", None, None, C)
+ck("heartbeat" in subj_s2.lower() and "LIVE again" not in subj_s2,
+   "a silent-heartbeat recovery is not mislabelled 'channel is LIVE again'")
+ck("absent" in wd.human_heartbeat({"last_heartbeat_state": "absent"}, C),
+   "status spells out an absent heartbeat instead of treating it as stale")
 
 ok = wd.send_alert(C, "subject line", "body text")
 files = sorted(pathlib.Path(os.path.join(scratch, "log", "alerts")).glob("*.eml"))
@@ -212,14 +344,24 @@ t_assert_file "$ENVEX" "the tracked config template exists"
 if [[ -f "$ENVEX" ]]; then
   t_assert_contains "$(cat "$ENVEX")" 'WATCH_SMTP_PASS=""' "the template ships with an empty password (never a secret)"
   t_assert_contains "$(cat "$ENVEX")" 'WATCH_ALERT_MODE="smtp"' "the template defaults to the smtp transport"
+  # The two new signals must be discoverable from the tracked template, and the dead-man
+  # signal must ship OFF: an unconfigured heartbeat is normal, not an outage.
+  t_assert_contains "$(cat "$ENVEX")" 'WATCH_HEARTBEAT=""' "the template ships with the heartbeat unset (disabled, not alerting)"
+  t_assert_contains "$(cat "$ENVEX")" 'WATCH_HEARTBEAT_MAX="900"' "and documents the heartbeat staleness limit"
+  t_assert_contains "$(cat "$ENVEX")" 'WATCH_HTTP="1"' "and the second channel reader on by default"
 fi
 
 # --- end to end through the real CLI, against the stubs ---------------------------------
+# The second reader is pointed at a FILE fixture, so the CLI never opens a socket: the same
+# combined live|offline|unknown logic runs, but over a URL that cannot leave the machine.
+HTTP_PAGE="$T_BASE/log/fake_channel.html"
+print -r -- '{"isLiveNow":false}' > "$HTTP_PAGE"
 run_once() {  # run_once [extra VAR=VALUE ...]
   env "$@" \
     BASE="$T_BASE" HOME="$T_BASE/home" PATH="$STUBS:$PATH" \
     WATCH_CHANNEL="@ternaklaundrybengkong" WATCH_HOST="ternak-macbook" \
     WATCH_YTDLP="yt-dlp" WATCH_TAILSCALE="tailscale" \
+    WATCH_HTTP_URL="file://$HTTP_PAGE" \
     WATCH_STATE_DIR="$T_BASE/log/wd" WATCH_ALERT_MODE="file" \
     WATCH_ALERT_DIR="$T_BASE/log/alerts" \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -252,6 +394,40 @@ print -r -- "unknown" > "$T_BASE/log/fake_yt_live"
 out=$(run_once); rc=$?
 t_assert_eq 2 $rc "once: an unreadable channel exits 2, not 1"
 t_assert_contains "$out" '"channel": "unknown"' "once: reports unknown rather than offline"
+
+# The 2026-09-19 defect, end to end: yt-dlp is rate-limited to UNKNOWN while the public page
+# still says isLiveNow:true. Before the second reader this exact state was blind; now the
+# channel stays verifiable and no "blind" alert is raised.
+print -r -- '{"isLiveNow":true}' > "$HTTP_PAGE"
+out=$(run_once); rc=$?
+t_assert_eq 0 $rc "once: the HTTP reader keeps a yt-dlp-unknown channel live"
+t_assert_contains "$out" '"channel": "live"' "once: and the combined state is live"
+print -r -- '{"isLiveNow":false}' > "$HTTP_PAGE"
+
+# --- the dead-man signal, end to end ----------------------------------------------------
+# A heartbeat file older than WATCH_HEARTBEAT_MAX is the application going quiet: it must
+# page even though the channel read is UNKNOWN, which is exactly what the channel cannot see.
+HB="$T_BASE/log/heartbeat"
+print -r -- "tick" > "$HB"
+touch -t 202001010000 "$HB"
+print -r -- "unknown" > "$T_BASE/log/fake_yt_live"
+out=$(run_once WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900); rc=$?
+t_assert_eq 2 $rc "once: a stale heartbeat with an unknown channel still exits 2 (unknown, not dark)"
+t_assert_contains "$out" '"heartbeat": "stale"' "once: reports the heartbeat stale"
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_eq "silent" "$acts" "once: the stale heartbeat raises a silent action while the channel is unknown"
+
+# A fresh heartbeat is silence, and an absent file is an unconfigured deployment: neither may
+# page. `absent` is the case that would otherwise alarm forever on a host that never wired a
+# delivery mechanism up, which is the reason it is not treated as stale.
+print -r -- "tick" > "$HB"
+out=$(run_once WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900); rc=$?
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_eq "recover" "$acts" "a fresh heartbeat closes the silent episode without a new silent alert"
+out=$(run_once WATCH_HEARTBEAT="$T_BASE/log/no-such-heartbeat" WATCH_HEARTBEAT_MAX=900); rc=$?
+t_assert_contains "$out" '"heartbeat": "absent"' "once: an absent heartbeat is reported as absent"
+acts=$(print -r -- "$out" | python3 -c 'import json,sys; print(",".join(json.load(sys.stdin)["actions"]))' 2>/dev/null)
+t_assert_eq "" "$acts" "once: an absent heartbeat never raises a silent action (unconfigured)"
 
 # --- the installer must not use the macOS system python, and must give the job a PATH -------
 # /usr/bin/python3 is the Xcode Command Line Tools build - 3.9.6, measured on this project's

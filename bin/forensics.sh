@@ -74,7 +74,11 @@ pmset -g log 2>/dev/null \
   | grep -vE 'Assertions|Prevent|Kernel Assertions' | tail -25 | sed 's/^/  /'
 
 hdr "memory and swap (a hang)"
-print -- "  RAM  : $(( $(sysctl -n hw.memsize 2>/dev/null) / 1073741824 )) GB"
+# ${MEM:-0} is not cosmetic: zsh treats an empty arithmetic operand as a FATAL parse error in a
+# non-interactive shell, so a host without sysctl (or with it off PATH) would abort the report
+# here instead of continuing to the evidence.
+MEM=$(sysctl -n hw.memsize 2>/dev/null)
+print -- "  RAM  : $(( ${MEM:-0} / 1073741824 )) GB"
 print -- "  swap : $(sysctl -n vm.swapusage 2>/dev/null)"
 print -- "  load : $(sysctl -n vm.loadavg 2>/dev/null)"
 vm_stat 2>/dev/null | head -6 | sed 's/^/  /'
@@ -88,10 +92,16 @@ if [[ -d "$BASE/log" ]]; then
 fi
 
 hdr "panics and crash reports"
+# (N) is required: with no .panic files - the normal healthy case - a bare *.panic glob makes
+# zsh print "no matches found" BEFORE any 2>/dev/null can take effect, injecting shell noise
+# into the evidence. The array form also matters: `ls ... *.panic(N)` with no match would hand
+# `ls` zero arguments, and `ls` with zero arguments lists the CURRENT directory instead.
 for d in /Library/Logs/DiagnosticReports "$HOME/Library/Logs/DiagnosticReports"; do
-  n=$(ls -1 "$d"/*.panic 2>/dev/null | wc -l | tr -d ' ')
-  print -- "  $d: ${n} panic(s)"
-  ls -lt "$d"/*.panic 2>/dev/null | head -3 | sed 's/^/    /'
+  panics=("$d"/*.panic(N))
+  print -- "  $d: ${#panics} panic(s)"
+  if (( ${#panics} > 0 )); then
+    ls -lt "${panics[@]}" 2>/dev/null | head -3 | sed 's/^/    /'
+  fi
 done
 
 hdr "what the project last did"
@@ -116,15 +126,127 @@ done
 print -- "  progress.txt : $(stat -f %z "$BASE/log/progress.txt" 2>/dev/null) bytes"
 print -- "  last frame   : $(grep -a '^frame=' "$BASE/log/progress.txt" 2>/dev/null | tail -1)"
 
-hdr "camera and network"
+hdr "network (the 2026-09-18 blind spot)"
+# On 2026-09-18 the streamer lost its ENTIRE network for ~19.5 h while the host stayed awake, and
+# this script had nothing to say about it: no sleep, no panic, no reboot. Every command below is
+# unprivileged and READ-ONLY, and none of it may hang the report - a wedged daemon is one of the
+# things we are here to catch. macOS has no `timeout`, so the calls that can block get a hard
+# ceiling by running in the background and killing the straggler. The watcher's stdout/stderr
+# MUST be redirected: without it its `sleep` inherits the caller's command-substitution pipe and
+# the whole report stalls for the full timeout, which is exactly what a kill is meant to avoid.
+net_tmo() {   # net_tmo SECONDS cmd...
+  local secs="$1"; shift
+  "$@" &
+  local p=$!
+  ( sleep "$secs"; kill -TERM "$p" 2>/dev/null ) </dev/null >/dev/null 2>&1 &
+  local k=$!
+  wait "$p" 2>/dev/null
+  kill -TERM "$k" 2>/dev/null
+  wait "$k" 2>/dev/null
+  return 0
+}
+
+print -- "  --- interfaces (en*) ---"
+for i in ${(f)"$(ifconfig -l 2>/dev/null | tr ' ' '\n')"}; do
+  [[ "$i" == en* ]] || continue
+  nic=$(ifconfig "$i" 2>/dev/null)
+  stat=$(print -r -- "$nic" | grep -m1 'status:' | sed 's/.*status: *//')
+  med=$(print -r -- "$nic" | grep -m1 'media:' | sed 's/.*media: *//')
+  addrs=$(print -r -- "$nic" | awk '/inet /{print $2}' | tr '\n' ' ')
+  print -- "  $i: status=${stat:-unknown}  media=${med:-unknown}"
+  print -- "      inet  : ${addrs:-none}"
+  # The trap that matters here: the port reports `active` (carrier up) but holds only a
+  # 169.254.x.x link-local, so interface, route and DNS all look present and none of them work.
+  if [[ "$stat" == active ]]; then
+    if [[ -z "${addrs// /}" ]]; then
+      print -- "      TRAP  : LINKED BUT UNUSABLE - active with no address (DHCP never answered)"
+    elif [[ "$addrs" == *169.254.* ]]; then
+      print -- "      TRAP  : LINKED BUT UNUSABLE - active with only a 169.254.x.x link-local"
+    fi
+  fi
+done
+
+print -- "  --- network service order (the first enabled service wins) ---"
+# networksetup and scutil both talk to configd, which is one of the things that can wedge and
+# take the network with it, so they get the same ceiling as the rest of this section.
+net_tmo 5 networksetup -listnetworkserviceorder 2>/dev/null | sed 's/^/    /'
+dis=$(net_tmo 5 networksetup -listallnetworkservices 2>/dev/null | tail -n +2 | grep '^\*' | sed 's/^\*//' | tr '\n' ' ')
+print -- "  disabled services: ${dis:-none}"
+
+print -- "  --- default route ---"
+defroute=$(net_tmo 3 route -n get default 2>/dev/null)
+print -r -- "$defroute" | sed 's/^/    /'
+GW=$(print -r -- "$defroute" | awk '/gateway:/{print $2}')
+print -- "  --- inet routing table ---"
+netstat -rn -f inet 2>/dev/null | sed 's/^/    /'
+
+print -- "  --- effective resolvers (scutil --dns; a supplemental resolver has its own flags/if_index) ---"
+net_tmo 5 scutil --dns 2>/dev/null | grep -E 'resolver #[0-9]+|nameserver|flags|if_index|reach|search domain' | sed 's/^/    /'
+print -- "  --- per-service configured DNS (a service with none inherits the router) ---"
+net_tmo 5 networksetup -listallnetworkservices 2>/dev/null | tail -n +2 | sed 's/^\*//' | while IFS= read -r s; do
+  [[ -n "$s" ]] || continue
+  print -- "    $s: $(net_tmo 5 networksetup -getdnsservers "$s" 2>/dev/null | tr '\n' ' ')"
+done
+if [[ -d /etc/resolver ]]; then
+  print -- "  --- /etc/resolver (per-domain resolvers; split DNS lives here) ---"
+  for f in /etc/resolver/*(N); do
+    print -- "    --- ${f:t} ---"
+    sed 's/^/      /' "$f" 2>/dev/null
+  done
+fi
+
+print -- "  --- Wi-Fi (system_profiler SPAirPortDataType; the SSID is withheld if Location is off) ---"
+wifi=$(net_tmo 12 system_profiler SPAirPortDataType 2>/dev/null)
+ssid=$(print -r -- "$wifi" | awk '/Current Network Information:/{f=1;next} f&&/^[[:space:]]+[^:]+:$/{gsub(/^[[:space:]]+|:$/,"");print;exit}')
+print -- "  SSID  : ${ssid:-unknown}"
+# Signal/noise is the single most useful RF fact on an AirPort; PHY mode and channel follow it.
+print -r -- "$wifi" | grep -E 'PHY Mode|Channel:|Signal / Noise|Transmit Rate|Security:' | head -8 | sed 's/^[[:space:]]*/    /'
+
+print -- "  --- DHCP (ipconfig getpacket; no packet = no lease) ---"
+for i in ${(f)"$(ifconfig -l 2>/dev/null | tr ' ' '\n')"}; do
+  [[ "$i" == en* ]] || continue
+  pkt=$(net_tmo 5 ipconfig getpacket "$i" 2>/dev/null)
+  if [[ -z "$pkt" ]]; then
+    print -- "    $i: no DHCP packet (no lease, or the interface is not DHCP)"
+  else
+    print -- "    $i:"
+    print -r -- "$pkt" | grep -E 'yiaddr|server_identifier|lease_time|router|subnet_mask|domain_name_server' | sed 's/^[[:space:]]*/      /'
+  fi
+done
+
+CAMIP=$(cat "$BASE/log/cam_ip" 2>/dev/null)
+print -- "  --- ARP table (which interface resolved the gateway ${GW:-?} and the camera ${CAMIP:-?}) ---"
+ARPT=$(arp -an 2>/dev/null)
+if [[ -z "$ARPT" ]]; then
+  print -- "    (empty: nothing on this LAN has been resolved into the ARP cache)"
+else
+  print -r -- "$ARPT" | sed 's/^/    /'
+  for ip in "$GW" "$CAMIP"; do
+    [[ -n "$ip" ]] || continue
+    hits=$(print -r -- "$ARPT" | grep -F "($ip)" | sed 's/.* on /on /' | tr '\n' ' ')
+    print -- "  $ip resolved on: ${hits:-NOT IN THE TABLE}"
+  done
+fi
+
+print -- "  --- Tailscale (usually NOT on PATH on macOS: the CLI lives inside Tailscale.app) ---"
+TSCLI=""
+# PATH first, so a test stub (and a Homebrew install) wins over the app bundle.
+for c in tailscale /Applications/Tailscale.app/Contents/MacOS/Tailscale; do
+  p=$(command -v "$c" 2>/dev/null) && { TSCLI="$p"; break; }
+done
+if [[ -n "$TSCLI" ]]; then
+  print -- "  cli   : $TSCLI"
+  net_tmo 6 "$TSCLI" status 2>/dev/null | head -5 | sed 's/^/    /'
+else
+  print -- "  cli   : not found on PATH or at /Applications/Tailscale.app/Contents/MacOS/Tailscale"
+fi
+
+hdr "camera reachability"
 CAMIP=$(cat "$BASE/log/cam_ip" 2>/dev/null)
 print -- "  camera ip : ${CAMIP:-unknown}"
 if [[ -n "$CAMIP" ]]; then
   if nc -z -G 3 "$CAMIP" 554 2>/dev/null; then print -- "  port 554  : open"; else print -- "  port 554  : unreachable"; fi
 fi
-TS=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale status 2>/dev/null | head -3)
-[[ -z "$TS" ]] && TS=$(tailscale status 2>/dev/null | head -3)
-print -- "  tailscale : ${TS:-not available}"
 
 if [[ "$DEEP" == "yes" ]]; then
   hdr "deep: previous shutdown cause (0 = power loss, 5 = clean, -128 = forced power-off)"
@@ -142,6 +264,15 @@ cat <<'EOF'
   Panic / off  - a .panic near the outage, or shutdown cause -128 / 0.
   Login window - SHORT uptime and a console user that is not `user`: the agents are user
                  LaunchAgents, so nothing starts until someone logs in.
+  No network   - `status: active` with only a 169.254.x.x inet (or none) is "linked but
+                 unusable": the port has carrier but DHCP never answered, so the Mac is up with
+                 no route. If `arp -an` never resolved the router on ANY interface, that cable
+                 or switch port is not on the router's LAN.
+  DNS          - an empty nameserver list, or only a supplemental resolver whose `if_index` is a
+                 utun, means resolution depends entirely on the router: a router reboot takes the
+                 streamer's DNS with it.
+  DHCP         - no `ipconfig getpacket` output = no lease; a `yiaddr` in 169.254.x.x means the
+                 router answered with a link-local (the DHCP pool is broken).
   Nothing here is a result too: it means the host was healthy until the moment it went silent,
   which is what the outside view already showed.
 EOF

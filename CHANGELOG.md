@@ -1,13 +1,118 @@
 # Changelog
 
-The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1`, `v2.2` and
-`v2.3`. The
+The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1`, `v2.2`,
+`v2.3` and `v2.4`. The
 authoritative version is the `VERSION` file at the repository root; a release refuses to build
 when `VERSION` and the tag disagree. There is no version literal in any script: the streamer's
 tunables live in `conf/stream.env`.
 
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
+
+## 2.4 — 2026-09-19
+
+**The 2026-09-18 outage was not what the 2.2/2.3 documentation said it was, and the fix is a
+layer of the design that did not exist: the transport.** The incident is closed — the channel
+went live again on 2026-09-19 — and the machine's own records contradict the recorded cause, so
+this release corrects the record and then fills the hole the incident exposed.
+
+### What actually happened (correcting 2.2, 2.3 and the wiki)
+
+`docs/release-notes-v2.2.md` and `.3`, the handover and the wiki all recorded the leading cause
+as *a momentary mains interruption while the lid was shut, after which the Mac slept on battery*.
+That is **falsified** by the host's own records, read on 2026-09-19:
+
+- **It never rebooted.** `kern.boottime` is Mon Aug 31 01:55:19 2026; uptime at the time of
+  measurement was 19 days 17 hours. A panic, a forced power-off and a reboot to a login window are
+  all excluded, and the console user was `user`, so both LaunchAgents were loaded.
+- **It never slept, and never ran on battery.** Across a `pmset -g log` window covering
+  2026-09-12 → 09-19 there are **zero** `Entering Sleep`/`Wake from` lines and **zero**
+  AC/battery transition lines. (The sleep/wake section of `bin/forensics.sh` is empty for the
+  last two days for the same reason.)
+- **It was awake and logging throughout.** `log/stream.log` holds 640–760 lines per hour
+  through 08:00–12:00 WIB on 09-19 — while the host was still absent from the tailnet.
+
+What the log actually says is a **transport failure**: `PREPARE: network error talking to
+YouTube: <urlopen error [Errno 8] nodename nor servname provided, or not known>` — a DNS
+resolution failure — and `CAM-WATCH: 192.168.1.3 not answering on 554` followed by `no ONVIF
+camera found on the LAN`, which is the *local* link. The Mac had lost DNS **and its own LAN**
+while it kept running and retrying. The shop's uplink was never the problem.
+
+Timeline as measured: ingest stopped **2026-09-18T10:19:54Z**, 5h14m into an 8h03m segment; the
+network returned on 09-19 around 05:00Z; the first successor broadcast created after the outage
+went live at **05:46:12Z** (`D9kF4Rf9uPU`); the current stable broadcast `ycAbb2G_Q2U` went live
+at **08:06:55Z**. **Dark for ~19h26m**, not the 10h23m the earlier documents recorded.
+
+Two further facts from the same investigation:
+
+- **The external watchdog performed correctly and was still nearly useless at the end**, because
+  `yt-dlp` returns `unknown` under a rate limit: it raised two `blind` alerts and its "channel is
+  LIVE again" mail arrived **5h21m after** the channel had actually recovered. Its own `DARK for
+  11h05m` reminder went out 57 seconds *before* the recovery.
+- **The streamer's name resolution depended on a single nameserver inside the shop router**
+  (`192.168.1.1`, A-records only). The reference Mac in this project carries four IPv4 and four
+  IPv6 public resolvers from two independent providers on every service. That asymmetry is now
+  removed on the streamer.
+
+### The fix: a transport layer under the retries
+
+- **`bin/net_watch.sh`** — the missing bottom of the design rule "every failure path retries".
+  Every retry in `stream.sh` retried the *application* layer (ffmpeg, ONVIF discovery, the OAuth
+  probe) and not one of them ever touched the network interface, which is why the 19h26m outage
+  was outside the reach of all of them. The new watchdog probes once every `NET_CHECK_EVERY`
+  (30s) and classifies the transport as exactly one of `OK / NOLINK / NOGW / NOWAN / NODNS`,
+  then — only after `NET_FAIL_SAMPLES` (3) *consecutive* failures, so a 60s router reboot cannot
+  trigger a repair, and inside a rate limit (`NET_MIN_ACTION_INTERVAL`, `NET_MAX_ACTIONS_PER_HOUR`)
+  — climbs a ladder: re-assert DNS → re-assert DHCP → power-cycle the wireless radio. The decision
+  is a pure function of `(state, failures, seconds since last action, actions this outage,
+  actions this hour)`, so a 15-minute rule is tested in microseconds, exactly like `yt_watchdog.py`.
+- **Two things it must never do, both learned the hard way.** It never **power-cycles a network
+  service**: toggling the USB-Ethernet service on 2026-09-19 killed that adapter's carrier and it
+  did not come back, so the wired NIC is only ever asked to re-assert DHCP. And it never
+  **reorders the service list**: a secondary interface with no router gets no default route, so
+  macOS already prefers the working one, and one mistyped `-ordernetworkservices` is a broken
+  only path. Wired stays first, so it becomes primary by itself the moment it holds a real lease —
+  which is the intent: **LAN primary, Wi-Fi backup**. `bin/status.sh` now says which interface is
+  actually carrying the traffic and warns when that is not the intended primary.
+- **`LOG_MAX_BYTES_STREAM` (2 MB)** — a second, larger trim budget for `stream.log`. The old
+  512 KB cap keeps only its last half, which at the measured ~700 lines/hour of an outage storm
+  retained about four hours, so the trim erased the **first** hours of this one. That is why the
+  earliest part of the incident cannot be read from the log at all. `log/net_events.log` records
+  transitions rather than every probe, so it survives a 20-hour outage regardless.
+- **`bin/forensics.sh` gained a Network section** — interfaces and whether one is `active` with
+  only a `169.254` self-assigned address, service order, default route, resolvers with their
+  flags (so a supplemental Tailscale resolver can be told from the default one), Wi-Fi SSID and
+  **signal/noise**, DHCP, ARP (which interface resolved the gateway), and Tailscale presence. The
+  section that would have answered this incident from the machine instead of from a day of
+  inference.
+- **A `zsh` bug in `forensics.sh`** — the panic-report lines used a bare `*.panic` glob. zsh treats
+  an unmatched glob as a hard error printed *before* any redirection can suppress it, so on a
+  healthy host the report carried error text into the evidence. Now null-globbed.
+- **`bin/yt_watchdog.py` no longer depends on `yt-dlp` alone.** A second, independent channel read
+  fetches the channel's `/live` page over plain HTTPS and combines with `yt-dlp` so that a rate
+  limit cannot blind the watchdog: either reader saying `live` is live, both saying `offline` is
+  offline, anything else is unknown. `UNKNOWN` still never pages anyone.
+- **A dead-man heartbeat** (`WATCH_HEARTBEAT`, `WATCH_HEARTBEAT_MAX`) that reports a streamer whose
+  application has gone silent even when the channel read is `unknown`. Deliberately, delivery is
+  not implemented: the two options are a push endpoint or a restricted SSH pull, and choosing
+  between them is a security decision, not a coding one.
+- **`tests/t09_net.sh`** — 39 checks driving the classifier through stubs (so the suite still
+  needs no network and cannot touch a real interface), the whole action ladder, the rate limits,
+  the operator hold, and the safety property that no action may power-cycle a service or disable
+  the radio. `tests/t07_watchdog.sh` grew 76 → 120 and `tests/t08_hosttools.sh` grew with the new
+  forensics section. `t_extract_fn` in `tests/lib.sh` now also handles single-line function
+  definitions; it previously read past them to the next function's closing brace, so a test could
+  exercise the wrong text and still pass.
+
+### Also on the streamer (configuration, not code)
+
+- Redundant public resolvers (`8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1`) set on the streamer's services,
+  so resolution no longer depends on the router or on which service macOS considers primary.
+- The streamer was running **2.1**; the wired interface was found `active` at 100baseTX with a
+  `169.254` self-assigned address and no route to the router, while being **first** in the service
+  order — a linked-but-unusable primary. It has no carrier at all now and needs a site visit: a
+  cheap WCH `1a86:5394` USB adapter whose link did not survive a service toggle. Replace it with a
+  better adapter, or leave it disabled and stay on Wi-Fi.
 
 ## 2.3 — 2026-09-19
 

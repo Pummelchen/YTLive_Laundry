@@ -1,13 +1,13 @@
 #!/bin/zsh
-# Apply and VERIFY the host hardening that stops the 2026-09-18 class of outage.
+# Apply and VERIFY the host hardening that covers the host power class of outage.
 #
 #   bin/harden-host.sh              show the plan and the current settings (dry run)
 #   sudo bin/harden-host.sh --go    apply it, then verify it
 #   bin/harden-host.sh --check      verify only, change nothing
 #
-# On 2026-09-18 the streamer dropped off the network mid-segment and stayed dark 10 h 23 m.
-# From outside it looked like a sleeping Mac - powered on, wifi fine, Tailscale offline - and
-# a sleeping Mac is exactly what this machine was allowed to become:
+# The 2026-09-18 outage was a transport failure - the streamer lost DNS and its own LAN while
+# it stayed awake, and was dark ~19 h 26 m - so nothing here would have prevented it. This file
+# covers the separate POWER class, which this machine was still allowed to become:
 #
 #   * stream.sh runs `caffeinate -ism`, whose system-sleep assertion is valid ONLY on AC
 #     power, and which does not cover lid-close (clamshell) sleep at all. Lid-close sleep is

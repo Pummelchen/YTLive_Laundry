@@ -1,0 +1,28 @@
+#!/bin/zsh
+# Test stub for ifconfig.
+#
+# bin/forensics.sh's network section has one piece of real logic worth pinning down: an interface
+# that reports `status: active` (carrier up) while holding only a 169.254.x.x link-local is "linked
+# but unusable" - the exact trap the 2026-09-18 blackout could hide behind. A real machine's
+# addresses vary (and the developer box usually has no such interface), so this stub supplies a
+# fixed pair: en0 is the trap and en1 is healthy. The test asserts the flag fires for en0 only.
+if [[ "${1:-}" == -l ]]; then
+  print -- "lo0 en0 en1"
+  exit 0
+fi
+
+case "${1:-}" in
+  en0)
+    print -- "en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500"
+    print -- "	status: active"
+    print -- "	media: autoselect (1000baseT <full-duplex>)"
+    print -- "	inet 169.254.13.7 netmask 0xffff0000 broadcast 169.254.255.255"
+    ;;
+  en1)
+    print -- "en1: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500"
+    print -- "	status: active"
+    print -- "	media: autoselect"
+    print -- "	inet 192.168.1.42 netmask 0xffffff00 broadcast 192.168.1.255"
+    ;;
+esac
+exit 0

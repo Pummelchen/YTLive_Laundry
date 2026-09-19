@@ -77,6 +77,27 @@ if [[ "$NET" == yes ]]; then
   print -r -- "$st" | grep -q '"status": *"LIVE"' && ok "$st" || bad "$st"
 fi
 
+print "\n=== network transport ==="
+# The layer that was missing entirely on 2026-09-18: the host stayed awake and kept logging
+# while it had no LAN, no DNS and no internet for 19h26m, and every retry loop in stream.sh
+# retried the application layer without ever touching the interface. The intent is WIRED as the
+# primary path and Wi-Fi as the backup; this says whether reality matches the intent.
+if [[ "$NET" == yes && -x "$BASE/bin/net_watch.sh" ]]; then
+  nout=$(BASE="$BASE" "$BASE/bin/net_watch.sh" status 2>/dev/null)
+  nst=${${(f)nout}[1]#network state : }
+  if [[ "$nst" == "OK" ]]; then ok "transport OK - gateway, a public address and DNS all answered"
+  else bad "transport ${nst:-UNKNOWN} - no retry loop above this can repair it; see log/net_events.log"; fi
+  print -r -- "$nout" | tail -n +2 | sed 's/^/  /'
+  iline=$(print -r -- "$nout" | awk '/^intent_iface/{print}')
+  carrying=$(print -r -- "$iline" | awk '{for(i=1;i<=NF;i++) if ($i ~ /^carrying=/) {sub(/carrying=/,"",$i); print $i}}')
+  lanif=$(print -r -- "$iline" | awk '{for(i=1;i<=NF;i++) if ($i ~ /^primary=/) {sub(/primary=/,"",$i); print $i}}')
+  if [[ -n "$lanif" && "$lanif" != "none" && -n "$carrying" && "$carrying" != "none" && "$carrying" != "$lanif" ]]; then
+    warn "traffic is on $carrying, not on the intended primary $lanif - the WIRED link is down (check cable, port and adapter)"
+  fi
+else
+  warn "network probe skipped (--no-net or bin/net_watch.sh missing)"
+fi
+
 print "\n=== camera ==="
 host=$(<"$BASE/log/cam_ip" 2>/dev/null) || host="${CAM_URL#rtsp://}"
 host=${host%%/*}; host=${host%%:*}
