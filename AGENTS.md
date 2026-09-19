@@ -389,6 +389,12 @@ changing or closing a row.
   `CHANGELOG.md` and the closing commit; the open row links to the evidence.
 - **Update a row the moment its state changes**, and read the table top to bottom
   before starting work — the top Open row is the default next task.
+- **A row is a measured defect or an improvement this checkout can implement in code.**
+  Not a wish, not a purchase, not "we should ask someone to buy a UPS": buying hardware
+  is not work the repository can do, so it is not a row — the operator keeps those
+  decisions in their own notes. If the next step is "someone buys/installs something",
+  it is out of scope here. Measured symptoms of an unowned class of failure are a row
+  only when there is a code change or a test that would close them.
 
 ## Releasing
 

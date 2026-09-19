@@ -17,6 +17,14 @@ heading — status is a column.
 5. The tracker page is the table and one line pointing at this standard. Do not
    repeat the type/status/size legends on it; they are defined here once, so
    there is nothing on the page to drift.
+6. **A row is a measured defect or an improvement this checkout can implement in
+   code.** The tracker is a fix list, not a wishlist: no hardware purchases, no
+   "someone should buy/install X", no operator decisions, no please-someday
+   items. If the next step is an action outside this repository (buying a UPS or
+   an LTE router, standing up a VPS, changing a vendor account), it is not a row —
+   the owner keeps it in their own notes, and the failure class is recorded in
+   `CHANGELOG.md`/`docs` as a known limit instead. A measured symptom belongs in
+   the table only when a code change or a test would close it.
 
 ## COLUMNS, in this order
 
