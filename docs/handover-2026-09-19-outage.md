@@ -151,8 +151,10 @@ settles it.
 ## 5. After recovery — close the loop
 
 - Confirm the **cause** from the captured forensics and write it into `CHANGELOG.md`, the release
-  notes of the next release, and the wiki Project-Tracker incident row (replace "leading cause" with
-  what the log showed).
+  notes of the next release, and the mechanism paragraph on the wiki
+  [Troubleshooting](https://github.com/Pummelchen/YTLive_Laundry/wiki/Troubleshooting) page. **The
+  tracker is not the place for it** — since the task-table standard the page is the table and one
+  line, and history belongs in the changelog and the closing commit.
 - **Close T-29** only when `bin/harden-host.sh --check` passes on the streamer.
 - **Delete this handover file** and note its removal in the commit message.
 - If the machine was actually **not** asleep, treat the hypothesis as falsified and reopen the
@@ -228,32 +230,42 @@ Each of these cost real time and is now regression-guarded:
 
 ## 9. Suggested next tasks, in order
 
-**Read [`docs/task-table-standard.md`](task-table-standard.md) first.** The project now has exactly
-ONE task table — the wiki Project Tracker, under `## Tasks` — whose columns are fixed and whose row
-order *is* the priority. See §10.1: the tracker page has not been migrated to that standard yet.
+**Read [`docs/task-table-standard.md`](task-table-standard.md) first.** The project has exactly ONE
+task table — the wiki Project Tracker, under `## Tasks` — with fixed columns, and its **row order is
+the priority**. The standard's own rule applies from here on: read the table top to bottom before
+starting work, and **the top `Open` row is the default next task**. At handover that is **T-14**
+(`bin/preflight.sh`'s hardcoded path), followed by T-15, T-16, T-17.
 
-1. Restore the stream (§4) — blocked on physical access, nothing else.
-2. Confirm the cause and close T-29; correct the macOS/CPU facts in the docs (§6.1).
-3. Cut **2.4** with the installer fixes now on `main` (POSIX sh, newest interpreter, job `PATH`,
-   no-truncate unit render) — they are committed but unreleased.
-4. T-31: give the notification path redundancy.
-5. T-32: the v3.0 datacenter move, per `docs/v3-datacenter-plan.md`, once the incident is closed.
+The work this handover is actually about, in order:
+
+1. Restore the stream (§4) — blocked on physical access, nothing else. (That is **T-29**'s
+   dependency; T-29 and T-30 are `Blocked`/`operator`.)
+2. Confirm the cause from the captured forensics, then close T-29 and correct the macOS/CPU facts in
+   the docs (§6.1). Fix the mechanism paragraph on the wiki Troubleshooting page (§5).
+3. Cut **2.4** with the installer fixes already on `main` (POSIX sh, newest interpreter, job `PATH`,
+   no-truncate unit render) — committed, tested, unreleased. Add a row for it if it is not done in
+   the same session.
+4. **T-31** (Open, M): give the notification path redundancy.
+5. **T-32** (Open, L): the v3.0 datacenter move, per `docs/v3-datacenter-plan.md`, once the incident
+   is closed.
 
 ---
 
-## 10. Two documentation inconsistencies, deliberately left alone
+## 10. Notes on the documentation, so the next session does not "fix" the wrong thing
 
-1. **The wiki Project-Tracker does not match `docs/task-table-standard.md` yet.** The page still has
-   `## Needs the owner` and `## Open — code` sections with `ID | Pri | Task | Why it matters |
-   Status`, whereas the standard requires one table under `## Tasks` with
-   `ID | Task | Type | Area | Size | Status | Owner | Next step`, and no legends on the page. It was
-   left alone rather than rewritten here for two reasons: the owner was actively editing this exact
-   area while this handover was being written (the standard and the AGENTS.md pointer landed
-   mid-session), and `Type`/`Area`/`Size`/`Owner` are judgements the owner should make rather than
-   have an agent infer.
-   **Do not renumber the IDs.** `T-01`…`T-32` are already a stable prefix plus a zero-padded number;
-   the standard's `TT-001` is an example, not a mandate. Renumbering would break the references in
-   `docs/known-issues.md` and in the wiki, against the standard's own rule 2.
+1. **The tracker was migrated to `docs/task-table-standard.md` during this session** — the owner did
+   it directly (wiki commit `6053529`, *"rewrite the project tracker to the task-table standard"*) —
+   so the page is now one `## Tasks` table with the standard's eight columns, and **the old
+   `## Needs the owner` / `## Open — code` sections and the header block are gone by design**.
+   Two consequences:
+   - **The tracker no longer carries incident history**, per the standard's rule 3. So the narrative
+     of the 2026-09-18 outage lives in this handover, in the 2.2/2.3 `CHANGELOG.md` entries, and in
+     the wiki Troubleshooting/External-Watchdog pages — not in a tracker row.
+   - **Ids were preserved** (`T-01`…`T-32`; the standard's `TT-001` is an example, not a mandate).
+     Keep them stable: `docs/known-issues.md`, the release notes and this handover all reference
+     them.
+   The rows relevant here: **T-29** and **T-30** are `Blocked`/`operator` (physical access and
+   hardware), **T-31** and **T-32** are `Open`/`here`.
 2. **`docs/release-notes-v2.2.md` and the 2.2 CHANGELOG entry quote "168 checks"**, which was true
    at `v2.2`; the tree now has **218**. Those are historical release records and are correct as
    written — the current-tree documents (`README.md`, `AGENTS.md`, `RELEASE.md`) carry 218. Do not
