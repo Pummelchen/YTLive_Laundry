@@ -165,7 +165,11 @@ done < <(cd "$STAGE" && find . -name '*.sh' -o -name '*.py' | sed 's|^\./||')
 say "gate: test suite"
 if [[ -f "$STAGE/tests/run.sh" ]]; then
   if (cd "$STAGE" && /bin/zsh tests/run.sh >"$ABS_BUILD/tests.log" 2>&1); then
-    note "$(grep -cE 'PASS' "$ABS_BUILD/tests.log") PASS lines; suite passed"
+    # Count CHECKS, not lines that happen to contain "PASS". The suite prints one indented
+    # "  PASS  <what>" per check, plus "  ALL PASSED (N checks)" per file and "SUITE PASSED" at the
+    # end - so a bare `grep -c PASS` overcounts by one per test file (17 in 2.7), and every
+    # published total would be inflated. The status carries ANSI colour, so strip it first.
+    note "$(sed $'s/\033\\[[0-9;]*m//g' "$ABS_BUILD/tests.log" | grep -cE '^  PASS  ') PASS checks; suite passed"
     note "log: $ABS_BUILD/tests.log"
   else
     tail -8 "$ABS_BUILD/tests.log" | sed 's/^/    /'
