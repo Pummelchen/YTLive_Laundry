@@ -171,13 +171,22 @@ rollback() {
   fi
   cd "$BASE" || exit 1
   start_agents
-  sleep 3
+  # A publisher does not appear in 3 seconds: ffmpeg has to start and YouTube has to accept the
+  # ingest, which takes about 25s. Checking at 3s reported a perfectly healthy rollback as
+  # "stream is NOT publishing" - which is exactly what the first 2.7 rollback looked like, and it
+  # sent a human (and an agent) chasing a stream that was already coming back. Wait for it, bounded.
+  local waited=0
+  while (( waited < 45 )) && ! publisher_up; do sleep 5; waited=$(( waited + 5 )); done
   if [[ "$partial" == yes ]]; then
     say "*** PARTIAL ROLLBACK: the tree is restored but some machine state is NOT. Check $BIN and $LA by hand. ***"
   else
     say "*** rollback done: HEAD=$(git rev-parse --short HEAD) VERSION=$(cat VERSION 2>/dev/null || echo none) jobs=$(jobs_loaded) yt-dlp=$("$YTDLP" --version 2>/dev/null || echo BROKEN) ***"
   fi
-  say "*** stream is $(publisher_up && print publishing || print NOT publishing) ***"
+  if publisher_up; then
+    say "*** stream is publishing again (waited ${waited}s) ***"
+  else
+    say "*** stream is NOT publishing after ${waited}s - START IT BY HAND: launchctl load -w ~/Library/LaunchAgents/com.user.cctv-stream.plist ***"
+  fi
   exit 1
 }
 
@@ -188,13 +197,19 @@ say "   jobs now=$(jobs_loaded) ffmpeg-rtmp=$(pgrep -f 'ffmpeg.*rtmp' 2>/dev/nul
 
 # ---------- 3. checkout -------------------------------------------------------
 say "3/6 git checkout $TAG"
-git checkout -- conf/broadcast_template.json 2>/dev/null
-# The live playlist is machine-specific - a shuffled order with absolute paths - so it is normally
-# dirty, and a commit that changed the tracked copy would make `git checkout` refuse. Nothing is
-# lost by discarding it here: install.sh rebuilds it two steps later, and a rollback restores the
-# whole tree from the backup. The template is different and is RESTORED below, because a capture
-# made on this machine is the authoritative reference for what the channel should look like.
-git checkout -- conf/playlist.txt 2>/dev/null
+# Discard EVERY local modification to tracked files before switching, not just the two we happened
+# to know about. The deployed tree is not SUPPOSED to have any - 2.5 and 2.6 removed both sources
+# of drift (`capture` no longer rewrites the reference, and the playlist is rebuilt by install.sh)
+# - so anything still modified here is either machine state we are about to regenerate or a
+# leftover whose only effect is to make `git checkout` refuse. That is not hypothetical: the first
+# 2.7 deploy aborted on a MODE-ONLY diff in bin/cam_time.py (644 in the tag, 755 on the host after
+# install.sh's chmod +x), and the rollback left the stream stopped until it was started by hand.
+# The whole tree is backed up above and a rollback restores it, so nothing is unrecoverable.
+# conf/broadcast_template.json is the ONE file whose live content is authoritative - a capture made
+# on this machine - so it is set aside and restored after the switch.
+say "   discarding local modifications to tracked files (the tree is backed up above):"
+git status --short | sed 's/^/     /'
+git checkout -- . 2>/dev/null
 git checkout "$TAG" || { say "ABORT: checkout failed"; rollback; }
 rm -rf AUDIT
 cp "$JOB/broadcast_template.json.live" conf/broadcast_template.json 2>/dev/null
