@@ -72,9 +72,9 @@ owned, and a heartbeat written so late that a healthy monitor could be killed fo
   start; an unchanged one re-uses the stored clock and costs no API call), plus the source
   assertions that the bounce uses the pidfile and that both restart paths arm the retry.
   `tests/t14_monitor_beat.sh` (25 checks) proves the heartbeat is already fresh at the instant the
-  grading command runs, and that the graded status still lands. The suite is now **568 checks**
+  grading command runs, and that the graded status still lands. The suite is now **569 checks**
   (t01 53, t02 12, t03 22, t04 13, t05 15, t06 21, t07 120, t08 46, t09 42, t10 63, t11 38, t12 57,
-  t13 21, t14 25, t15 20).
+  t13 21, t14 25, t15 21).
 
 ## 2.6 — 2026-09-19
 
