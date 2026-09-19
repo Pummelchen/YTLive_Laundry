@@ -272,3 +272,25 @@ can be neither set nor read here. It is also only toggleable while a stream is i
 starting phase, not once running, which on an 8h rotation is a few unattended minutes per
 cycle. Recorded under "manual" in the reference and reported by status.sh as a single quiet
 line. Treat it as off.
+
+**Re-checked 2026-09-19, and it is still not automatable.** The discovery document (revision
+20260914) has no dual/vertical/aspect field; the live broadcast's full `contentDetails` key
+list and `liveStreams.cdn.ingestionInfo` (primary + backup addresses only, no vertical key)
+confirm it; and the Live Streaming API revision history through 2026-08 adds only
+`snippet.categoryId`, `contentDetails.availabilityConfig` and the monetization fields. Google
+shipped dual-format streaming for third-party encoders on 2026-08-20, but the route is the
+Studio Live Control Room: choose **Encoder** instead of **Auto**, then type a **second stream
+key** by hand - and the choice is fixed when the stream goes live and cannot be removed after.
+Per-broadcast, Studio-only and un-undoable, which is the opposite of automatable, and it resets
+on every rotation because `prepare_broadcast()` creates a brand-new broadcast and a new
+broadcast inherits nothing.
+
+The alternatives were considered and rejected: driving the Studio UI from the streamer needs a
+logged-in Google web session on that machine (a credential exposure this project deliberately
+avoids, and it breaks on any UI change); a second standalone vertical broadcast via the API is a
+different product (separate URL and chat, no shared notification) and would add a second encode
+to a 2015 dual-core i5 that is already reporting `videoIngestionStarved` on the primary stream.
+
+**One experiment would settle it for good:** enable Dual stream by hand on a live broadcast and
+list `liveStreams` again. If YouTube creates a second `liveStream` resource for the vertical
+feed, there may be a bindable path after all; if it does not, this stays closed.
