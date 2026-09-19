@@ -120,6 +120,19 @@ t_assert_contains "$out" "a wedged lease needs a human" "and says what its absen
 out=$(SUDOERS_DEST="$SDOK" run_h --check 2>&1); rc=$?
 t_assert_contains "$out" "PASS  $SDOK" "a rendered, parsing rule passes the check"
 
+# An unreadable file is NOT a broken one: 0440 root:wheel is the correct mode, and a normal user
+# cannot parse what it cannot read. Reporting that as "sudo may be refusing EVERY rule" was the
+# first 2.8 build's bug, so it is pinned here.
+print -r -- "valid enough" > "$SD"; chmod 000 "$SD"
+out=$(SUDOERS_DEST="$SD" run_h --check 2>&1); rc=$?
+t_assert_contains "$out" "readable only by root" "an unreadable (0440) rule is reported as unverifiable, not as broken"
+if print -r -- "$out" | grep -q "refusing EVERY rule"; then
+  t_bad "an unreadable rule still raised the alarming broken-file failure"
+else
+  t_ok "an unreadable rule never claims sudo itself may be broken"
+fi
+chmod 644 "$SD"
+
 print -r -- "this is not a sudoers file" > "$SD"
 out=$(SUDOERS_DEST="$SD" run_h --check 2>&1); rc=$?
 t_assert_eq 1 $rc "a malformed sudoers file fails the check"

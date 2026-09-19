@@ -73,11 +73,21 @@ SUDOERS_SRC="$BASE/conf/ytlive-sudoers"
 SUDOERS_DEST="${SUDOERS_DEST:-/etc/sudoers.d/ytlive-net}"   # overridable so the suite can point it at a scratch tree
 SUDOERS_USER="$(stat -f %Su "$BASE" 2>/dev/null || print -- "${USER:-user}")"
 
-sudoers_installed() {   # 0 only when the rule is present AND parses
-  [[ -f "$SUDOERS_DEST" ]] || return 1
-  /usr/sbin/visudo -cf "$SUDOERS_DEST" >/dev/null 2>&1 || return 1
-  grep -q 'NOPASSWD: /usr/sbin/ipconfig set' "$SUDOERS_DEST" 2>/dev/null || return 1
-  return 0
+sudoers_state() {   # installed | unreadable | broken | missing
+  # 0440 root:wheel is the CORRECT mode for a sudoers drop-in, so a normal user cannot read it -
+  # and `visudo -cf` then fails on permission, not on syntax. Treating that as "broken" is how
+  # the first 2.8 build printed a scary FAIL ("sudo may be refusing EVERY rule") on a perfectly
+  # good file in the documented no-sudo check. Only a READABLE file that does not parse is
+  # broken; an unreadable one is unverifiable without root, which is a different sentence.
+  [[ -f "$SUDOERS_DEST" ]] || { print -- missing; return }
+  [[ -r "$SUDOERS_DEST" ]] || { print -- unreadable; return }
+  /usr/sbin/visudo -cf "$SUDOERS_DEST" >/dev/null 2>&1 || { print -- broken; return }
+  grep -q 'NOPASSWD: /usr/sbin/ipconfig set' "$SUDOERS_DEST" 2>/dev/null || { print -- broken; return }
+  print -- installed
+}
+
+sudoers_installed() {   # 0 only when the rule is present AND parseable as this user
+  [[ "$(sudoers_state)" == "installed" ]]
 }
 
 autorestart_support() {   # -> yes | no | unknown
@@ -120,16 +130,20 @@ verify() {   # verify -> 0 if everything wanted is set
   esac
 
   # The NOPASSWD rule the transport watchdog needs (T-38). A file in /etc/sudoers.d that does
-  # not parse can make sudo refuse everything, so a broken one is louder than a missing one.
-  if sudoers_installed; then
-    say "  PASS  $SUDOERS_DEST: the transport watchdog may renew DHCP and flush the resolver"
-  elif [[ -f "$SUDOERS_DEST" ]]; then
-    say "  FAIL  $SUDOERS_DEST exists but does not parse or lacks the rule - sudo may be refusing EVERY rule. Fix or remove it now: sudo rm $SUDOERS_DEST"
-    rc=1
-  else
-    say "  FAIL  no $SUDOERS_DEST: bin/net_watch.sh cannot renew DHCP or flush the resolver cache, so a wedged lease needs a human (T-38). Apply: sudo bin/harden-host.sh --go"
-    rc=1
-  fi
+  # not parse can make sudo refuse everything, so a broken one is louder than a missing one -
+  # but "I cannot read this as a normal user" is not broken, and must never be reported as it.
+  case "$(sudoers_state)" in
+    installed)
+      say "  PASS  $SUDOERS_DEST: the transport watchdog may renew DHCP and flush the resolver" ;;
+    unreadable)
+      say "  NOTE  $SUDOERS_DEST is present but readable only by root - run 'sudo bin/harden-host.sh --check' to verify that it parses" ;;
+    broken)
+      say "  FAIL  $SUDOERS_DEST exists but does not parse or lacks the rule - sudo may be refusing EVERY rule. Fix or remove it now: sudo rm $SUDOERS_DEST"
+      rc=1 ;;
+    *)
+      say "  FAIL  no $SUDOERS_DEST: bin/net_watch.sh cannot renew DHCP or flush the resolver cache, so a wedged lease needs a human (T-38). Apply: sudo bin/harden-host.sh --go"
+      rc=1 ;;
+  esac
   return $rc
 }
 

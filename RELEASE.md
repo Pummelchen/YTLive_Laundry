@@ -152,6 +152,12 @@ Verify the Release: the notes quote the digest in the `.sha256` beside it, the
 assets are the archive and its checksum, and the changelog points at the same tag.
 Leave previous releases' notes and performance tables alone.
 
+**Re-publishing an OLDER release flips the "latest" marker.** `gh release create` marks its
+release latest by default, so a corrected re-publish of, say, `v2.7` leaves the release page
+advertising the older version. Re-assert the newest one afterwards and check it:
+`gh release edit v2.8 --latest` then `gh release list` — measured 2026-09-19, when re-publishing
+`v2.7` to match its moved tag did exactly that.
+
 **If the release carries a change to the external watchdog, verify the host too.** The
 streamer and the watchdog host are separate installs (`bin/deploy-release.sh` and
 `bin/watchdog-install.sh`), the host carries no version stamp, and nothing cross-checks
@@ -236,7 +242,7 @@ live.
 - **§1.5's four gates, mapped to this repository.**
   - *Lint* — the syntax gate: `zsh -n` per shell file and `ast.parse` per Python module. There
     has never been another linter here, so this is the whole of it.
-  - *Test suite* — `tests/run.sh`, 699 checks, run serially, reporting the count that passed. It
+  - *Test suite* — `tests/run.sh`, 701 checks, run serially, reporting the count that passed. It
     was added in 2.0; 1.0 has none, and its notes record that as **not checked** rather than
     implying a green run.
   - *Parity / golden* — the archive hash-match: for this project "the output is unchanged" means

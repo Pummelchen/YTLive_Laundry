@@ -9,6 +9,25 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.9 — 2026-09-19
+
+**One bug in 2.8, found by running its own documented check.** `bin/harden-host.sh --check` is
+documented to run *without* sudo, and the `NOPASSWD` rule it verifies is installed `0440
+root:wheel` — so a normal user cannot read it, and `visudo -cf` then fails on **permission**, not
+on syntax. 2.8 treated that as a broken file and printed the loudest message in the tool:
+
+    FAIL  /etc/sudoers.d/ytlive-net exists but does not parse or lacks the rule - sudo may be
+          refusing EVERY rule. Fix or remove it now: sudo rm /etc/sudoers.d/ytlive-net
+
+on a file that was perfectly good — which is worse than a missing check, because it invites an
+operator to delete a working rule. It now distinguishes four states: `installed` (readable and
+parses → PASS), `unreadable` (present but root-only → a `NOTE` naming `sudo bin/harden-host.sh
+--check`, no failure), `broken` (readable and does not parse → the loud FAIL, unchanged), and
+`missing` (→ FAIL with the command that installs it). Pinned in `tests/t08_hosttools.sh`.
+
+Suite: **701 checks** (t08 68). Measured on the live streamer: `--check` as the normal user now
+reports `NOTE ... readable only by root` and exits 0.
+
 ## 2.8 — 2026-09-19
 
 **Four fixes so the health page tells the truth and the machine's limits stop looking like
