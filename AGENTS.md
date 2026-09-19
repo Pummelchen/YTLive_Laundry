@@ -167,7 +167,13 @@ packs it, so a release cannot ship a tree that fails either.
   stale-heartbeat rule existed only in the repo, so a freshly deployed push/listener pair
   could not have alerted. Before claiming a cross-host feature works, hash or diff the
   host's `$PREFIX/bin/*.py` against the tagged tree, and run `bin/yt_watchdog.py status`
-  there to read what it actually decides.
+  there to read what it actually decides. **Replacing the file is not deploying it:** both
+  `watchdog-install.sh --start` and a plain `install` leave an ALREADY-RUNNING unit on its old
+  code in memory, and `status` runs a fresh process from the new file - so status can show the
+  new version while the loop still behaves like the old one (measured 2026-09-19: a 2.9 install
+  was "verified" this way, and the loop went on emailing the 2.7 alert body). `systemctl restart
+  ytlive-watchdog` (or `launchctl kickstart -k`) and then read the loop's OWN start line, which
+  now names its version: `watchdog starting: version=2.9`.
 - **A published release tag is never moved; cut a new version instead.** A moved tag
   silently breaks `git fetch --tags` on clones that already hold the old object (they need
   `--force`, and without it they stay on old code with no error), and it invalidates

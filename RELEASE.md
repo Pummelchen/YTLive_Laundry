@@ -158,6 +158,11 @@ advertising the older version. Re-assert the newest one afterwards and check it:
 `gh release edit v2.8 --latest` then `gh release list` — measured 2026-09-19, when re-publishing
 `v2.7` to match its moved tag did exactly that.
 
+**An install is not a restart.** After `watchdog-install.sh --start` on the watchdog host,
+restart the unit (`systemctl restart ytlive-watchdog`) and confirm the LOOP's own start line
+names the new version (`watchdog starting: version=X.Y`); `bin/yt_watchdog.py status` proves the
+file, not the running process. Measured 2026-09-19: a 2.9 install left the 2.7 loop running.
+
 **If the release carries a change to the external watchdog, verify the host too.** The
 streamer and the watchdog host are separate installs (`bin/deploy-release.sh` and
 `bin/watchdog-install.sh`), the host carries no version stamp, and nothing cross-checks
