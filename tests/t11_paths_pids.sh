@@ -154,6 +154,13 @@ grep -q 'pub_death_reason "\$rc"' "$REPO_DIR/bin/stream.sh" \
   || t_bad "the death handler does not use pub_death_reason"
 
 # --- (d) T-39: the deployed tree must stay CLEAN -------------------------------------------
+# install.sh runs `chmod +x bin/*.sh bin/*.py`. A tool committed as mode 644 therefore becomes a
+# permanent MODE change against the tag after every install: the deployed checkout can never be
+# clean and a `git pull` there can refuse. bin/cam_time.py shipped that way in 2.6 and was caught
+# by `git status` on the streamer minutes after the deploy. Cheap to assert, invisible otherwise.
+nonexec=$(git -C "$REPO_DIR" ls-files -s -- 'bin/*.sh' 'bin/*.py' install.sh release.sh 2>/dev/null \
+          | awk '$1 != "100755" {print $4}' | tr '\n' ' ')
+t_assert_eq "" "$nonexec" "every script is tracked 755 (install.sh chmods them, so 644 means a dirty tree)"
 # stream.sh captures the outgoing broadcast at every rotation, and that used to rewrite the
 # TRACKED conf/broadcast_template.json every 8 hours with a fresh timestamp - so the deployed
 # checkout was permanently dirty and a `git pull` or `git checkout` there could refuse or
