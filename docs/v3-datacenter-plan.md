@@ -1,8 +1,20 @@
-# v3.0 — moving the stream into a datacenter (proposal, not yet approved)
+# v3.0 — moving the stream into a datacenter (CLOSED, not happening)
 
-**Status: proposal.** Nothing here is scheduled, and no code changes until the owner approves a
-phase. It is written down because the 2026-09-18 outage raised the question and the answer should
-not have to be re-derived. Tracked as **T-32** in the wiki Project-Tracker.
+> **CLOSED 2026-09-20 by the operator.** The streamer stays on the shop Mac; there will be no VPS
+> on the streaming side. Written down so it is not proposed again: *"for now we will not plan to
+> use a vps as a streaming helper."* The consequences are accepted knowingly — the failure classes
+> below that v3.0 would have removed (the Mac sleeping, crashing, or being unplugged) remain, and
+> what covers them instead is the 2.x set: `caffeinate` plus `pmset -c sleep 0 disablesleep 1` on
+> AC, auto-login so a clean reboot recovers without a human, the dead-man heartbeat (2.7) and the
+> off-host watchdog (2.2). The two classes no software here can fix — the shop's power and its
+> uplink — were never fixed by v3.0 either (see the honest headline below), and the tracker no
+> longer carries purchase rows for them (task-table standard, hard rule 6). **This document is
+> kept as the analysis, not as a plan.** It was tracked as **T-32** until that row closed with
+> this decision.
+
+**Status: closed. No phase was ever approved and no code was written from it.** The analysis below
+is retained because the 2026-09-18 outage raised the question and the reasoning should not have to
+be re-derived if the decision is ever revisited.
 
 ## The problem it addresses
 

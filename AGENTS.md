@@ -48,7 +48,9 @@ RTMP session.
   holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
   unit for the always-on host).
 - `docs/` — the design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
-  `docs/v3-datacenter-plan.md` is an unscheduled v3.0 proposal.
+  `docs/v3-datacenter-plan.md` is the v3.0 analysis, **closed 2026-09-20**: the streamer
+  stays on the shop Mac and no VPS is used on the streaming side. It is kept as reasoning,
+  not as a plan.
   `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
   `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by

@@ -79,7 +79,8 @@
                              unsupported key reports N/A instead of failing forever (T-29)
     docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
                              ...) plus the per-release notes release-notes-vX.Y.md
-    docs/v3-datacenter-plan.md          unscheduled v3.0 proposal (push-based SRT, Hetzner SG)
+    docs/v3-datacenter-plan.md          the v3.0 analysis, CLOSED 2026-09-20: no VPS on the
+                             streaming side; kept so the question is not re-derived
     docs/task-table-standard.md         the ONE task-table standard: columns, types, statuses,
                              sizes, ownership, and the ordering that is the priority
     tests/                   the credential-free suite: tests/run.sh and its README
