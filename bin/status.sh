@@ -127,6 +127,14 @@ du -h "$BASE/log"/*(.N) 2>/dev/null | sort -rh | head -4 | sed 's/^/  /'
 
 print "\n=== rotation history ==="
 RH="$BASE/log/rotation_history.log"
+# A FRAGMENT is a RESTART that closed a broadcast early, not a rotation - so it never appears in
+# the history above, and it is the only explanation for a VOD that is short for no visible reason.
+# It is logged (T-08) and counted here, because "why is this recording 40 minutes long" should be
+# answerable from this page. The window is whatever stream.log still holds.
+frags=$(grep -c 'FRAGMENT:' "$BASE/log/stream.log" 2>/dev/null)
+if [[ "$frags" == <-> ]] && (( frags > 0 )); then
+  warn "$frags restart(s) closed a broadcast early - a FRAGMENT line in stream.log names both ids. A dead-camera restart can no longer do this; a stall or an OOM kill still can."
+fi
 if [[ -s "$RH" ]]; then
   tail -5 "$RH" | sed 's/^/  /'
   n=$(grep -c 'mode=native' "$RH"); a=$(grep -c 'mode=api-fallback' "$RH"); f=$(grep -c 'mode=failed' "$RH")

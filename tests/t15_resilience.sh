@@ -132,6 +132,9 @@ t_assert_eq "2" "$(grep -c 'CLOCK_RETRY_END=\$((' "$REPO_DIR/bin/stream.sh")" \
 grep -q 'FRAGMENT: the restart closed broadcast' "$REPO_DIR/bin/stream.sh" \
   && t_ok "a restart that fragments the recording says so, with both ids" \
   || t_bad "fragmentation is still invisible in the log"
+grep -q "grep -c 'FRAGMENT:'" "$REPO_DIR/bin/status.sh" \
+  && t_ok "and the health page counts them, so a short VOD is explained where a human looks" \
+  || t_bad "fragmentation is logged but never surfaced"
 
 t_teardown
 t_summary
