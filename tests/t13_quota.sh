@@ -165,5 +165,44 @@ grep -q 'cmd == "quota"' "$PY" \
   && t_ok "yt_api.py exposes the free quota verb" \
   || t_bad "yt_api.py has no quota verb"
 
+# --- (e) YouTube's OWN ingest verdict, with its severities respected (T-40) ----------------
+# healthStatus carries per-issue severities. An `error` is YouTube saying viewers are affected;
+# `info` is an advisory - and this installation's audio bitrate is deliberately above YouTube's
+# recommendation, so flattening them into one alarm would push the operator to "fix" a choice.
+hout=$(PYTHONDONTWRITEBYTECODE=1 python3 - <<PY
+import contextlib, importlib.util, io, json
+spec = importlib.util.spec_from_file_location("yt_api", "$PY")
+m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+m.probe_refresh_token = lambda: ("LIVE", "ok")
+m.access_token = lambda: "tok"
+def call(issues):
+    m.api = lambda *a, **k: {"items": [{"id": "S", "status": {"healthStatus": {"configurationIssues": issues}}}]}
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = m.cmd_health()
+    return rc, json.loads(buf.getvalue())
+for label, issues in (("clean", []),
+                      ("audio", [{"type": "audioBitrateHigh", "severity": "info", "reason": "Check audio settings"}]),
+                      ("starved", [{"type": "videoIngestionStarved", "severity": "error", "reason": "Video output low"}]),
+                      ("both", [{"type": "videoIngestionStarved", "severity": "error"},
+                                {"type": "audioBitrateHigh", "severity": "info"}])):
+    rc, o = call(issues)
+    print(label, rc, o["status"], o["error_count"], o["advisory_count"])
+PY
+)
+t_assert_contains "$hout" "clean 0 GOOD 0 0" "a healthy ingest reports GOOD and exits 0"
+t_assert_contains "$hout" "audio 1 ADVISORY 0 1" "the deliberate audio bitrate is an ADVISORY (exit 1), never an error"
+t_assert_contains "$hout" "starved 2 BAD 1 0" "an error-severity ingest issue reports BAD and exits 2"
+t_assert_contains "$hout" "both 2 BAD 1 1" "an error outranks an advisory without hiding it"
+grep -q 'cmd == "health"' "$PY" \
+  && t_ok "yt_api.py exposes the health verb" \
+  || t_bad "yt_api.py has no health verb"
+grep -q 'ingest health (YouTube' "$REPO_DIR/bin/status.sh" \
+  && t_ok "the health page asks for it" \
+  || t_bad "status.sh does not show YouTube's ingest verdict"
+grep -q 'the audio note is DELIBERATE' "$REPO_DIR/bin/status.sh" \
+  && t_ok "and says the audio advisory is deliberate rather than a fault to fix" \
+  || t_bad "status.sh does not defend the deliberate audio setting"
+
 t_teardown
 t_summary

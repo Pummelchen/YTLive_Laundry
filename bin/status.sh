@@ -84,6 +84,28 @@ if [[ "$NET" == yes ]]; then
   print "\n=== YouTube says ==="
   st=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" status 2>&1)
   print -r -- "$st" | grep -q '"status": *"LIVE"' && ok "$st" || bad "$st"
+
+  # YouTube's OWN verdict on the ingest, with its severities respected. The platform grades
+  # issues error/info, and an info-level advisory must never be shown as a fault: this
+  # installation sends AAC 384 kbps on purpose where YouTube recommends 128, and the Studio
+  # wording for that advisory is itself buggy ("a bitrate of 0 is higher than the recommended").
+  # Recorded 2026-09-19: right after a restart YouTube reported videoIngestionStarved (error) for
+  # a few minutes and then cleared it, so the reason is printed verbatim rather than judged.
+  print "\n=== ingest health (YouTube's own verdict) ==="
+  hl=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" health 2>&1); hrc=$?
+  case $hrc in
+    0) ok   "$hl" ;;
+    1) warn "$hl" ;;
+    *) if print -r -- "$hl" | grep -q '"status": *"UNKNOWN"'; then
+         warn "$hl  (could not confirm - not a fault)"
+       else
+         bad  "$hl"
+       fi ;;
+  esac
+  if print -r -- "$hl" | grep -q 'audioBitrateHigh'; then
+    print "  the audio note is DELIBERATE: this installation sends 384 kbps (YouTube recommends"
+    print "  128) because audio quality was chosen over a quieter health page. Do not lower it."
+  fi
 fi
 
 print "\n=== network transport ==="

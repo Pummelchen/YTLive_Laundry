@@ -1,0 +1,22 @@
+#!/bin/zsh
+# Test stub for the external watchdog's host-presence signal (Tailscale).
+#
+# Reads log/fake_tailscale:
+#   live -> the streamer peer is Online
+#   down -> the streamer peer is offline with a LastSeen
+#   anything else, or no file -> no peers, so the watchdog must report host "unknown"
+# The real tailscale is never invoked by the suite.
+FAKE="${BASE:-/nonexistent}/log/fake_tailscale"
+case "${1:-}" in
+  status)
+    if [[ "$*" == *--json* && -f "$FAKE" ]]; then
+      case "$(cat "$FAKE")" in
+        live) print -- '{"Peer":{"k":{"HostName":"ternak-macbook","DNSName":"ternak-macbook.tail1c3b90.ts.net.","Online":true,"LastSeen":"2026-09-19T00:00:00Z"}}}' ;;
+        down) print -- '{"Peer":{"k":{"HostName":"ternak-macbook","DNSName":"ternak-macbook.tail1c3b90.ts.net.","Online":false,"LastSeen":"2026-09-18T10:20:00Z"}}}' ;;
+      esac
+    else
+      print -- '{"Peer":{}}'
+    fi
+    exit 0 ;;
+esac
+exit 0

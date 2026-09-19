@@ -202,6 +202,52 @@ else
   t_ok "renew leaves the wireless radio alone"
 fi
 
+# --- E. the root-only rungs, when the NOPASSWD rule IS installed (T-38) --------------------
+# Without the rule the ladder stops at networksetup (above). With it, the targeted `ipconfig`
+# renew and the resolver flush become reachable - and every call must carry `sudo -n`, because a
+# launchd agent has no terminal and a prompt would hang the loop instead of failing.
+SUDOCALLS="$T_BASE/log/fake_sudo.calls"
+rm -f "$SUDOCALLS"; print -r -- ok > "$T_BASE/log/fake_sudo"
+: > "$NSLOG"
+run_nw 'do_action renew' FAKE_ROUTE="$R_OK" FAKE_NS_OUT="$NS_PORTS" >/dev/null
+if grep -q -- "sudo n=yes /usr/sbin/ipconfig set en0 DHCP" "$SUDOCALLS" 2>/dev/null; then
+  t_ok "with the rule installed, renew uses the targeted ipconfig renew through sudo -n"
+else
+  t_bad "renew did not use the root path (calls: $(cat "$SUDOCALLS" 2>/dev/null | tr '\n' ' '))"
+fi
+if print -r -- "$(cat "$NSLOG")" | grep -qx -- "-setdhcp"; then
+  t_bad "renew still poked networksetup even though the targeted renew succeeded"
+else
+  t_ok "and does not also fall back when the root path worked"
+fi
+
+rm -f "$SUDOCALLS"
+run_nw 'do_action dns' >/dev/null
+grep -q -- "sudo n=yes /usr/bin/dscacheutil -flushcache" "$SUDOCALLS" 2>/dev/null \
+  && t_ok "dns flushes the resolver cache through the rule" \
+  || t_bad "dns did not use the root path"
+
+# Without the rule it must still fail FAST and take the weaker path - never block on a prompt.
+# (The harness's own dscacheutil stub sits ahead of tests/stubs and exits 0 by default, so the
+# no-sudo flush succeeds here and the refusal is exercised below with FAKE_DSCACHE_RC=1.)
+rm -f "$T_BASE/log/fake_sudo" "$SUDOCALLS"
+: > "$T_BASE/log/net_events.log"
+run_nw 'do_action dns' >/dev/null; rc=$?
+t_assert_eq 0 $rc "a refused flush is not fatal to the action"
+if grep -q "n=no" "$SUDOCALLS" 2>/dev/null; then
+  t_bad "a sudo call without -n would prompt, which hangs a launchd agent"
+else
+  t_ok "no sudo call is ever made without -n"
+fi
+grep -q "NET-ACT dns: resolver cache flushed (no root needed)" "$T_BASE/log/net_events.log" \
+  && t_ok "without the rule it still flushes through the no-sudo path" \
+  || t_bad "the weaker no-sudo flush was not taken"
+
+run_nw 'do_action dns' FAKE_DSCACHE_RC=1 >/dev/null
+grep -q "install the rule: sudo bin/harden-host.sh --go" "$T_BASE/log/net_events.log" \
+  && t_ok "and when even that is refused, the log names the one command that fixes it" \
+  || t_bad "the refusal does not say how to install the rule (T-38)"
+
 : > "$NSLOG"
 run_nw 'do_action wifi' >/dev/null
 wifi_log=$(cat "$NSLOG")

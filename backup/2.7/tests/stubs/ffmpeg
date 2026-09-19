@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Test stub: records its argv and exits, so no real encode can start.
+print -r -- "ffmpeg $*" >> "${BASE:-/nonexistent}/log/stub_ffmpeg.calls" 2>/dev/null
+exit 0

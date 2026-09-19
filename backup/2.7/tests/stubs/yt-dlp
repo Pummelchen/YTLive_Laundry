@@ -1,0 +1,26 @@
+#!/bin/zsh
+# Test stub: the monitor/streamer ask for %(id)s|%(is_live)s and for -g media URLs.
+#
+# t07 (the external watchdog) has to exercise a channel that is live, dark, and
+# unreadable, so when log/fake_yt_live exists it decides from that: live | offline |
+# unknown. With no such file the behaviour is exactly what every other test already
+# relies on, so this stub stays backwards compatible.
+FAKE="${BASE:-/nonexistent}/log/fake_yt_live"
+# NOTE: match on "is_live", not on the literal "%(id)s|%(is_live)s". In a zsh case pattern a
+# quoted "\(...\)" keeps its backslashes and is compared literally, so the old pattern never
+# matched anything - it fell through to "exit 0" with no output. Nothing had exercised this
+# stub's stdout until t07 did; t07 is what found it.
+case "$*" in
+  *is_live*)
+    if [[ -f "$FAKE" ]]; then
+      case "$(cat "$FAKE")" in
+        live)    print -- "TESTVID|True"; exit 0 ;;
+        offline) print -u2 -- "ERROR: This live event will begin in 3 hours."; exit 1 ;;
+        *)       print -u2 -- "ERROR: unable to download API page: HTTP Error 429"; exit 1 ;;
+      esac
+    fi
+    print -- "TESTVID|True"; exit 0 ;;
+  *-g*) print -- "https://example.invalid/media"; exit 0 ;;
+  *duration*) print -- "28800"; exit 0 ;;
+esac
+exit 0

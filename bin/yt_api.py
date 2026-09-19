@@ -22,6 +22,8 @@ USAGE
     yt_api.py verify [id]     compare a broadcast against that reference (0 match, 1 drifted)
     yt_api.py enforce [id]    apply the reference, read back, and retry until it matches
     yt_api.py token           refresh-token expiry check, offline (0 ok, 1 soon, 2 expired)
+    yt_api.py quota           is the API pool usable? (free, never spends)
+    yt_api.py health          YouTube's own ingest verdict, severities respected (0 good, 1 advisory, 2 error)
 
 ensure-live is idempotent. If the channel is already live it does nothing and exits 0.
 Otherwise it creates a broadcast, binds it to the stream that owns YT_KEY, and transitions
@@ -134,6 +136,57 @@ def cmd_quota():
         die_quota()
     print(json.dumps({"status": "OK", "msg": "no quota cooldown is armed"}))
     return 0
+
+
+def cmd_health():
+    """YouTube's OWN verdict on the ingest, with its severities respected.
+
+    `liveStreams.status.healthStatus` is the platform's own judgement. An issue whose severity
+    is `error` is YouTube saying viewers are affected; `info`/`warning` are advisories. They must
+    not be flattened into one alarm: this installation deliberately sends AAC **384 kbps** where
+    YouTube recommends 128, which YouTube grades `info` (and whose Studio wording is itself
+    buggy - "the audio stream's current bitrate of 0 is higher than the recommended bitrate"),
+    and a project that "fixed" that would trade audio quality for a quieter page.
+
+    Measured 2026-09-19: right after an ingest restart YouTube reported
+    `videoIngestionStarved` (`error`) for a few minutes and then cleared it, which is why the
+    severity and the reason are reported verbatim rather than as a verdict of ours.
+
+    Exit: 0 no issues, 1 advisories only, 2 an error-severity issue OR an answer we could not
+    get - a check that cannot confirm must not report OK.
+    """
+    state, detail = probe_refresh_token()
+    if state != "LIVE":
+        print(json.dumps({"status": "UNKNOWN", "msg": detail}))
+        return 2
+    try:
+        r = api("GET", "liveStreams", access_token(),
+                {"part": "id,status", "mine": "true", "maxResults": "50"})
+    except RuntimeError as e:
+        print(json.dumps({"status": "UNKNOWN", "msg": f"liveStreams.list failed: {e}"}))
+        return 2
+    items = r.get("items") or []
+    if not items:
+        print(json.dumps({"status": "UNKNOWN", "msg": "this channel has no liveStream to ask about"}))
+        return 2
+    issues = []
+    for it in items:
+        health = (it.get("status") or {}).get("healthStatus") or {}
+        for i in (health.get("configurationIssues") or []):
+            issues.append({"stream": it.get("id"), "type": i.get("type"),
+                           "severity": i.get("severity") or "info",
+                           "reason": i.get("reason"), "description": i.get("description")})
+    errors = [i for i in issues if i["severity"] == "error"]
+    advisories = [i for i in issues if i["severity"] != "error"]
+    if errors:
+        status, msg = "BAD", f"{len(errors)} error-severity ingest issue(s) reported by YouTube"
+    elif advisories:
+        status, msg = "ADVISORY", f"{len(advisories)} advisory note(s), no error"
+    else:
+        status, msg = "GOOD", "YouTube reports the ingest healthy"
+    print(json.dumps({"status": status, "msg": msg, "issues": issues,
+                      "error_count": len(errors), "advisory_count": len(advisories)}))
+    return 2 if errors else (1 if advisories else 0)
 
 
 def load_creds():
@@ -1331,6 +1384,8 @@ def main():
             return cmd_token(offline="--offline" in sys.argv)
         if cmd == "quota":
             return cmd_quota()
+        if cmd == "health":
+            return cmd_health()
         if cmd == "prepare":
             if "--dry-run" in sys.argv:
                 tok = access_token(); st = stream_for_key(tok, read_key())
@@ -1358,7 +1413,7 @@ def main():
                                       force="--force" in sys.argv)
         if cmd in ("apply", "enforce"):
             return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | quota | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | quota | health | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:

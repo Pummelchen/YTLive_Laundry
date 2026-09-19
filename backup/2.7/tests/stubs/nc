@@ -1,0 +1,4 @@
+#!/bin/zsh
+# Test stub: reachable unless the test creates log/fake_nc_down.
+[[ -e "${BASE:-/nonexistent}/log/fake_nc_down" ]] && exit 1
+exit 0

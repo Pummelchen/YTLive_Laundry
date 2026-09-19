@@ -1,0 +1,67 @@
+# CI for YTLive.
+#
+# This is the FIRST automated gate this repository has ever had. Before this file existed there
+# was no `.github/` directory at all: neither the syntax gate nor the credential-free suite ran
+# on push or on a pull request, and only GitHub's dynamic CodeQL default setup (Python) watched
+# anything. AGENTS.md used to say "None automatic"; it now points here.
+#
+# macOS ONLY, deliberately. tests/run.sh is written for macOS: it uses `zsh` idioms, `stat -f`,
+# `plutil`, and a `pmset` stub that models the keys macOS reports only when they are enabled.
+# Those do not exist on Linux. It runs on `macos-latest` and MUST NOT be moved to ubuntu-latest
+# or into a Linux matrix - a Linux job would fail for reasons that are not defects in this repo.
+#
+# Deliberately minimal and honest: no caching (nothing is installed), no `install.sh` (this is a
+# source tree, not a host), no credentials, and no network use. The suite needs no camera, no
+# ffmpeg, no OAuth token and no network.
+#
+# bin/smoke_test.sh is deliberately NOT run here: it needs `conf/yt_oauth.json`, a real
+# gitignored credential, so it cannot pass on a clean checkout. It stays a by-hand host gate.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    name: credential-free gate (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      # The syntax gate is not a separate step on purpose: `zsh tests/run.sh` already runs t01,
+      # which `zsh -n`-parses every bin/*.sh, install.sh, tests/*.sh and tests/stubs/* and
+      # AST-parses every .py. Running `zsh tests/run.sh t01` again would duplicate work and hide
+      # nothing new. pipefail makes a non-zero suite exit fail this step loudly.
+      - name: Run the credential-free gate
+        shell: bash
+        run: |
+          set -o pipefail
+          zsh tests/run.sh 2>&1 | tee "$RUNNER_TEMP/gate.log"
+
+      # Always run this, even when the gate failed, so the log still ends with the per-file
+      # counts and the total. The suite colours its PASS/FAIL lines with ANSI escapes, so strip
+      # them before matching: `ALL PASSED\x1b[0m (57 checks)` is not `ALL PASSED (57 checks)`.
+      - name: Print per-file check counts
+        if: always()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/gate.log"
+          if [ ! -f "$log" ]; then
+            echo "gate.log was not produced"
+            exit 0
+          fi
+          clean=$(sed $'s/\033\\[[0-9;]*m//g' "$log")
+          echo "===== per-file check counts ====="
+          printf '%s\n' "$clean" | grep -E 'ALL PASSED \([0-9]+ checks\)|[0-9]+ FAILED, [0-9]+ passed' || true
+          passed=$(printf '%s\n' "$clean" | sed -nE \
+            -e 's/.*ALL PASSED \(([0-9]+) checks\).*/\1/p' \
+            -e 's/.*[0-9]+ FAILED, ([0-9]+) passed.*/\1/p' \
+            | awk '{s += $1} END {printf "%d\n", s + 0}')
+          echo "===== total checks passed: $passed ====="

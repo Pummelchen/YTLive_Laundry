@@ -73,7 +73,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 659 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 699 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -138,7 +138,7 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 659 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 699 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -175,6 +175,27 @@ packs it, so a release cannot ship a tree that fails either.
   **one-time recorded exception**: T-34 was a 2.7-scoped row cut before it landed, the only
   installed consumer (the streamer) was force-fetched in the same change, and the GitHub
   release was re-published and re-verified. Do not read it as a precedent.
+- **The audio bitrate is a deliberate choice, not a defect to repair.** The publisher sends AAC
+  384 kbps where YouTube recommends 128: this stream is mostly music and audio quality was chosen
+  over a quieter health page. YouTube grades the difference `info` (its own wording even reports
+  "a bitrate of 0 is higher than the recommended bitrate", a UI bug), and `docs/youtube.md` plus
+  `bin/status.sh` say so. Read `severity` before escalating anything (T-40).
+- **Host limits are PROBED and RECORDED, never guessed.** `autorestart` is unsupported on this
+  streamer's hardware: a root `pmset -a autorestart 1` exits 0 and the key never appears (measured
+  2026-09-19, with a `womp` control toggle proving pmset writes do work), and neither `pmset -g`
+  nor `pmset -g cap` can tell "unsupported" from "off". `bin/harden-host.sh --go` applies it, reads
+  it back and records the verdict in `log/host_hardening.json`; `--check` reports `N/A` for a
+  recorded "unsupported" and still FAILS when support is merely unproven (T-29). A power cut still
+  leaves this Mac off - the UPS (T-30) is the only mitigation, accepted as a risk.
+- **`/etc/sudoers.d/ytlive-net` is three exact commands and nothing else** (`conf/ytlive-sudoers`:
+  `ipconfig set en0|en2 DHCP`, `dscacheutil -flushcache`), so the transport watchdog's root-only
+  rungs are reachable without handing a launchd agent the account password. No wildcards, no shell,
+  no `ALL`, and it is proved with `visudo -cf` BEFORE installation - a malformed file in
+  `/etc/sudoers.d` can make sudo refuse every rule, including the one needed to remove it (T-38).
+- **A host line is not a health verdict.** Tailscale reports Go's zero time for an ONLINE peer,
+  which is why the status page says `online now` instead of a date; `bin/yt_api.py health` reports
+  YouTube's own ingest severity beside it; the monitor's frame grading is a third opinion. Keep
+  them separate - each answers a different question.
 - **`CAM_LINK_TIMEOUT="45"` is declared in `conf/stream.env.example` but read by no
   script.** It is one of the dead knobs listed below, and its old comment claimed the
   watchdog watched the camera's TCP session "instead" of the output frame counter -

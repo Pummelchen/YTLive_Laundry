@@ -9,6 +9,62 @@ tunables live in `conf/stream.env`.
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
 to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
 
+## 2.8 — 2026-09-19
+
+**Four fixes so the health page tells the truth and the machine's limits stop looking like
+faults: a status line that printed year 1, a hardening check that failed forever on a setting
+this hardware cannot have, a transport ladder that could not touch DHCP or DNS, and YouTube's own
+ingest verdict that nothing here read.**
+
+- **The watchdog's status page no longer prints `last seen 1-01-01` for a healthy streamer.**
+  Tailscale reports Go's zero time (`0001-01-01T00:00:00Z`) for a peer that is **online** — verified
+  across the whole tailnet on 2026-09-19: the streamer, Node1-4 and MacBook AB all carry it while
+  online, while genuinely offline peers carry a real timestamp. The old code formatted it, so the
+  page an operator reads during an incident said the streamer was last seen in the year 1. Online
+  now means now: the line reads `host state : live  online now`, and an offline peer keeps its real
+  date. The cue came from the operator looking at the page, and the suite could not have caught it
+  before because the test stub invented a plausible date for the online case — it now carries the
+  zero time, which is what the real tool returns.
+- **T-29 — `bin/harden-host.sh` tells "not supported by this hardware" from "off".** macOS reports
+  `autorestart` only when it is on, so a read-only check cannot distinguish an unsupported key from
+  a disabled one, and `pmset -g cap` is not an oracle either (it omits `disablesleep`, which works
+  here). Measured 2026-09-19 on the streamer (MacBookAir7,2) with root: `pmset -a autorestart 1`
+  exits 0 and the key never appears, while a control toggle of `womp` read back correctly — so
+  `--check` was failing forever on a setting this Mac cannot have, which trains an operator to
+  ignore it. Support is now **probed** where root is available (`--go` applies and reads back) and
+  the verdict is recorded in `log/host_hardening.json`; `--check` reports `N/A` with the reason and
+  stops failing. An unprobed host still FAILS — a check that cannot confirm must not report OK. The
+  honest conclusion is unchanged and now written down: **a power cut leaves this Mac off, and the
+  UPS (T-30) is the only mitigation**, which the operator has accepted as a risk.
+- **T-38 — the transport watchdog can renew DHCP and flush the resolver cache.** `bin/net_watch.sh`
+  is a launchd USER agent, so the two root-only rungs of its ladder were unreachable: a wedged DHCP
+  lease needed a human. The fix is **not** to hand the agent the account password — a login secret
+  in a file that a network-facing process can read — but a sudoers drop-in granting **three exact
+  commands** (`ipconfig set en0|en2 DHCP`, `dscacheutil -flushcache`) for the one user, with no
+  wildcards, no shell and no `ALL`. `conf/ytlive-sudoers` is the tracked template; `harden-host.sh`
+  renders it, proves it with `visudo -cf` **before** it can reach `/etc/sudoers.d/` (a malformed
+  file there can make sudo refuse every rule, including the one needed to remove it), installs it
+  `0440 root:wheel`, and `--check` verifies it. The ladder prefers the targeted `ipconfig` renew,
+  falls back to the no-sudo `networksetup` form, and logs which path it took; every call uses
+  `sudo -n`, because a launchd agent has no terminal and a prompt would hang the loop.
+- **T-40 — the health page shows YouTube's own ingest verdict, with its severities respected.**
+  `liveStreams.status.healthStatus` is the platform's own judgement and nothing in this project
+  read it, so a transient `videoIngestionStarved` (severity `error`) was invisible while it lasted.
+  `bin/yt_api.py health` reports it as one JSON line and `bin/status.sh` colours it by severity:
+  `error` is loud, `info`/advisory is quiet, and an answer that cannot be obtained is `UNKNOWN`
+  rather than a fault. **The audio advisory is deliberate and is not a fault to fix:** this
+  installation sends AAC **384 kbps** where YouTube recommends 128, the API grades it `info`, and
+  Studio's own wording for it is buggy ("the audio stream's current bitrate of 0 is higher than the
+  recommended bitrate"). The health page says so in as many words, so a future reader does not
+  "repair" it.
+- **Tests.** `tests/t07_watchdog.sh` grew to **153** (the online/offline host-display cases),
+  `tests/t08_hosttools.sh` to **66** (the unsupported-versus-off probe and the sudoers render,
+  parse, install and malformed-file cases), `tests/t09_net.sh` to **49** (the root-only rungs with
+  and without the rule, and that no `sudo` call is ever made without `-n`), and `tests/t13_quota.sh`
+  to **28** (the severity mapping: GOOD/0, ADVISORY/1, BAD/2 — and an error outranking an advisory
+  without hiding it). The suite is now **699 checks** (t01 56, t02 12, t03 22, t04 17, t05 15,
+  t06 21, t07 153, t08 66, t09 49, t10 63, t11 38, t12 57, t13 28, t14 25, t15 23, t16 54).
+
 ## 2.7 — 2026-09-19
 
 **Five silent failure modes in the stream's own restarts and bookkeeping: a stale rotation clock, a

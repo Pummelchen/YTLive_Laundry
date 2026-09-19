@@ -521,6 +521,30 @@ touch -t 202001010000 "$HB"
 out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
 t_assert_contains "$out" "unavailable" "status does not believe a stale push's disk figure"
 
+# --- the host line must not print year 1 ------------------------------------------------
+# Tailscale reports Go's zero time for a peer that is ONLINE (measured on the real tailnet
+# 2026-09-19), and formatting it printed "last seen 1-01-01T00:00:00Z" for a perfectly healthy
+# streamer - on the page an operator reads during an incident. Online means now, so the line
+# says so and carries no date at all.
+print -r -- "live" > "$T_BASE/log/fake_tailscale"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900)
+t_assert_contains "$out" "host state     : live  online now" "an ONLINE peer reads 'online now'"
+if print -r -- "$out" | grep -qE "0001-01-01|1-01-01"; then
+  t_bad "status still renders Tailscale's zero time as a date for an online peer"
+else
+  t_ok "status never prints year 1 for an online peer"
+fi
+print -r -- "down" > "$T_BASE/log/fake_tailscale"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900)
+t_assert_contains "$out" "host state     : down" "an offline peer reads down"
+t_assert_contains "$out" "last seen" "and an OFFLINE peer keeps its real last-seen date"
+if print -r -- "$out" | grep -qE "1-01-01"; then
+  t_bad "the offline path lost its last-seen date"
+else
+  t_ok "the offline last-seen date is intact"
+fi
+print -r -- "live" > "$T_BASE/log/fake_tailscale"
+
 # --- the installer must not use the macOS system python, and must give the job a PATH -------
 # /usr/bin/python3 is the Xcode Command Line Tools build - 3.9.6, measured on this project's
 # machines on 2026-09-19 - and trusting it is exactly what broke the 2026-09-17 deploy. For a

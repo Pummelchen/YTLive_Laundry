@@ -11,7 +11,12 @@ case "${1:-}" in
   status)
     if [[ "$*" == *--json* && -f "$FAKE" ]]; then
       case "$(cat "$FAKE")" in
-        live) print -- '{"Peer":{"k":{"HostName":"ternak-macbook","DNSName":"ternak-macbook.tail1c3b90.ts.net.","Online":true,"LastSeen":"2026-09-19T00:00:00Z"}}}' ;;
+        # The ONLINE case carries Go's zero time, which is what the real tailnet reports:
+        # measured 2026-09-19, the streamer, Node1-4 and MacBook AB all return
+        # "0001-01-01T00:00:00Z" while online, while genuinely offline peers carry a real
+        # timestamp. A stub that invented a plausible date here is exactly why the "last seen
+        # 1-01-01" display bug survived: the suite never produced the input that triggers it.
+        live) print -- '{"Peer":{"k":{"HostName":"ternak-macbook","DNSName":"ternak-macbook.tail1c3b90.ts.net.","Online":true,"LastSeen":"0001-01-01T00:00:00Z"}}}' ;;
         down) print -- '{"Peer":{"k":{"HostName":"ternak-macbook","DNSName":"ternak-macbook.tail1c3b90.ts.net.","Online":false,"LastSeen":"2026-09-18T10:20:00Z"}}}' ;;
       esac
     else

@@ -1,0 +1,25 @@
+# YTLive transport watchdog - the root-only rungs of its recovery ladder, and NOTHING else.
+#
+# WHY THIS EXISTS (tracker row T-38). bin/net_watch.sh runs as a launchd USER agent, so it has
+# no root: it cannot renew a DHCP lease with `ipconfig`, and it cannot flush the resolver cache.
+# Without this rule the ladder stops at the no-sudo `networksetup` actions, and a wedged lease
+# therefore needs a human - which is exactly the failure this project keeps paying for.
+#
+# SCOPE. Three exact commands, for one user, with no shell, no wildcards and no ALL. A wildcard
+# in an argument is how "renew DHCP on en0" quietly becomes something else, and the point of the
+# rule is that the watchdog can do these three things and nothing more. `killall -HUP
+# mDNSResponder` is deliberately NOT here: it is a heavier alternative to `dscacheutil` that no
+# code path calls, and an unused grant is still a grant. If a fifth becomes necessary, add it
+# deliberately and say why in this comment.
+#
+# INSTALLED AND VERIFIED BY bin/harden-host.sh, which substitutes __YT_USER__, proves the result
+# with `visudo -cf` BEFORE it can land in /etc/sudoers.d/, and installs it 0440 root:wheel:
+#
+#     sudo bin/harden-host.sh --go      # install (also does the pmset hardening)
+#     bin/harden-host.sh --check        # verify
+#
+# A malformed file in /etc/sudoers.d/ can make sudo refuse EVERYTHING, including the rule that
+# lets you fix it - which is why nothing here is ever written without a parse check first.
+__YT_USER__ ALL=(root) NOPASSWD: /usr/sbin/ipconfig set en0 DHCP
+__YT_USER__ ALL=(root) NOPASSWD: /usr/sbin/ipconfig set en2 DHCP
+__YT_USER__ ALL=(root) NOPASSWD: /usr/bin/dscacheutil -flushcache

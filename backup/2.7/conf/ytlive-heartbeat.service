@@ -1,0 +1,43 @@
+[Unit]
+Description=YTLive heartbeat listener (receives the streamer's dead-man push)
+Documentation=https://github.com/Pummelchen/YTLive_Laundry/blob/main/docs/watchdog.md
+# This unit runs on the WATCHDOG host, beside ytlive-watchdog.service, and NOT on the streamer.
+# The streamer pushes a small status JSON here; the listener writes the file the watchdog reads
+# as WATCH_HEARTBEAT (tracker row T-34). Push and not pull, deliberately: this host holds the
+# Gmail app password and must never be able to reach into the streamer.
+After=network-online.target
+Wants=network-online.target
+# The listener is useless without the socket, and it must be up before the watchdog starts
+# reading the file it writes - otherwise a reboot would page a human for a healthy streamer
+# during the window between "watchdog up" and "listener up". WATCH_HEARTBEAT_MAX is 15 min, so
+# this ordering is a comfort, not the guarantee.
+Before=ytlive-watchdog.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/ytlive-watchdog
+# The same env file the watchdog reads: it holds the bind address, the port, the state file and
+# the token path. The token VALUE lives in HEARTBEAT_TOKEN_FILE (mode 600), never in this unit.
+EnvironmentFile=/var/ytlive-watchdog/conf/watchdog.env
+# Bound to the tailnet address only. WireGuard already encrypts the tailnet, so plain HTTP is
+# correct here and TLS would be ceremony; 0.0.0.0 would expose a token-accepting socket on every
+# interface. systemd expands ${...} from the EnvironmentFile above.
+ExecStart=/usr/bin/python3 /var/ytlive-watchdog/bin/yt_heartbeat.py serve --bind ${HEARTBEAT_BIND} --port ${HEARTBEAT_PORT} --state-file ${HEARTBEAT_STATE_FILE} --token-file ${HEARTBEAT_TOKEN_FILE}
+# The listener must never be the reason the dead-man signal is blind: if it exits, the heartbeat
+# file stops being written, goes stale and the watchdog pages for a HEALTHY streamer. That alarm
+# is real but it is not the outage it looks like, so restart immediately and say so in the
+# journal. A bind failure (port taken) exits non-zero with a clear message rather than pretending
+# to listen.
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ytlive-heartbeat
+
+# Without this section `systemctl enable` reports the unit as "static" and creates no boot
+# symlink: the listener would run until the first reboot and then silently never come back, and
+# the heartbeat would go stale - paging a human with "the streamer's application has gone silent"
+# for a streamer that is perfectly healthy. The alarm would be real; the cause would be this unit.
+# Caught on the real host for ytlive-watchdog.service on 2026-09-18, and the same trap applies.
+[Install]
+WantedBy=multi-user.target

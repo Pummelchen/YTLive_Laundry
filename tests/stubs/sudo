@@ -1,0 +1,29 @@
+#!/bin/zsh
+# Test stub for `sudo`, so the suite can exercise the transport watchdog's root-only rungs
+# WITHOUT ever escalating privileges. The real sudo is never invoked by the suite.
+#
+# Models the two outcomes that matter:
+#   log/fake_sudo contains "ok"  -> the NOPASSWD rule is installed: exit 0, run nothing
+#   otherwise / no file          -> refused, exactly like `sudo -n` with no rule: exit 1
+#
+# The `-n` flag is asserted: a launchd agent has no terminal, so a prompt would hang the loop
+# rather than fail. A call without -n is a bug, and this stub records it as one.
+FAKE_DIR="${BASE:-/nonexistent}/log"
+STATE="$FAKE_DIR/fake_sudo"
+CALLS="$FAKE_DIR/fake_sudo.calls"
+mkdir -p "$FAKE_DIR" 2>/dev/null
+
+nflag=no
+args=()
+for a in "$@"; do
+  if [[ "$a" == "-n" ]]; then nflag=yes; else args+=( "$a" ); fi
+done
+print -r -- "sudo n=$nflag ${(j: :)args}" >> "$CALLS" 2>/dev/null
+
+if [[ "$nflag" != "yes" ]]; then
+  # A prompting sudo would block forever in a launchd context. Fail loudly instead.
+  print -u2 -- "sudo stub: called without -n (would prompt; a launchd agent cannot)"
+  exit 1
+fi
+[[ -f "$STATE" && "$(cat "$STATE")" == "ok" ]] && exit 0
+exit 1

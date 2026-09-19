@@ -325,6 +325,34 @@ def read_channel(cfg):
     return vid, combine_channel_states(primary, http_channel_state(cfg))
 
 
+def tailscale_last_seen(value):
+    """Tailscale's LastSeen, or None when it carries no information.
+
+    A peer that is ONLINE has no last-seen: Tailscale reports Go's zero time
+    ("0001-01-01T00:00:00Z") for it, verified on the real tailnet 2026-09-19 (the streamer,
+    Node1-4 and MacBook AB all report it while online, while genuinely offline peers carry a
+    real timestamp). Formatting that zero time is how the status page came to print
+    "last seen 1-01-01T00:00:00Z (1-01-01 07:00 WIB)" for a perfectly healthy streamer - on
+    the page an operator reads during an incident. A state with no information is reported as
+    no information, never as a date.
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    if not text or text.startswith("0001-01-01T00:00:00"):
+        return None
+    return text
+
+
+def host_seen_text(host, last_seen, cfg):
+    """The parenthetical after the host state: when it was seen, or 'online now'."""
+    if last_seen:
+        return f"last seen {human_time(last_seen, cfg)}"
+    if host == "live":
+        return "online now"
+    return ""
+
+
 def host_state(cfg):
     """(state, last_seen) for the streamer in the tailnet: live | down | unknown.
 
@@ -350,9 +378,10 @@ def host_state(cfg):
         host = (peer.get("HostName") or "")
         dns = (peer.get("DNSName") or "").split(".")[0]
         if name.lower() in (host.lower(), dns.lower()):
+            seen = tailscale_last_seen(peer.get("LastSeen"))
             if peer.get("Online"):
-                return "live", peer.get("LastSeen")
-            return "down", peer.get("LastSeen")
+                return "live", seen
+            return "down", seen
     return "unknown", None
 
 
@@ -794,11 +823,12 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         subject = "[YTLive] channel is LIVE again"
         head = "The channel is live again; the outage is over."
 
+    seen = host_seen_text(host, host_last_seen, cfg)
     lines = [
         head,
         "",
         f"channel state : {channel}",
-        f"host state    : {host}" + (f" (last seen {human_time(host_last_seen, cfg)})" if host_last_seen else ""),
+        f"host state    : {host}" + (f" ({seen})" if seen else ""),
         f"heartbeat     : {human_heartbeat(state, cfg)}",
         f"disk          : {human_disk(state, cfg)}",
         f"video id      : {vid or 'none'}",
@@ -1008,13 +1038,14 @@ def cmd_run(cfg):
 
 
 def render_status(cfg, state, channel, host, host_last_seen, vid):
+    seen = host_seen_text(host, host_last_seen, cfg)
     lines = [
         "YTLive external watchdog",
         f"  watchdog       : version {program_version(cfg)}",
         f"  channel        : {cfg['WATCH_CHANNEL'] or '(unset)'}  ->  {cfg.channel_url or '(unset)'}",
         f"  host peer      : {cfg['WATCH_HOST'] or '(unset)'}",
         f"  channel state  : {channel}",
-        f"  host state     : {host}" + (f"  last seen {human_time(host_last_seen, cfg)}" if host_last_seen else ""),
+        f"  host state     : {host}" + (f"  {seen}" if seen else ""),
         f"  heartbeat      : {human_heartbeat(state, cfg)}",
         f"  disk           : {human_disk(state, cfg)}",
         f"  video id       : {vid or 'none'}",

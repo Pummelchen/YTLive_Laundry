@@ -171,9 +171,12 @@ net_action() {
 }
 
 # ---------------------------------------------------------------------------
-# Actions. Each is idempotent and none of them needs sudo - verified on the streamer:
-# `user` is an admin, so networksetup writes are permitted, while sudo requires a
-# password and is therefore useless to a launchd agent.
+# Actions. Each is idempotent. The network-service writes need no root: `user` is an admin, so
+# networksetup is permitted. The two ROOT-only rungs (a targeted `ipconfig` lease renew and a
+# resolver-cache flush) go through `sudo -n` and exist only when bin/harden-host.sh has installed
+# the narrow NOPASSWD rule - four exact commands, no wildcards, no shell (T-38). sudo -n never
+# prompts, so a launchd agent without the rule fails fast and logs the weaker path it took
+# instead of hanging on a password it can never type.
 # ---------------------------------------------------------------------------
 dns_servers_of() { networksetup -getdnsservers "$1" 2>/dev/null | grep -v '^There aren' ; }
 
@@ -217,10 +220,16 @@ do_action() {
   local what="$1" svc
   case "$what" in
     dns)
-      # Best effort on the cache: on macOS this needs root, which a launchd user agent does
-      # not have. Recorded either way, because "we tried and were refused" is itself evidence.
-      if dscacheutil -flushcache >/dev/null 2>&1; then nlog "NET-ACT dns: resolver cache flushed"
-      else nlog "NET-ACT dns: cache flush refused (needs root) - continuing"; fi
+      # Root-only, and possible at all only because bin/harden-host.sh installs a NOPASSWD rule
+      # for exactly this command (T-38). `sudo -n` never prompts, because a launchd agent has no
+      # terminal and a prompt would hang the loop instead of failing.
+      if sudo -n /usr/bin/dscacheutil -flushcache >/dev/null 2>&1; then
+        nlog "NET-ACT dns: resolver cache flushed (via the NOPASSWD rule)"
+      elif dscacheutil -flushcache >/dev/null 2>&1; then
+        nlog "NET-ACT dns: resolver cache flushed (no root needed)"
+      else
+        nlog "NET-ACT dns: cache flush refused - install the rule: sudo bin/harden-host.sh --go"
+      fi
       local set; set=$(ensure_dns)
       nlog "NET-ACT dns: re-asserted resolvers on [${set:-none}]"
       ;;
@@ -230,9 +239,19 @@ do_action() {
       # Re-assert DHCP rather than power-cycling the service: power-cycling the USB NIC is
       # how the wired link was lost on 2026-09-19, and a watchdog must not be able to make
       # the machine worse than it found it.
-      networksetup -setdhcp "$svc" >/dev/null 2>&1 \
-        && nlog "NET-ACT renew: re-asserted DHCP on '$svc'" \
-        || nlog "NET-ACT renew: could not re-assert DHCP on '$svc'"
+      #
+      # The targeted renew needs root (`ipconfig`), which the NOPASSWD rule from T-38 grants for
+      # the two interfaces this machine has. Fall back to the no-sudo networksetup form when the
+      # rule is not installed, and say which path was taken - "we tried the weaker thing" is
+      # evidence, not noise.
+      local ifc; ifc=$(default_iface)
+      if [[ -n "$ifc" ]] && sudo -n /usr/sbin/ipconfig set "$ifc" DHCP >/dev/null 2>&1; then
+        nlog "NET-ACT renew: ipconfig renewed the lease on $ifc (via the NOPASSWD rule)"
+      elif networksetup -setdhcp "$svc" >/dev/null 2>&1; then
+        nlog "NET-ACT renew: re-asserted DHCP on '$svc' (networksetup; no root rule)"
+      else
+        nlog "NET-ACT renew: could not re-assert DHCP on '$svc'"
+      fi
       ;;
     wifi)
       nlog "NET-ACT wifi: power-cycling $NET_WIFI_DEVICE"

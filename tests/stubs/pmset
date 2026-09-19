@@ -6,15 +6,21 @@
 # that exactly, which is the whole point: a stub that always printed the keys would let a wrong
 # reading pass the test.
 #
-# State lives under $BASE/log/fake_pmset/ : sleepdisabled, autorestart (each 0 or 1), and
-# calls.log, which records every WRITE so a test can assert that a dry run wrote nothing.
+# State lives under $BASE/log/fake_pmset/ : sleepdisabled, autorestart (each 0 or 1), calls.log,
+# which records every WRITE so a test can assert that a dry run wrote nothing, and `unsupported`,
+# which names settings this "hardware" accepts a write for and then ignores - the real behaviour
+# measured on the streamer (MacBookAir7,2, 2026-09-19) for `autorestart`: `pmset -a autorestart 1`
+# exits 0 and the key never appears. Without that mode the stub always took the write, which is
+# exactly how "supported but off" and "this Mac cannot do it at all" came to look identical.
 STATE_DIR="${BASE:-/nonexistent}/log/fake_pmset"
 SD="$STATE_DIR/sleepdisabled"
 AR="$STATE_DIR/autorestart"
 CALLS="$STATE_DIR/calls.log"
+UNSUP="$STATE_DIR/unsupported"
 mkdir -p "$STATE_DIR" 2>/dev/null
 sd=$(cat "$SD" 2>/dev/null); [[ -n "$sd" ]] || sd=0
 ar=$(cat "$AR" 2>/dev/null); [[ -n "$ar" ]] || ar=0
+unsupported() { [[ -f "$UNSUP" ]] && grep -qw "$1" "$UNSUP"; }
 
 case "${1:-}" in
   -g)
@@ -50,7 +56,7 @@ case "${1:-}" in
       *disablesleep*) print -- 1 > "$SD" ;;
     esac
     case "$*" in
-      *autorestart*) print -- 1 > "$AR" ;;
+      *autorestart*) if unsupported autorestart; then : ; else print -- 1 > "$AR"; fi ;;
     esac
     ;;
 esac

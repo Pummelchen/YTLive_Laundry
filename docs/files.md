@@ -67,6 +67,16 @@
     conf/heartbeat.token     the shared bearer secret (chmod 600, gitignored, NOT tracked) on
                              the streamer; the watchdog host keeps its own copy under
                              /var/ytlive-watchdog/conf/. Never on a command line - see AGENTS.md
+    conf/ytlive-sudoers      the TEMPLATE for /etc/sudoers.d/ytlive-net: three exact NOPASSWD
+                             commands for the transport watchdog's root-only rungs (ipconfig on
+                             en0/en2, dscacheutil -flushcache). Rendered with the streamer's user,
+                             proved by visudo -cf and installed 0440 root:wheel by
+                             `sudo bin/harden-host.sh --go`, which also verifies it in --check.
+                             No wildcards, no shell, no ALL - keep it that way (T-38)
+    log/host_hardening.json  runtime state (gitignored): the recorded answer to "does this
+                             hardware support autorestart?". Written by harden-host.sh --go after
+                             it applies the setting and reads it back, consumed by --check so an
+                             unsupported key reports N/A instead of failing forever (T-29)
     docs/                    the design/ops notes (architecture.md, operations.md, watchdog.md,
                              ...) plus the per-release notes release-notes-vX.Y.md
     docs/v3-datacenter-plan.md          unscheduled v3.0 proposal (push-based SRT, Hetzner SG)

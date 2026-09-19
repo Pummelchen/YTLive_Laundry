@@ -1,0 +1,5 @@
+#!/bin/zsh
+# Test stub. Records the invocation and does nothing. Set STUB_PKILL_REAL=1 to opt in.
+print -r -- "pkill $*" >> "${BASE:-/nonexistent}/log/stub_pkill.calls" 2>/dev/null
+[[ "${STUB_PKILL_REAL:-}" == 1 ]] && exec /usr/bin/pkill "$@"
+exit 1
