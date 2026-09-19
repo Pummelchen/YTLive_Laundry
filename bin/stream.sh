@@ -90,13 +90,15 @@ housekeep() {
 
 # --- why did the publisher die? --------------------------------------------------------------
 # The log used to say only `PUBLISHER died rc=N`. rc alone does not say WHY: 137 is SIGKILL and
-# could be the rotation, the stall watchdog, an ingest bounce or the shutdown trap, and 224 is
-# ffmpeg's broken pipe because YouTube closed the ingest. The archived audit counted 192 deaths of
-# which rc=224 was the only recurring mode (~1 per 2 days) - and nothing said so.
+# could be the broadcast rotation, the stall watchdog or an ingest bounce, and 224 is ffmpeg's
+# broken pipe because YouTube closed the ingest. The archived audit counted 192 deaths of which
+# rc=224 was the only recurring mode (~1 per 2 days) - and nothing said so.
 # A deliberate kill records its reason in a FILE first, not in a variable, because
 # await_broadcast runs in a subshell and a subshell cannot set the main loop's variables. An
 # unexpected death quotes ffmpeg's own last error line instead, which is the only thing that can
 # explain a death nothing here caused.
+# NOT covered, deliberately: the TERM/INT trap kills the publisher and exits immediately, so no
+# death line is ever produced for it and there is nothing to explain.
 mark_pub_kill() { print -rn -- "$*" > "$PUB_WHY" 2>/dev/null; }
 pub_death_reason() {
   local rc="$1" why="" last

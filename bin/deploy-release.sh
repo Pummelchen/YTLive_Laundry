@@ -189,6 +189,12 @@ say "   jobs now=$(jobs_loaded) ffmpeg-rtmp=$(pgrep -f 'ffmpeg.*rtmp' 2>/dev/nul
 # ---------- 3. checkout -------------------------------------------------------
 say "3/6 git checkout $TAG"
 git checkout -- conf/broadcast_template.json 2>/dev/null
+# The live playlist is machine-specific - a shuffled order with absolute paths - so it is normally
+# dirty, and a commit that changed the tracked copy would make `git checkout` refuse. Nothing is
+# lost by discarding it here: install.sh rebuilds it two steps later, and a rollback restores the
+# whole tree from the backup. The template is different and is RESTORED below, because a capture
+# made on this machine is the authoritative reference for what the channel should look like.
+git checkout -- conf/playlist.txt 2>/dev/null
 git checkout "$TAG" || { say "ABORT: checkout failed"; rollback; }
 rm -rf AUDIT
 cp "$JOB/broadcast_template.json.live" conf/broadcast_template.json 2>/dev/null

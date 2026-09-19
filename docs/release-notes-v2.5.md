@@ -1,14 +1,14 @@
 # YTLive_Laundry 2.5 — the checkout you are in, and the processes you actually own
 
-2.5 does three things. It makes every entry point use the **checkout it is run from** instead of a
-hardcoded `~/Downloads/YTLive` (T-14); it stops the two watchdogs from **signalling by command-line
-pattern** and makes them signal an exact pid (T-16); and it lets the **deployed tree be clean
-again** by moving the capture stamp out of a tracked file (T-39). The camera-side defects the 2.4
-investigation left behind — tools that crashed on their own arguments, and a second WS-Discovery
-implementation the code claimed did not exist — are fixed as well (T-15, T-17), and a publisher
-death now says **why** it happened instead of only quoting an exit code (T-26). T-37 is **closed as
-a symptom, not a defect**: the reader churn was the network, and it was measured, not patched. Full
-detail is in [`CHANGELOG.md`](../CHANGELOG.md).
+2.5 does three things to the code that watched the stream. It makes every entry point use the
+**checkout it is run from** instead of a hardcoded `~/Downloads/YTLive` (T-14); it stops the two
+watchdogs from **signalling by command-line pattern** and makes them signal an exact pid (T-16); and
+it lets the **deployed tree be clean again** by moving the capture stamp out of a tracked file
+(T-39). The camera-side defects the 2.4 investigation left behind — tools that crashed on their own
+arguments, and a second WS-Discovery implementation the code claimed did not exist — are fixed as
+well (T-15, T-17), and a publisher death now says **why** it happened instead of only quoting an
+exit code (T-26). T-37 is **closed as a symptom, not a defect**: the reader churn was the network,
+and it was measured, not patched. Full detail is in [`CHANGELOG.md`](../CHANGELOG.md).
 
 - Built from tag `v2.5`
 - Contents: the tagged tree **without `MP3/`**, without `backup/` and without `AUDIT/`. The
@@ -119,11 +119,11 @@ shares the same credential rule as `onvif_probe.py`.
 ## T-26 — a publisher death now says why
 
 The log said only `PUBLISHER died rc=N`, and **rc alone does not say why**. `137` is SIGKILL, and
-in this system that could be the broadcast rotation, the stall watchdog, an ingest bounce or the
-shutdown trap — four different causes with four different responses, all printed as the same
-number. `224` is ffmpeg's broken pipe because **YouTube closed the ingest**, and it was the only
-*recurring* mode among the **192 deaths counted in the archived audit** (~1 per 2 days) — and
-nothing in the log distinguished it from the rest.
+in this system that could be the broadcast rotation, the stall watchdog, an ingest bounce or a kill
+from outside — several different causes with different responses, all printed as the same number.
+`224` is ffmpeg's broken pipe because **YouTube closed the ingest**, and it was the only *recurring*
+mode among the **192 deaths counted in the archived audit** (~1 per 2 days) — and nothing in the log
+distinguished it from the rest.
 
 Each deliberate kill now records its reason in `log/pub_kill_reason` **first**, and the death line
 prints it:
@@ -132,22 +132,26 @@ prints it:
 PUBLISHER died rc=137 - deliberate: broadcast rotation (scheduled 8h3m reached) - restarting ...
 ```
 
-The three deliberate sites are the rotation, the stall watchdog and the ingest bounce, and
-`mark_pub_kill` is called at each. When nothing here caused the death, the line quotes **ffmpeg's
-own last error line** from `log/publisher.log` (truncated to 200 chars), because that is the only
-thing that can explain a death nothing local caused; an unmarked SIGKILL is attributed to the
-monitor, which is the only outside killer. The reason file is cleared by the death handler and by
-every `start_publisher`, so a stale reason cannot describe the next death.
+There are **three** deliberate kill sites, and each calls `mark_pub_kill`: the broadcast rotation,
+the stall watchdog (`output frozen <n>s`) and the ingest bounce (YouTube had not started the bound
+broadcast). When nothing local caused the death, the line quotes **ffmpeg's own last error line**
+from `log/publisher.log` (truncated to 200 chars), because that is the only thing that can explain a
+death nothing here caused; an unmarked `137` is reported as `SIGKILL from outside this script`, and
+the code names the monitor as the only outside killer that does this.
 
 **It is a file and not a variable, and that is the whole point:** `await_broadcast` runs in a
 **subshell**, and a subshell cannot set the main loop's variables. A variable would have silently
 shown every ingest bounce as `unknown` — the change would have looked correct and told the operator
-nothing.
+nothing. The reason file is cleared by the death handler and by every `start_publisher`, so a stale
+reason cannot describe the next death.
 
-**The limit:** the mapping is unit-tested for `224`, `1`, `0`, a marked `137` and an unmarked
-`137`, but **no real `rc=224` death has been observed since the change**, so the end-to-end line
-has not yet been seen in production. This makes a death legible; it does not reduce the death rate,
-and it does not attempt to.
+**The two limits.** First, the **shutdown trap** (`TERM`/`INT`) kills the publisher to shut the
+stream down and does **not** call `mark_pub_kill`; the process exits immediately rather than
+restarting, so no death line is produced and none is expected — the reason file is simply left
+behind for the next `start_publisher` to clear. Second, the mapping is unit-tested for `224`, `1`,
+`0`, a marked `137` and an unmarked `137`, but **no real `rc=224` death has been observed since the
+change**, so the finished log line has not been seen in production. This makes a death legible; it
+does not reduce the death rate, and it does not attempt to.
 
 ## T-39 — the deployed tree can be clean again
 
@@ -279,6 +283,9 @@ first. Two things are worth checking after the first restart:
 - The first rotation after the deploy is the real test of T-39: `git status` in the deployed tree
   should stay clean across a capture. A capture that changed nothing also prints
   `"reference_written": false`.
+- The first deliberate rotation also exercises T-26: the death line should read
+  `PUBLISHER died rc=137 - deliberate: broadcast rotation (...)`, and `log/pub_kill_reason` should
+  exist while the kill is in flight and be gone again once the new publisher has started.
 
 The streamer was on 2.1 at the time of the 2.4 work and still needs `bin/harden-host.sh --go`
 (autorestart) and a decision on the wired adapter — replace it or leave it disabled and stay on
