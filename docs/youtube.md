@@ -294,3 +294,18 @@ to a 2015 dual-core i5 that is already reporting `videoIngestionStarved` on the 
 **One experiment would settle it for good:** enable Dual stream by hand on a live broadcast and
 list `liveStreams` again. If YouTube creates a second `liveStream` resource for the vertical
 feed, there may be a bindable path after all; if it does not, this stays closed.
+
+**Done 2026-09-19, and it settled nothing in our favour.** The operator enabled Dual stream by
+hand on the live broadcast — Studio showed the horizontal *and* the vertical preview (the
+vertical labelled **Auto crop**, both graded `Excellent`) — and the API still shows nothing:
+`liveStreams` remains exactly **one** resource with only the five standard ingestion addresses
+(no vertical key to push to), the `liveBroadcasts.contentDetails` key list is byte-identical
+across a `ready`, a `live` and a `complete` broadcast, and `videos.list` carries nothing either.
+So the setting is neither settable **nor readable**, and there is no second ingest to send. The
+verdict is now empirical rather than documentary. Studio also left a stray `ready` broadcast
+bound to the same stream with no distinguishing field; it is harmless — the next
+`prepare_broadcast()` binds the stream to its own.
+
+**The one piece of good news:** the vertical side is YouTube's own **Auto crop**, generated
+server-side, so the encoder needs to do **nothing** — no second ffmpeg, no extra encode, no CPU
+cost. If Google ever exposes the toggle, the win is free.
