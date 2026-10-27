@@ -460,10 +460,32 @@ reader_loop() {
 # sleeping subshell so it survives a restart of this script.
 schedule_thumbnail() {
   [[ -n "$1" ]] || return 0
-  # cut time is recorded so the give-up deadline is measured from the CUT, not from however
-  # many retries have happened - restarts and slow attempts cannot extend the window.
+  # cut time is recorded so the retry clock is measured from the CUT, not from however many
+  # retries have happened - restarts and slow attempts cannot extend the window.
   print -r -- "$1 $(( $(date +%s) + THUMB_DELAY )) 0 $(date +%s)" > "$THUMB_PENDING"
-  log "THUMB: will adopt YouTube's first suggestion for $1 in $(( THUMB_DELAY / 60 )) min, falling back to the ${THUMB_FRAME_AT} frame after $(( THUMB_GIVEUP / 60 )) min"
+  log "THUMB: will take the ${THUMB_FRAME_AT} frame for $1 in $(( THUMB_DELAY / 60 )) min (YouTube needs hours to finish an 8h video)"
+}
+
+# Repair the recent past as well as the video that just ended. A cut whose video was still
+# processing when the NEXT cut overwrote the single pending slot would otherwise keep the
+# channel's generic image forever. Costs nothing unless something needs fixing.
+SWEEP_STATE="$BASE/log/thumb_sweep_at"
+sweep_thumbnails() {
+  local now last
+  now=$(date +%s)
+  last=$(<"$SWEEP_STATE" 2>/dev/null) || last=0
+  [[ "$last" == <-> ]] || last=0
+  (( now - last >= THUMB_SWEEP_EVERY )) || return 0
+  log "THUMB-SWEEP: checking the ${THUMB_SWEEP_COUNT} most recent videos for the generic image"
+  local out
+  out=$(yt_api_call sweep-thumbnails "$THUMB_SWEEP_COUNT")
+  log "THUMB-SWEEP: $out"
+  # A quota refusal is not a completed sweep: leave the clock alone so the next
+  # housekeeping pass tries again instead of waiting another 12 hours.
+  if print -r -- "$out" | grep -q '"status": *"QUOTA"'; then
+    return 0
+  fi
+  print -r -- "$now" > "$SWEEP_STATE"
 }
 
 do_pending_thumbnail() {
@@ -475,33 +497,21 @@ do_pending_thumbnail() {
   [[ "$tries" == <-> ]] || tries=0
   [[ "$cut" == <-> ]] || cut=$due
   now=$(date +%s)
-  # Proceed when a retry is due OR the give-up deadline has passed. Gating only on the
-  # retry slot rounds the deadline up to the next one: with retries 15 min apart, a 2h
-  # window became 2h11m in practice tonight.
-  (( now >= due || now - cut >= THUMB_GIVEUP )) || return 0
+  (( now >= due )) || return 0
 
-  # Past the window, stop waiting for YouTube and take a frame ourselves. An 8h video can
-  # go hours without producing suggestions, and a video left on the auto-pick is worse than
-  # one showing a real frame from its own content.
-  if (( now - cut >= THUMB_GIVEUP )); then
-    log "THUMB: no suggestion for $vid after $(( (now - cut) / 60 )) min - taking the ${THUMB_FRAME_AT} frame instead"
-    out=$(yt_api_call frame-thumbnail "$vid" "$THUMB_FRAME_AT")
-    log "THUMB: $out"
-    if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
-      print -r -- "$vid $(( now + THUMB_RETRY )) $tries $cut" > "$THUMB_PENDING"
-    else
-      rm -f "$THUMB_PENDING"
-    fi
-    return 0
-  fi
-
-  out=$(yt_api_call pick-thumbnail "$vid")
+  # OUR OWN FRAME - never YouTube's suggestion. Suggestions never arrived for these 8h
+  # streams (measured 2026-10-28: "no suggestion after 321 min", six hours of retries
+  # wasted), so waiting for them only delayed the real work. THUMB_DELAY is 4 h because
+  # YouTube needs hours to turn an 8h live stream into a seekable video; when it is still
+  # not ready the retry keeps coming back until it is.
+  out=$(yt_api_call frame-thumbnail "$vid" "$THUMB_FRAME_AT")
   log "THUMB: $out"
   if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
     print -r -- "$vid $(( now + THUMB_RETRY )) $(( tries + 1 )) $cut" > "$THUMB_PENDING"
-  else
-    rm -f "$THUMB_PENDING"      # SET, CUSTOM or ERROR - either way this one is settled
+    return 0
   fi
+  rm -f "$THUMB_PENDING"
+  sweep_thumbnails
 }
 
 # Stamp the saved title/description/tags/category onto a new broadcast. Runs only AFTER the
@@ -684,9 +694,11 @@ VOD_PENDING="$BASE/log/vod_pending"
 : ${VOD_RECHECK_AFTER:=86400} # re-read the published duration this long after the first verdict
 VOD_RECHECK="$BASE/log/vod_recheck"    # "<id> <due epoch>": ids awaiting their finalised duration
 THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
-: ${THUMB_DELAY:=3600}                 # wait an hour after a cut before adopting a suggestion
-: ${THUMB_RETRY:=900}                   # if the video is still processing, look again in 15 min
-: ${THUMB_GIVEUP:=7200}                 # after this long, stop waiting for YouTube's own
+: ${THUMB_DELAY:=14400}                # 4 h after a cut: YouTube needs hours to finish an 8h video
+: ${THUMB_SWEEP_EVERY:=43200}          # repair sweep of the newest videos, at most twice a day
+: ${THUMB_SWEEP_COUNT:=10}             # how many recent videos the sweep insists on
+: ${THUMB_RETRY:=1800}                  # if the video is still processing, look again in 30 min
+: ${THUMB_GIVEUP:=7200}                 # legacy: no longer used, the frame is taken, not awaited
                                         # suggestions and take a frame from the video instead
 : ${THUMB_FRAME_AT:="01:00:00"}         # which moment to grab if it comes to that
 LAST_ROTATE=0
@@ -1216,6 +1228,7 @@ trap 'release_monitor; kill -9 $READERPID $CAMWATCHPID ${NETWATCHPID:+"$NETWATCH
 
 register_predecessor      # BEFORE the clock file is rewritten: see the function
 start_publisher
+sweep_thumbnails          # repair any recent video still showing the generic image
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's

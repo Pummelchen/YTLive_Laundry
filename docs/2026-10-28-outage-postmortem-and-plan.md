@@ -678,3 +678,38 @@ inside this window the feed cannot be recreated until the quota resets - the one
 Lesson for the next test session: test broadcasts are 50-unit writes each; a day of experiments
 can eat the quota the production rotation needs. Do destructive API tests on a scratch channel,
 or budget them.
+
+## 19. Post-stream thumbnails: our own frame at 4 h, plus a repair sweep
+
+**What was wrong.** The scheduler waited an hour for YouTube's "pick one of 3" suggestions,
+which never arrive for these 8 h streams ("no suggestion after 321 min" in `stream.log`), and
+only then tried to grab a frame - which returned "not seekable yet - still processing" for six
+more hours. It did eventually work (bcuPgvYZk5k was set at 362 min), but the single pending
+slot is rewritten at every cut, so any video still processing when the next cut happened kept
+the channel's generic image forever. That is the state the operator had been fixing by hand.
+
+**What it does now.**
+
+* `THUMB_DELAY` = **4 h** after the cut. The video that just ended is then given the
+  **01:00:00 frame from itself**; YouTube's suggestions are no longer consulted at all.
+* If the video is still processing, the worker retries every 30 min until it succeeds.
+* A **repair sweep** (`yt_api.py sweep-thumbnails 10`) checks the **ten most recent videos**
+  and fixes any that still show the generic image. It runs once at startup and again after
+  every successful post-cut thumbnail, at most twice a day.
+
+**How "default placeholder" is decided.** Every broadcast is stamped with `conf/thumbnail.jpg`
+by `apply_settings()`, so a video that never got its own frame keeps that same shop picture.
+A byte comparison cannot detect it - YouTube re-encodes an uploaded thumbnail - so
+`thumbnail_is_placeholder()` compares 64x36 greyscale correlation against that file and calls
+it a placeholder at **corr >= 0.95**, or when the image is flat (spread < 8, YouTube's own
+"processing" card). Measured over the 12 most recent videos on 2026-10-28: the two live
+broadcasts scored **1.000**, every finished video **0.004-0.185**.
+
+**Verified on the machine.** Dry run over the ten newest videos: 2 placeholders (both currently
+live, correctly skipped - their own cuts will handle them), 8 already carrying a frame of
+themselves, 0 errors, ~15 s, and **no API quota consumed** because nothing needed repair.
+The 01:00:00 frame grab itself was proven against a finished video (1920x1080 JPEG).
+`tests/t18_thumbnails.sh` (15 checks) locks the schedule, the sweep and the correlation rule in.
+
+**Not yet exercised:** the actual thumbnail upload, because the API quota is exhausted until
+~11:40 WIB. The first real set happens 4 h after the 13:20 cut (~17:20), well after the reset.

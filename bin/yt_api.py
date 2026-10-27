@@ -995,6 +995,51 @@ def _gray(src, is_url=False):
     return list(r.stdout)
 
 
+PLACEHOLDER_CORR = 0.95
+
+
+def thumbnail_is_placeholder(video_id):
+    """Has this video still got the channel's generic image instead of a frame of itself?
+
+    Every broadcast is stamped with conf/thumbnail.jpg by apply_settings(), so a video that
+    never received its own frame keeps that same shop picture forever - which is exactly the
+    "default placeholder" the operator has been fixing by hand.
+
+    A byte comparison cannot answer this: YouTube RE-ENCODES an uploaded thumbnail, so the
+    served file is never identical to conf/thumbnail.jpg. A 64x36 greyscale correlation can.
+    Measured on 2026-10-28 over the 12 most recent videos: the two live broadcasts - which
+    still carried the generic image - scored 1.000, every finished video scored 0.004-0.185.
+
+    Returns (verdict, corr, spread); verdict is None when no thumbnail is served at all
+    (video still processing), which must never be read as "fine".
+    """
+    raw = _yt_img(video_id, "maxresdefault") or _yt_img(video_id, "hqdefault")
+    if raw is None:
+        return None, None, None
+    tmp = BASE / "log/.thumb_probe.jpg"
+    try:
+        tmp.parent.mkdir(parents=True, exist_ok=True)
+        tmp.write_bytes(raw)
+        g = _gray(str(tmp))
+    except Exception:
+        return None, None, None
+    finally:
+        tmp.unlink(missing_ok=True)
+    ref = _thumb_path()
+    if not ref.exists() or not g:
+        return None, None, None
+    refg = _gray(str(ref))
+    if not refg:
+        return None, None, None
+    c = _corr(g, refg)
+    n = len(g)
+    m = sum(g) / n if n else 0
+    spread = (sum((x - m) ** 2 for x in g) / n) ** 0.5 if n else 0.0
+    # A flat image is YouTube's own "still processing" card, never a usable frame.
+    placeholder = (c >= PLACEHOLDER_CORR) or (spread < 8.0)
+    return placeholder, round(c, 3), round(spread, 1)
+
+
 def _corr(a, b):
     if len(a) != len(b) or not a:
         return 0.0
@@ -1200,16 +1245,12 @@ def _frame_stats(path):
     return m, var ** 0.5
 
 
-def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
-    """Grab a frame from the finished video and set it as the thumbnail.
-
-    The fallback for when YouTube never offers its own suggestions - an 8h video can take
-    hours to produce them, and a video with no thumbnail of its own is worse than one
-    showing a real frame.
+def grab_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
+    """Capture a frame from a finished video and set it as the thumbnail. Returns a dict.
 
     The frame is CHECKED before it is used: a near-black frame, or a flat one with no
     detail, means the stream was showing filler or had glitched at that moment, and using
-    it would be worse than the auto-pick. Nearby offsets are tried before giving up.
+    it would be worse than the alternative. Nearby offsets are tried before giving up.
     """
     import subprocess
     token = access_token()
@@ -1220,10 +1261,8 @@ def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
                        capture_output=True, text=True, timeout=120)
     url = (r.stdout.strip().split("\n") or [""])[0]
     if not url:
-        print(json.dumps({"status": "NOTREADY", "video": video_id,
-                          "msg": "no media URL yet - video still processing"}))
-        return 1
-    # the requested moment first, then nearby, in case that one frame was bad
+        return {"status": "NOTREADY", "video": video_id,
+                "msg": "no media URL yet - video still processing"}
     h, m, sec = (int(x) for x in ts.split(":"))
     base = h * 3600 + m * 60 + sec
     tried = []
@@ -1233,9 +1272,9 @@ def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
         if at < 0:
             continue
         stamp = f"{at//3600:02d}:{at%3600//60:02d}:{at%60:02d}"
-        g = subprocess.run([ff, "-y", "-v", "error", "-ss", stamp, "-i", url,
-                            "-frames:v", "1", "-q:v", "2", str(out)],
-                           capture_output=True, timeout=180)
+        subprocess.run([ff, "-y", "-v", "error", "-ss", stamp, "-i", url,
+                        "-frames:v", "1", "-q:v", "2", str(out)],
+                       capture_output=True, timeout=180)
         if not out.exists() or out.stat().st_size == 0:
             tried.append({"at": stamp, "why": "no frame"})
             continue
@@ -1246,24 +1285,115 @@ def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
             tried.append({"at": stamp, "why": f"flat/no detail (spread {spread:.1f})"}); continue
         set_thumbnail(token, video_id, out)
         out.unlink(missing_ok=True)
-        print(json.dumps({"status": "SET", "video": video_id, "source": "frame",
-                          "at": stamp, "luma": round(luma, 1), "spread": round(spread, 1),
-                          "rejected": tried,
-                          "url": f"https://www.youtube.com/watch?v={video_id}"}))
-        return 0
+        return {"status": "SET", "video": video_id, "source": "frame",
+                "at": stamp, "luma": round(luma, 1), "spread": round(spread, 1),
+                "rejected": tried,
+                "url": f"https://www.youtube.com/watch?v={video_id}"}
     out.unlink(missing_ok=True)
     # "no frame" everywhere means the video is not seekable yet, not that its content is
-    # bad - reporting that as FAILED made the scheduler treat it as settled and give up
-    # permanently on a video that was merely still processing.
+    # bad - reporting that as FAILED would make the scheduler give up on a video that was
+    # merely still processing.
     if tried and all(t["why"] == "no frame" for t in tried):
-        print(json.dumps({"status": "NOTREADY", "video": video_id,
-                          "msg": "video not seekable yet - still processing",
-                          "rejected": tried}))
-        return 1
-    print(json.dumps({"status": "FAILED", "video": video_id,
-                      "msg": "every candidate frame was black or featureless",
-                      "rejected": tried}))
-    return 1
+        return {"status": "NOTREADY", "video": video_id,
+                "msg": "video not seekable yet - still processing", "rejected": tried}
+    return {"status": "FAILED", "video": video_id,
+            "msg": "every candidate frame was black or featureless", "rejected": tried}
+
+
+def cmd_frame_thumbnail(video_id, ts="01:00:00", min_luma=24.0, min_spread=8.0):
+    res = grab_frame_thumbnail(video_id, ts, min_luma, min_spread)
+    print(json.dumps(res))
+    return 0 if res.get("status") == "SET" else 1
+
+
+def channel_recent_videos(limit=10):
+    """The newest video ids on the channel. yt-dlp first, because it costs no API quota.
+
+    The channel's /streams tab is used rather than /videos: this channel publishes almost
+    nothing but live broadcasts, and its handle has no "videos" tab at all (yt-dlp:
+    "This channel does not have a videos tab").
+    """
+    import subprocess
+    ytdlp = str(pathlib.Path.home() / ".local/bin/yt-dlp")
+    ch = os.environ.get("YT_CHANNEL", "").strip()
+    if not ch:
+        try:
+            m = re.search(r'^YT_CHANNEL="([^"]*)"', (BASE / "conf/stream.env").read_text(), re.M)
+            ch = (m.group(1) if m else "").strip()
+        except OSError:
+            ch = ""
+    if ch:
+        h = ch if ch.startswith("@") else "@" + ch
+        try:
+            r = subprocess.run([ytdlp, "--flat-playlist", "--playlist-end", str(limit),
+                                "--print", "%(id)s", "--no-warnings",
+                                f"https://www.youtube.com/{h}/streams"],
+                               capture_output=True, text=True, timeout=120)
+            ids = [x.strip() for x in r.stdout.splitlines() if x.strip()]
+            if len(ids) >= limit:
+                return ids[:limit]
+            if ids:
+                return ids
+        except Exception:
+            pass
+    token = access_token()
+    c = api("GET", "channels", token, {"part": "contentDetails", "mine": "true"})
+    pl = c["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
+    r = api("GET", "playlistItems", token, {"part": "snippet", "playlistId": pl,
+                                            "maxResults": str(limit)})
+    return [it["snippet"]["resourceId"]["videoId"] for it in r.get("items", [])][:limit]
+
+
+def cmd_sweep_thumbnails(limit=10, ts="01:00:00", dry_run=False):
+    """Repair pass: the newest N videos must each show a frame of themselves.
+
+    The scheduled post-cut job handles the video that just ended. This covers the ones that
+    fall through it: a cut whose video was still processing when the NEXT cut overwrote the
+    single pending slot would otherwise keep the channel's generic image forever - which is
+    the state the operator had been fixing by hand.
+
+    The check itself costs nothing (one image fetch from i.ytimg.com per video); only a
+    repair costs quota (50 units for the upload).
+    """
+    out = {"checked": [], "fixed": [], "still_placeholder": [], "errors": [],
+           "dry_run": dry_run}
+    ids = channel_recent_videos(limit)
+    live_ids = set()
+    for f in ("broadcast_started", "vertical.broadcast"):
+        try:
+            v = (BASE / "log" / f).read_text().split()
+            if v:
+                live_ids.add(v[0])
+        except OSError:
+            pass
+    for vid in ids:
+        verdict, c, spread = thumbnail_is_placeholder(vid)
+        item = {"video": vid, "placeholder": verdict, "corr": c, "spread": spread}
+        out["checked"].append(item)
+        if verdict is None:
+            out["errors"].append({"video": vid, "why": "no thumbnail served"})
+            continue
+        if not verdict:
+            continue                      # already shows a frame of its own
+        if vid in live_ids:
+            item["skip"] = "currently live - its own cut will handle it"
+            continue
+        if dry_run:
+            out["still_placeholder"].append(vid)
+            continue
+        try:
+            res = grab_frame_thumbnail(vid, ts)
+        except Exception as e:            # quota, network, still processing
+            out["errors"].append({"video": vid, "why": str(e)[:160]})
+            continue
+        if res.get("status") == "SET":
+            out["fixed"].append({"video": vid, "at": res.get("at")})
+        elif res.get("status") == "NOTREADY":
+            out["errors"].append({"video": vid, "why": "not seekable yet"})
+        else:
+            out["errors"].append({"video": vid, "why": res.get("msg", "no usable frame")})
+    print(json.dumps(out))
+    return 0
 
 
 def cmd_prepare(key):
@@ -1434,6 +1564,13 @@ def main():
             return cmd_capture(sys.argv[2] if len(sys.argv) > 2 else None)
         if cmd == "verify":
             return cmd_verify(sys.argv[2] if len(sys.argv) > 2 else None)
+        if cmd == "sweep-thumbnails":
+            n = 10
+            for a in sys.argv[2:]:
+                if a.isdigit():
+                    n = int(a)
+                    break
+            return cmd_sweep_thumbnails(n, dry_run="--dry-run" in sys.argv)
         if cmd == "thumbnail":
             return cmd_thumbnail(sys.argv[2] if len(sys.argv) > 2 else None)
         if cmd == "frame-thumbnail":
@@ -1449,7 +1586,7 @@ def main():
                                       force="--force" in sys.argv)
         if cmd in ("apply", "enforce"):
             return cmd_enforce(sys.argv[2] if len(sys.argv) > 2 else None)
-        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | quota | health | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail")
+        die(f"unknown command '{cmd}' - use: auth | status | prepare | ensure-live | end | token | quota | health | capture | verify | enforce | thumbnail | pick-thumbnail | frame-thumbnail | sweep-thumbnails")
     except RuntimeError as e:
         die(str(e))
     except urllib.error.URLError as e:
