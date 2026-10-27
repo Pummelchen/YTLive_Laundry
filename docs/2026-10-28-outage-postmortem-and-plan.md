@@ -713,3 +713,8 @@ The 01:00:00 frame grab itself was proven against a finished video (1920x1080 JP
 
 **Not yet exercised:** the actual thumbnail upload, because the API quota is exhausted until
 ~11:40 WIB. The first real set happens 4 h after the 13:20 cut (~17:20), well after the reset.
+
+**The scheduler itself is driven in tests.** `t18` extracts the real `do_pending_thumbnail()`
+and runs it against a stubbed yt_api: nothing happens before the 4 h mark; when due it calls
+`frame-thumbnail <id> 01:00:00` (never a suggestion); `SET` clears the pending slot and then
+runs the repair sweep; `NOTREADY` keeps the video queued and reschedules it. 21 checks.

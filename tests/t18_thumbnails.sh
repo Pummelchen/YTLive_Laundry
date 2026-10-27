@@ -13,6 +13,7 @@
 # still show the generic image.
 source "${0:A:h}/lib.sh"
 t_begin t18
+t_setup >/dev/null          # the scheduler test needs a scratch tree
 
 cd "$REPO_DIR" || exit 2
 
@@ -61,6 +62,52 @@ i = s.find("def thumbnail_is_placeholder(")
 body = s[i:s.find("\ndef ", i + 10)]
 sys.exit(0 if "_corr(" in body and "_gray(" in body else 1)
 PY
+
+
+# --- the scheduler, driven for real ----------------------------------------------------
+# Static checks cannot prove the file handling: the pending slot must be cleared on SET,
+# rewritten on NOTREADY, and untouched before it is due. This runs the real function with a
+# stubbed yt_api, so it stays hermetic and costs no quota.
+DRV="$T_BASE/thumb_funcs.zsh"
+CALLS="$T_BASE/log/thumb_calls.log"
+{ t_extract_fn "$REPO_DIR/bin/stream.sh" do_pending_thumbnail
+  printf "BASE='%s'\n" "$T_BASE"
+  printf "THUMB_PENDING='%s/log/thumb_pending'\n" "$T_BASE"
+  printf "THUMB_RETRY=1800\nTHUMB_FRAME_AT='01:00:00'\n"
+  printf "CALLS='%s'\n" "$CALLS"
+  cat <<'EOF'
+log() { print -r -- "log: $*" >> "$CALLS"; }
+yt_api_ready() { return 0; }
+yt_api_call() { print -r -- "api: $*" >> "$CALLS"; print -r -- "${FAKE_OUT:-}"; }
+sweep_thumbnails() { print -r -- "sweep" >> "$CALLS"; }
+EOF
+} > "$DRV"
+
+pending() { print -r -- "$1" > "$T_BASE/log/thumb_pending"; }
+pending_line() { <"$T_BASE/log/thumb_pending"; }
+run_pending() { : > "$CALLS"; FAKE_OUT="$1" BASE="$T_BASE" /bin/zsh -c "source '$DRV'; do_pending_thumbnail" >/dev/null 2>&1; }
+
+pending "abcdefghijk $(( $(date +%s) + 3600 )) 0 $(date +%s)"
+run_pending '{"status":"SET"}'
+if [[ -s "$CALLS" ]]; then t_bad "the scheduler acted an hour BEFORE it was due"; else t_ok "nothing happens before the 4 h mark"; fi
+
+pending "abcdefghijk $(( $(date +%s) - 60 )) 0 $(( $(date +%s) - 3600 ))"
+run_pending '{"status":"SET","source":"frame"}'
+grep -q "api: frame-thumbnail abcdefghijk 01:00:00" "$CALLS" \
+  && t_ok "when due it takes the 01:00:00 FRAME, not a YouTube suggestion" \
+  || t_bad "the scheduler did not ask for the frame (calls: $(<"$CALLS"))"
+[[ -s "$T_BASE/log/thumb_pending" ]] && t_bad "a SET left the pending slot behind" || t_ok "a SET clears the pending slot"
+grep -q "^sweep$" "$CALLS" && t_ok "a SET then runs the repair sweep" || t_bad "no repair sweep after a SET"
+
+pending "abcdefghijk $(( $(date +%s) - 60 )) 1 $(( $(date +%s) - 3600 ))"
+run_pending '{"status":"NOTREADY","msg":"video not seekable yet"}'
+[[ -s "$T_BASE/log/thumb_pending" ]] && t_ok "a NOTREADY keeps the video queued" || t_bad "a NOTREADY dropped the video"
+newdue=$(<"$T_BASE/log/thumb_pending" | awk '{print $2}')
+if [[ "$newdue" == <-> ]] && (( newdue >= $(date +%s) + 600 )); then
+  t_ok "and reschedules it for the retry interval"
+else
+  t_bad "NOTREADY did not reschedule (due=$newdue)"
+fi
 
 t_teardown
 t_summary
