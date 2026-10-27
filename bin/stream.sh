@@ -247,15 +247,39 @@ print -r -- "$CAM_HOST" > "$CAMIP_FILE"
 # a cheap TCP probe of the current address; only if that fails do we run ONVIF
 # discovery. The reader picks the new address up on its next reconnect.
 cam_ip_watcher() {
-  local cur newip
+  local cur newip down_since=0 last_reboot=0 now
   while true; do
     sleep 30
     cur=$(<"$CAMIP_FILE")
     if nc -z -G 3 "$cur" 554 2>/dev/null; then
+      down_since=0
       continue                       # still there, nothing to do
     fi
+    now=$(date +%s)
+    (( down_since == 0 )) && down_since=$now
+
+    # SELF-HEAL: a camera that is ON the network (answers ONVIF on 8899) but has stopped
+    # serving RTSP is the one failure class a restart here cannot fix and a human would fix by
+    # pulling the plug. ONVIF's SystemReboot is exactly that, remotely. Guarded hard, because
+    # a camera that is merely still booting also has 8899 up before 554: only after 10 minutes
+    # of dead RTSP, and at most once an hour.
+    if (( now - down_since >= 600 )) && (( now - last_reboot >= 3600 )) \
+       && nc -z -G 3 "$cur" 8899 2>/dev/null; then
+      log "CAM-WATCH: $cur answers ONVIF but RTSP has been dead $(( (now - down_since) / 60 )) min - sending SystemReboot"
+      python3 "$BASE/bin/cam_reboot.py" "$cur" 8899 >>"$LOG" 2>&1 \
+        && log "CAM-WATCH: SystemReboot accepted" \
+        || log "CAM-WATCH: SystemReboot refused (anonymous ONVIF may be off)"
+      last_reboot=$now
+    fi
+
     log "CAM-WATCH: $cur not answering on 554, running ONVIF discovery"
     newip=$(python3 "$BASE/bin/find_cam.py" 2>/dev/null)
+    if [[ -z "$newip" ]]; then
+      # WS-Discovery is multicast and is the first thing a cheap AP or the camera firmware
+      # drops. A TCP sweep cannot be blocked, and it also catches a camera that just rebooted
+      # onto a different DHCP address.
+      newip=$(python3 "$BASE/bin/find_rtsp.py" 2>/dev/null)
+    fi
     if [[ -n "$newip" && "$newip" != "$cur" ]]; then
       print -r -- "$newip" > "$CAMIP_FILE"
       # The reader follows log/cam_ip, but start_publisher's snapshot grab uses $CAM_URL, which
@@ -287,19 +311,130 @@ CHAIN="${(j:,:)cam_filters}"
 SIZE="${ENC_SIZE}"
 [[ "$MODE" == "crop" ]] && SIZE="${CROP_GEOM%%:*}x$(print -r -- ${CROP_GEOM} | cut -d: -f2)"
 
+# --- SLATE: keep the UDP feed alive while the camera is gone ---------------
+# WHY THIS EXISTS (measured 2026-10-28, on this machine):
+#   The publisher reads the local UDP hop with timeout=0. When the camera disappears the
+#   reader exits, no packets arrive, and the UDP demuxer BLOCKS FOREVER - the filter graph
+#   stops producing frames (reproduced: 0 frames in 15s), `-progress` stops advancing, and the
+#   stall watchdog below kills a perfectly live broadcast every ~35s. YouTube then autoStops
+#   the broadcast, a new one is created and can never go live because no frames ever arrive,
+#   and the channel stays dark for as long as the camera is away. That is exactly how the
+#   2026-10-27 outage turned a camera fault into 14 hours of a dead channel.
+#
+#   So the reader never stops feeding: when the camera is unreachable it pushes a still card
+#   instead (the same 1080p geometry the publisher's crop yields), the publisher never
+#   notices, the RTMP session is never torn down, and viewers get "camera offline" rather
+#   than a dark channel. The moment port 554 answers again the slate is killed and the real
+#   feed reconnects - no publisher restart, no new broadcast, no new URL.
+SLATE="$BASE/log/slate.jpg"
+SLATE_FONT="${SLATE_FONT:-/System/Library/Fonts/Supplemental/Arial.ttf}"
+# How long the slate is held after repeated short RTSP sessions. Defined HERE, before
+# any reader can reference it: it was first used undefined and `set -u` killed the
+# reader subshell on the third failure, which darkened the channel (2026-10-28 05:13).
+SLATE_BURST_SECONDS="${SLATE_BURST_SECONDS:-120}"
+
+SLATE_TEXT="$BASE/log/slate_text.txt"
+
+make_slate() {
+  local src="$SNAP"
+  [[ -s "$src" ]] || src="$BASEIMG"
+  # textfile=, not text='...': the quoted form does not survive every shell/ffmpeg pair
+  # (measured 2026-10-28 - the card silently fell back to a plain colour), while a file
+  # path contains nothing either parser can disagree about.
+  # Indonesian on purpose: the shop floor and its customers are in Batam, not Berlin. The
+  # second line sets the expectation the operator asked for - back in a few hours, not "soon".
+print -r -- "LAUNDRY BUKA 24 JAM - TETAP BEROPERASI" > "$SLATE_TEXT"
+  print -r -- "Kamera CCTV akan kembali dalam beberapa jam" >> "$SLATE_TEXT"
+  print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$SLATE_TEXT"
+  if [[ -s "$src" && -r "$SLATE_FONT" ]]; then
+    "$FF" -y -v error -i "$src" -frames:v 1 \
+      -vf "eq=brightness=-0.30:saturation=0.65,drawtext=fontfile=${SLATE_FONT}:textfile=${SLATE_TEXT}:fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=28:x=(w-text_w)/2:y=h/2-text_h" \
+      -q:v 4 "$SLATE" 2>/dev/null
+  fi
+  [[ -s "$SLATE" ]] && return 0
+  "$FF" -y -v error -f lavfi -i "color=c=0x0b1a2a:s=1920x1080" -frames:v 1 "$SLATE" 2>/dev/null
+}
+
+# Start the slate encoder on the UDP port the publisher is listening to. Echoes its pid.
+slate_start() {
+  make_slate
+  "$FF" -v error -nostdin -re -loop 1 -framerate 15 -i "$SLATE" \
+    -vf "scale=1920:1080,fps=15" -c:v h264_videotoolbox -b:v 1800k -g 30 -pix_fmt yuv420p \
+    -f mpegts "${UDP}?pkt_size=1316" >>"$BASE/log/reader.log" 2>&1 &
+  print -r -- $!
+}
+
+slate_stop() {
+  kill -9 "$1" 2>/dev/null; wait "$1" 2>/dev/null
+}
+
+# Runs until the camera answers on 554 again. Returns 0 when it does.
+slate_feed() {
+  local ip="$1" sp
+  sp=$(slate_start)
+  while kill -0 $sp 2>/dev/null; do
+    sleep 5
+    ip=$(<"$CAMIP_FILE" 2>/dev/null)   # the watcher may have moved it (DHCP after a power cut)
+    if nc -z -G 2 "$ip" 554 2>/dev/null; then
+      slate_stop $sp
+      return 0
+    fi
+  done
+  return 1
+}
+
+# A camera that ACCEPTS on 554 but never delivers frames - booting, auth refused, half-open
+# socket - is the nastiest state: the port probe says "up", so slate_feed would never engage,
+# and the RTSP client fails just fast enough to keep the publisher permanently starved. After
+# a few short failures, hold the slate for a fixed burst and let the camera finish booting.
+slate_burst() {
+  local secs="${2:-120}" sp end
+  sp=$(slate_start)
+  end=$(( $(date +%s) + secs ))
+  while kill -0 $sp 2>/dev/null && (( $(date +%s) < end )); do
+    sleep 5
+  done
+  slate_stop $sp
+}
+
 # --- READER: camera -> local UDP, restarts on its own -----------------------
 reader_loop() {
-  local backoff=2 start dur ip url
+  local backoff=2 start dur ip url fails=0
   while true; do
     ip=$(<"$CAMIP_FILE")
+    if ! nc -z -G 3 "$ip" 554 2>/dev/null; then
+      log "READER: camera $ip unreachable - feeding the slate so the broadcast stays up"
+      slate_feed "$ip"
+      backoff=2; fails=0
+      log "READER: camera $ip answers again - reconnecting the real feed"
+      continue
+    fi
     url="rtsp://${ip}/${CAM_PATH}"
     start=$(date +%s)
     "$FF" -v error -rtsp_transport tcp -timeout 15000000 -fflags +genpts \
       -i "$url" -c:v copy -an -f mpegts "${UDP}?pkt_size=1316&bitrate=20000000" 2>>"$BASE/log/reader.log"
     dur=$(( $(date +%s) - start ))
-    (( dur > 30 )) && backoff=2 || backoff=$(( backoff < 20 ? backoff*2 : 20 ))
-    log "READER: feed from $ip ended after ${dur}s, retrying in ${backoff}s (YouTube unaffected)"
-    sleep "$backoff"
+    if (( dur > 30 )); then
+      log "READER: feed from $ip ended after ${dur}s, retrying in ${backoff}s (YouTube unaffected)"
+      backoff=2; fails=0
+      sleep "$backoff"
+      continue
+    fi
+    # A SHORT session is the camera accepting TCP and then failing to stream (booting,
+    # auth, half-open). Starving the publisher for the length of three retries would trip
+    # the 30s stall watchdog and churn the broadcast, so the slate goes back up at once and
+    # only comes down for the retry itself.
+    fails=$(( fails + 1 ))
+    backoff=$(( backoff < 20 ? backoff*2 : 20 ))
+    log "READER: feed from $ip ended after ${dur}s (short failure $fails) - slate up while retrying (YouTube unaffected)"
+    if (( fails >= 3 )); then
+      log "READER: ${fails} short RTSP failures in a row - camera accepts on 554 but is not streaming; holding the slate for ${SLATE_BURST_SECONDS:-120}s"
+      slate_burst "$ip" "${SLATE_BURST_SECONDS:-120}"
+      fails=0; backoff=2
+    else
+      slate_burst "$ip" 30
+    fi
+    continue
   done
 }
 
@@ -810,7 +945,27 @@ yt_live_state() {
   rm -f "$err"
 }
 
-yt_live_id() { yt_live_state | awk '$1=="live"{print $2}'; }
+# WHICH live video is OURS. With a second (9:16) broadcast running, /@channel/live can
+# resolve to the vertical one, and this function is what await_broadcast trusts to decide
+# "the channel is live" - so on 2026-10-28 05:23 it reported the vertical broadcast as the
+# 16:9 one, logged LIVE on it, and stamped the horizontal title, tags and thumbnail onto the
+# vertical video. Ask the API first: status is stream-scoped, so its LIVE id is ours by
+# construction. Only when the API cannot answer do we fall back to yt-dlp, and then the
+# vertical's own id (log/vertical.broadcast) is excluded.
+yt_live_id() {
+  local ours vid vert
+  if yt_api_ready; then
+    ours=$(yt_api_call status 2>/dev/null | python3 -c 'import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+print(d.get("broadcast_id") or "") if d.get("status")=="LIVE" else print("")' 2>/dev/null)
+    if [[ -n "$ours" ]]; then print -r -- "$ours"; return 0; fi
+  fi
+  vid=$(yt_live_state | awk '$1=="live"{print $2}')
+  vert=$(sed -n '1s/ .*//p' "$BASE/log/vertical.broadcast" 2>/dev/null)
+  [[ -n "$vid" && "$vid" == "$vert" ]] && return 0
+  print -r -- "$vid"
+}
 
 # Has YouTube closed the broadcast? Ask the API when we have it. yt_live_state() goes
 # through yt-dlp, which lags by tens of seconds, and twice reported a broadcast still live
@@ -1080,6 +1235,16 @@ while true; do
     refresh_broadcast_clock
     enforce_drift
     do_pending_thumbnail
+  fi
+  # A dead READER means no frames ever reach the publisher, so the channel is dark until a
+  # human notices. The 2026-10-28 05:13 crash is why this check exists: the subshell exited on
+  # an unbound variable and the main loop happily kept restarting a publisher it could never
+  # feed. It is independent of the publisher watchdog on purpose - one fixed the encoder, the
+  # other fixes the source.
+  if ! kill -0 "$READERPID" 2>/dev/null; then
+    log "READER: the reader process is GONE - restarting it (without a reader there is no ingest at all)"
+    reader_loop & READERPID=$!
+    log "READER: back up (pid $READERPID)"
   fi
   if [[ -e "$ROTATE_NOW" ]]; then
     rotate_broadcast "manual"; last=""; stuck=0; continue

@@ -36,21 +36,22 @@ OFFLINE_SIGNS = ("not currently live", "does not have a live", "is not live",
                  "the channel is not currently live")
 
 
-def live_info():
-    """Resolve the channel's CURRENT live video.
+BSTATE  = BASE/"log/broadcast_started"    # "<broadcast id> <epoch>" - the 16:9 broadcast
+VBSTATE = BASE/"log/vertical.broadcast"   # the same shape, written by bin/vertical.sh
 
-    Returns (video_id, state) where state is "live", "offline" or "unknown".
 
-    "unknown" is NOT evidence that the channel is dark. This used to return a bare
-    (None, False) for every failure, so a yt-dlp hiccup - rate limit, bot check, network
-    blip, a yt-dlp release that breaks extraction - was reported to the monitor as OFFLINE,
-    and OFFLINE is the status that makes the monitor act. stream.sh has always drawn this
-    three-way distinction (yt_live_state); this checker is the one the monitor actually
-    uses, and it did not.
-    """
+def _state_id(path):
+    try:
+        return (path.read_text().split() or [""])[0]
+    except OSError:
+        return ""
+
+
+def _probe(url):
+    """(video_id, state) for one URL. state: "live", "offline" or "unknown"."""
     try:
         r = subprocess.run([YTDLP, "--no-warnings", "--skip-download",
-                            "--print", "%(id)s|%(is_live)s", WATCH],
+                            "--print", "%(id)s|%(is_live)s", url],
                            capture_output=True, text=True, timeout=90)
     except subprocess.TimeoutExpired:
         return None, "unknown"
@@ -62,6 +63,42 @@ def live_info():
     if any(sign in err for sign in OFFLINE_SIGNS):
         return None, "offline"
     return None, "unknown"
+
+
+def live_info():
+    """Resolve the 16:9 live video - never the vertical companion.
+
+    Returns (video_id, state) where state is "live", "offline" or "unknown".
+
+    "unknown" is NOT evidence that the channel is dark: a yt-dlp hiccup must never make the
+    monitor act.
+
+    With two live broadcasts on the channel, `/<channel>/live` resolves to whichever one
+    YouTube feels like, and grading a 1080x1920 frame against the horizontal golden frame
+    reports MISMATCH on a perfectly healthy stream. So the broadcast id that stream.sh wrote
+    to log/broadcast_started is preferred, and the vertical id (log/vertical.broadcast) is
+    excluded when falling back to the channel URL.
+    """
+    horiz = _state_id(BSTATE)
+    vert = _state_id(VBSTATE)
+
+    if horiz and horiz != vert:
+        vid, state = _probe(f"https://www.youtube.com/watch?v={horiz}")
+        if state == "live":
+            return vid, "live"
+        if state == "offline":
+            # It may just have rotated to a new id: prefer a DIFFERENT live video if any.
+            wvid, wstate = _probe(WATCH)
+            if wstate == "live" and wvid and wvid != vert:
+                return wvid, "live"
+            return (wvid or horiz), "offline"
+
+    wvid, wstate = _probe(WATCH)
+    if wstate == "live" and wvid and wvid != vert:
+        return wvid, "live"
+    if wstate == "offline":
+        return wvid, "offline"
+    return None, wstate
 
 def resolve(force=False):
     """Direct media URL for the current live stream. Re-resolves when the broadcast

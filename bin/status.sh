@@ -134,6 +134,22 @@ host=$(<"$BASE/log/cam_ip" 2>/dev/null) || host="${CAM_URL#rtsp://}"
 host=${host%%/*}; host=${host%%:*}
 nc -z -G 3 "$host" 554 2>/dev/null && ok "$host:554 reachable" || bad "$host:554 UNREACHABLE (stream shows the filler still)"
 
+# The independent 10-minute dual-interface scan (com.user.cctv-camscan). Its whole job is to
+# keep answering "where is the camera" while stream.sh might be the thing that is broken, so
+# silence here is a failure of its own - a scanner that stopped looking is not a quiet camera.
+scan_beh="$BASE/log/cam_scan.heartbeat"
+if [[ -s "$scan_beh" ]]; then
+  scan_age=$(( $(date +%s) - $(<"$scan_beh") ))
+  scan_last=$(tail -1 "$BASE/log/cam_scan.log" 2>/dev/null)
+  if (( scan_age > 1200 )); then
+    bad "the 10-min camera scan last ran $(( scan_age / 60 )) min ago - check com.user.cctv-camscan"
+  else
+    ok "dual-interface scan ${scan_age}s ago: ${scan_last#*SCAN }"
+  fi
+else
+  warn "the 10-min camera scan has never run (com.user.cctv-camscan not loaded?)"
+fi
+
 print "\n=== disk ==="
 # Free space, not just usage: a full volume is the one failure this project cannot recover from
 # (ffmpeg's -progress write fails, the frame counter stalls and the watchdog restarts the

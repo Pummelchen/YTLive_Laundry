@@ -57,3 +57,6 @@ tests/.tmp/
 # Editor/tool backups of the scripts. Git IS the backup.
 bin/*.bak-*
 conf/*.bak-*
+conf/vertical.env
+conf/vertical.env.bak-*
+conf/vertical_template.local.json

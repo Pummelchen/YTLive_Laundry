@@ -373,13 +373,34 @@ def cmd_auth():
 
 
 # ------------------------------------------------------------------- broadcast ops
-def active_broadcast(token):
-    """The broadcast currently live, or None."""
-    r = api("GET", "liveBroadcasts", token,
-            {"part": "id,snippet,status", "broadcastStatus": "active",
-             "broadcastType": "all", "maxResults": "5"})
+def active_broadcast(token, stream_id=None):
+    """The broadcast currently live, or None.
+
+    stream_id scopes the answer to ONE ingest stream. That mattered the day a second,
+    independent 9:16 broadcast started running alongside the 16:9 one: without the filter
+    every caller (status, prepare, ensure-live) would have grabbed whichever live broadcast
+    YouTube listed first, so the horizontal logic could adopt the vertical feed as its own
+    and sit there believing the channel was fine while the camera feed was dark.
+    """
+    params = {"part": "id,snippet,status,contentDetails", "broadcastStatus": "active",
+              "broadcastType": "all", "maxResults": "50"}
+    r = api("GET", "liveBroadcasts", token, params)
     items = r.get("items", [])
+    if stream_id:
+        items = [it for it in items
+                 if it.get("contentDetails", {}).get("boundStreamId") == stream_id]
     return items[0] if items else None
+
+
+def horizontal_active(token):
+    """The active broadcast of THIS installation's configured 16:9 stream.
+
+    The id-less fallbacks (capture, verify, enforce, thumbnail) are all about the horizontal
+    feed; with a vertical broadcast also live, "whichever is first" would silently retitle,
+    retag or re-thumbnail the wrong video.
+    """
+    s = stream_for_key(token, read_key())
+    return active_broadcast(token, s["id"] if s else None)
 
 
 def stream_for_key(token, key):
@@ -458,8 +479,8 @@ def token_age_warning(probe_state=None):
 
 def cmd_status(token=None, key=None):
     token = token or access_token()
-    b = active_broadcast(token)
     s = stream_for_key(token, key) if key else None
+    b = active_broadcast(token, s["id"] if s else None)
     out = {
         "status": "LIVE" if b else "OFFLINE",
         "broadcast_id": b["id"] if b else None,
@@ -495,16 +516,18 @@ def cmd_ensure_live(key):
     """Guarantee a live broadcast. Idempotent. This is what the streamer calls."""
     token = access_token()
 
-    b = active_broadcast(token)
-    if b:
-        print(json.dumps({"status": "LIVE", "broadcast_id": b["id"], "action": "none",
-                          "url": f"https://www.youtube.com/watch?v={b['id']}"}))
-        return 0
-
     stream = stream_for_key(token, key)
     if not stream:
         die("no liveStream on this channel uses the configured YT_KEY. Check YT_KEY in "
             "conf/stream.env against Studio -> Go Live -> Stream key.")
+
+    # Scoped to THIS stream: with a second (vertical) broadcast live, an unscoped lookup
+    # would report the vertical feed as the horizontal one's state.
+    b = active_broadcast(token, stream["id"])
+    if b:
+        print(json.dumps({"status": "LIVE", "broadcast_id": b["id"], "action": "none",
+                          "url": f"https://www.youtube.com/watch?v={b['id']}"}))
+        return 0
 
     # Pick up where a previous attempt left off rather than creating a fresh broadcast on
     # every retry. Deleting the abandoned ones keeps the channel clean.
@@ -644,9 +667,20 @@ BCAST_FIELDS  = ("latencyPreference", "enableDvr", "enableEmbed", "recordFromSta
                  "closedCaptionsType", "projection")
 
 
+def template_path():
+    """The settings reference, overridable per feed.
+
+    The vertical (9:16) broadcast is a SECOND video with its own title, description, tags
+    and thumbnail, so it must not inherit the horizontal reference. YT_TEMPLATE points it
+    at conf/vertical_template.json; everything else keeps using broadcast_template.json.
+    """
+    override = os.environ.get("YT_TEMPLATE", "").strip()
+    return pathlib.Path(override) if override else TEMPLATE
+
+
 def load_template():
     try:
-        return json.loads(TEMPLATE.read_text())
+        return json.loads(template_path().read_text())
     except Exception:
         return {}
 
@@ -660,14 +694,15 @@ def save_template(t):
     dirty and a `git pull` or `git checkout` in it could refuse or conflict. Skipping a no-op
     write is what keeps the deployed tree clean, so it is a correctness fix, not an optimisation.
     """
-    TEMPLATE.parent.mkdir(parents=True, exist_ok=True)
+    path = template_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
     body = json.dumps(t, indent=2, ensure_ascii=False)
     try:
-        if TEMPLATE.read_text() == body:
+        if path.read_text() == body:
             return False
     except OSError:
         pass
-    TEMPLATE.write_text(body)
+    path.write_text(body)
     return True
 
 
@@ -680,7 +715,7 @@ def cmd_capture(video_id=None):
     """
     token = access_token()
     if not video_id:
-        b = active_broadcast(token)
+        b = horizontal_active(token)
         if not b:
             die("nothing live to capture from - pass a video id")
         video_id = b["id"]
@@ -836,7 +871,7 @@ def cmd_verify(video_id=None, quiet=False):
         print(json.dumps({"status": "NOREF", "msg": f"no {TEMPLATE} yet"})); return 2
     token = access_token()
     if not video_id:
-        b = active_broadcast(token)
+        b = horizontal_active(token)
         if not b:
             print(json.dumps({"status": "OFFLINE", "msg": "nothing live to verify"})); return 2
         video_id = b["id"]
@@ -884,7 +919,7 @@ def cmd_enforce(video_id=None, attempts=3):
         print(json.dumps({"status": "NOREF", "msg": f"no {TEMPLATE} yet"})); return 2
     token = access_token()
     if not video_id:
-        b = active_broadcast(token)
+        b = horizontal_active(token)
         if not b:
             print(json.dumps({"status": "OFFLINE", "msg": "nothing live to enforce on"})); return 2
         video_id = b["id"]
@@ -1040,7 +1075,7 @@ def cmd_thumbnail(arg=None):
         (BASE / ('conf/thumbnail' + src.suffix.lower())).write_bytes(src.read_bytes())
     if not _thumb_path().exists():
         die(f"no reference thumbnail yet - run: bin/yt_api.py thumbnail <file>")
-    b = active_broadcast(token)
+    b = horizontal_active(token)
     if not b:
         print(json.dumps({"status": "STORED", "file": str(_thumb_path()),
                           "bytes": _thumb_path().stat().st_size,
@@ -1245,15 +1280,15 @@ def cmd_prepare(key):
     for: the streamer calls it during the rotation gap, then starts pushing.
     """
     token = access_token()
-    b = active_broadcast(token)
-    if b:
-        print(json.dumps({"status": "LIVE", "broadcast_id": b["id"], "action": "none",
-                          "url": f"https://www.youtube.com/watch?v={b['id']}"}))
-        return 0
     stream = stream_for_key(token, key)
     if not stream:
         die("no liveStream on this channel uses the configured YT_KEY. Check YT_KEY in "
             "conf/stream.env against Studio -> Go Live -> Stream key.")
+    b = active_broadcast(token, stream["id"])
+    if b:
+        print(json.dumps({"status": "LIVE", "broadcast_id": b["id"], "action": "none",
+                          "url": f"https://www.youtube.com/watch?v={b['id']}"}))
+        return 0
     reuse, stale = pending_broadcasts(token, stream["id"])
     swept = []
     for sid in stale:
@@ -1274,9 +1309,10 @@ def cmd_prepare(key):
     return 0
 
 
-def cmd_end():
+def cmd_end(key=None):
     token = access_token()
-    b = active_broadcast(token)
+    s = stream_for_key(token, key) if key else None
+    b = active_broadcast(token, s["id"] if s else None)
     if not b:
         print(json.dumps({"status": "OFFLINE", "action": "none"}))
         return 0
@@ -1379,7 +1415,7 @@ def main():
         if cmd == "ensure-live":
             return cmd_ensure_live(read_key())
         if cmd == "end":
-            return cmd_end()
+            return cmd_end(read_key())
         if cmd == "token":
             return cmd_token(offline="--offline" in sys.argv)
         if cmd == "quota":

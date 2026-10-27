@@ -70,7 +70,10 @@ t_assert_contains "$get" "short Seg2 7h53m" "a short published recording is repo
 t_assert_contains "$get" "8h00m floor" "and names the floor it broke"
 
 # Most recent wins: an older problem must not displace a newer one.
-print -r -- "Seg3 gone $(date -v-2S '+%Y-%m-%d %H:%M:%S') -" >> "$T_BASE/log/vod_status"
+# 60 s, not 2 s: the timestamp has to be older than the $now captured near the top of this
+# test, and the few seconds of python startup in between made a 2 s margin a coin flip
+# (measured 2026-10-28: 1 failure in 3 runs, purely on scheduling).
+print -r -- "Seg3 gone $(date -v-60S '+%Y-%m-%d %H:%M:%S') -" >> "$T_BASE/log/vod_status"
 get=$(BASE="$T_BASE" python3 -c "
 import importlib.util
 spec = importlib.util.spec_from_file_location('hb', '$HB')

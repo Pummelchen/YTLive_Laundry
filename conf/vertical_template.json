@@ -1,0 +1,46 @@
+{
+  "video": {
+    "title": "Live CCTV Batam - Ternak Laundry Bengkong (9:16) #shorts #live",
+    "description": "Ternak Laundry Bengkong - live vertical (9:16) CCTV feed, every day, 24 jam.\n\nWhatsApp:\n+62 877 8787 7783\nhttps://wa.me/+6287787877783\n\nTikTok:\nhttps://www.tiktok.com/@ternaklaundry.bengkong\n\nFeed vertikal ini adalah teman dari siaran utama 16:9:\nhttps://www.youtube.com/@ternaklaundrybengkong/live\n\n\u2705 Buka 24 Jam Nonstop\n\u2705 Mesin Cuci & Pengering Modern\n\u2705 Tempat Bersih, Nyaman, dan Aman\n\u2705 Cocok untuk Pakaian, Selimut, Bed Cover, Boneka, dan lainnya\n\n\ud83d\udccd Alamat: Ruko Cahaya Garden Residence Blok AC No 46, Bengkong\nhttps://maps.app.goo.gl/j6kqH8xh76yrc9Ua9\n\nJangan lupa Subscribe, Like, dan Aktifkan Notifikasi.",
+    "tags": [
+      "24jam",
+      "batam",
+      "bengkong",
+      "cctv",
+      "coinlaundry",
+      "cuci",
+      "cucibaju",
+      "indonesia",
+      "laundry",
+      "live",
+      "livestream",
+      "selfservice",
+      "shorts",
+      "vertical",
+      "ternaklaundry"
+    ],
+    "categoryId": "24",
+    "defaultLanguage": "id",
+    "defaultAudioLanguage": "id"
+  },
+  "video_status": {
+    "privacyStatus": "public",
+    "license": "youtube",
+    "embeddable": true,
+    "publicStatsViewable": true,
+    "selfDeclaredMadeForKids": false
+  },
+  "broadcast": {
+    "latencyPreference": "normal",
+    "enableDvr": true,
+    "enableEmbed": true,
+    "recordFromStart": true,
+    "enableAutoStart": true,
+    "enableAutoStop": true,
+    "enableContentEncryption": false,
+    "closedCaptionsType": "closedCaptionsDisabled",
+    "projection": "rectangular",
+    "enableMonitorStream": false
+  },
+  "_note": "Settings reference for the 9:16 companion broadcast only. Kept separate from broadcast_template.json on purpose: the vertical feed is a different video with its own title, tags and thumbnail, and stream.sh's capture step must never be able to overwrite it."
+}
