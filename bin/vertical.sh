@@ -115,14 +115,14 @@ make_slate() {
   print -r -- "Kamera CCTV kembali" >> "$tf"
   print -r -- "dalam beberapa jam" >> "$tf"
   print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$tf"
-  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits at y=280
+  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits at y=320
   # and the frame at y=700, so a phone viewer reads the sign first and the shop second.
   # 1080x1920, not a letterboxed 16:9 still: a 16:9 card inside a 9:16 frame is two thirds
   # empty bars, which looks broken in the Shorts feed. Brand colour, the last camera frame
   # fitted to the width, and the message underneath.
   if [[ -s "$src" && -r "$FONT" ]]; then
     "$FF" -y -v error -f lavfi -i "color=c=0x0b1a2a:s=1080x1920" -i "$src" \
-      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=1080:-2[p];[0:v][p]overlay=0:700[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=42:line_spacing=16:box=1:boxcolor=black@0.55:boxborderw=26:x=(w-text_w)/2:y=280" \
+      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=1080:-2[p];[0:v][p]overlay=0:700[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=42:line_spacing=16:box=1:boxcolor=black@0.55:boxborderw=26:x=(w-text_w)/2:y=320" \
       -frames:v 1 -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0
