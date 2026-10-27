@@ -338,6 +338,8 @@ SLATE_TEXT="$BASE/log/slate_text.txt"
 make_slate() {
   local src="$SNAP"
   [[ -s "$src" ]] || src="$BASEIMG"
+  # Subtitle position (operator request, 2026-10-28): low in the frame, ~90 px clear of the
+  # bottom edge, so the shop stays visible and the line reads like a caption, not a banner.
   # textfile=, not text='...': the quoted form does not survive every shell/ffmpeg pair
   # (measured 2026-10-28 - the card silently fell back to a plain colour), while a file
   # path contains nothing either parser can disagree about.
@@ -348,7 +350,7 @@ print -r -- "LAUNDRY BUKA 24 JAM - TETAP BEROPERASI" > "$SLATE_TEXT"
   print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$SLATE_TEXT"
   if [[ -s "$src" && -r "$SLATE_FONT" ]]; then
     "$FF" -y -v error -i "$src" -frames:v 1 \
-      -vf "eq=brightness=-0.30:saturation=0.65,drawtext=fontfile=${SLATE_FONT}:textfile=${SLATE_TEXT}:fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=28:x=(w-text_w)/2:y=h/2-text_h" \
+      -vf "eq=brightness=-0.30:saturation=0.65,drawtext=fontfile=${SLATE_FONT}:textfile=${SLATE_TEXT}:fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=28:x=(w-text_w)/2:y=h-text_h-90" \
       -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0

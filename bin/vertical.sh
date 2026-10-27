@@ -115,14 +115,14 @@ make_slate() {
   print -r -- "Kamera CCTV kembali" >> "$tf"
   print -r -- "dalam beberapa jam" >> "$tf"
   print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$tf"
-  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits at y=240
+  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits at y=280
   # and the frame at y=700, so a phone viewer reads the sign first and the shop second.
   # 1080x1920, not a letterboxed 16:9 still: a 16:9 card inside a 9:16 frame is two thirds
   # empty bars, which looks broken in the Shorts feed. Brand colour, the last camera frame
   # fitted to the width, and the message underneath.
   if [[ -s "$src" && -r "$FONT" ]]; then
     "$FF" -y -v error -f lavfi -i "color=c=0x0b1a2a:s=1080x1920" -i "$src" \
-      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=1080:-2[p];[0:v][p]overlay=0:700[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=42:line_spacing=16:box=1:boxcolor=black@0.55:boxborderw=26:x=(w-text_w)/2:y=240" \
+      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=1080:-2[p];[0:v][p]overlay=0:700[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=42:line_spacing=16:box=1:boxcolor=black@0.55:boxborderw=26:x=(w-text_w)/2:y=280" \
       -frames:v 1 -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0
@@ -235,6 +235,7 @@ FALLBACKS=0
 SLATE_UNTIL=0
 LAST_WAIT_LOG=0
 LAST_LIVE_NUDGE=0
+LAST_QUOTA_LOG=0
 MODE=""            # camera | slate
 STUCK=0
 LAST_FRAME=""
@@ -340,7 +341,19 @@ while true; do
   # 5. if ingest is flowing but YouTube has not gone live, let the API drive the transition
   #    (bounded: once every 60s, and never in the first minute after a prepare)
   if (( $(date +%s) >= LAST_LIVE_NUDGE + 60 )) && (( $(broadcast_age) > 60 )); then
-    local_st=$(vapi status | python3 -c 'import json,sys
+    local_out=$(vapi status 2>/dev/null)
+    # The API being exhausted is not "the feed is dark". Prodding ensure-live every minute
+    # against an exhausted quota only writes two log lines a minute and can never succeed
+    # (measured 2026-10-28 05:48-05:51), so back off and say so once an hour.
+    if print -r -- "$local_out" | grep -q '"status": *"QUOTA"'; then
+      if (( $(date +%s) >= LAST_QUOTA_LOG + 3600 )); then
+        vlog "API quota exhausted - cannot verify liveness that way; the encoder keeps running and this will retry after the reset"
+        LAST_QUOTA_LOG=$(date +%s)
+      fi
+      LAST_LIVE_NUDGE=$(( $(date +%s) + 600 ))
+      continue
+    fi
+    local_st=$(print -r -- "$local_out" | python3 -c 'import json,sys
 try: print(json.loads(sys.stdin.read()).get("status",""))
 except Exception: print("")' 2>/dev/null)
     if [[ "$local_st" == "LIVE" ]]; then
