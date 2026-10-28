@@ -195,14 +195,16 @@ publisher_args() {
 start_publisher() {
   local mode="$1" VFILTER
   publisher_args "$mode"
+  # The bars are pure black (operator request, 2026-10-28): the Shorts canvas on a phone is
+  # black, so the old brand navy read as a coloured frame around the camera panel.
   if [[ "$mode" == camera ]]; then
     # ONE panel, exactly the one the 16:9 feed shows (CROP_GEOM = the top 1080p view).
     # Showing the whole 1920x3240 composite was both wrong (three cameras in a 9:16 frame)
     # and expensive: scaling 3240 lines to 1824 at 30 fps is what made this encoder stall
     # every few minutes on the 2015 i5. Cropping first removes ~85% of the pixels.
-    VFILTER="crop=${CROP_GEOM:-1920:1080:0:0},scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=0x0b1a2a,fps=${VERT_FPS},format=yuv420p"
+    VFILTER="crop=${CROP_GEOM:-1920:1080:0:0},scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
   else
-    VFILTER="scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=0x0b1a2a,fps=${VERT_FPS},format=yuv420p"
+    VFILTER="scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
   fi
   local -a AUDIO_IN
   if [[ -s "$PLAYLIST" ]]; then
