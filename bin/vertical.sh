@@ -81,6 +81,7 @@ vapi() {
   BASE="$BASE" YT_KEY="$VERT_KEY" YT_TEMPLATE="${VERT_TEMPLATE:-$BASE/conf/vertical_template.json}" \
   YT_PRIVACY="$VERT_PRIVACY" YT_TITLE_FMT="$VERT_TITLE" \
   YT_TOKEN_TTL_DAYS="${YT_TOKEN_TTL_DAYS:-0}" \
+  YT_QUOTA_COOLDOWN="${YT_QUOTA_COOLDOWN:-21600}" \
   python3 "$BASE/bin/yt_api.py" "$@" 2>&1
 }
 
@@ -160,8 +161,17 @@ publisher_args() {
 }
 
 start_publisher() {
-  local mode="$1"
+  local mode="$1" VFILTER
   publisher_args "$mode"
+  if [[ "$mode" == camera ]]; then
+    # ONE panel, exactly the one the 16:9 feed shows (CROP_GEOM = the top 1080p view).
+    # Showing the whole 1920x3240 composite was both wrong (three cameras in a 9:16 frame)
+    # and expensive: scaling 3240 lines to 1824 at 30 fps is what made this encoder stall
+    # every few minutes on the 2015 i5. Cropping first removes ~85% of the pixels.
+    VFILTER="crop=${CROP_GEOM:-1920:1080:0:0},scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=0x0b1a2a,fps=${VERT_FPS},format=yuv420p"
+  else
+    VFILTER="scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=0x0b1a2a,fps=${VERT_FPS},format=yuv420p"
+  fi
   local -a AUDIO_IN
   if [[ -s "$PLAYLIST" ]]; then
     AUDIO_IN=( -re -stream_loop -1 -f concat -safe 0 -i "$PLAYLIST" )
@@ -172,7 +182,7 @@ start_publisher() {
   "$FF" -y -hide_banner -loglevel error -nostdin -progress "$PROG" \
     -thread_queue_size 8192 "${CAM_IN[@]}" \
     -thread_queue_size 4096 "${AUDIO_IN[@]}" \
-    -filter_complex "[0:v]fps=${VERT_FPS},scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=0x0b1a2a,format=yuv420p[v]" \
+    -filter_complex "[0:v]${VFILTER}[v]" \
     -map "[v]" -map 1:a:0 \
     -c:v h264_videotoolbox -b:v "$VERT_BITRATE" -realtime 1 -g "$VERT_GOP" -pix_fmt yuv420p \
     -c:a aac -b:a "$VERT_AUDIO_BITRATE" -ar 48000 -ac 2 \
@@ -236,6 +246,7 @@ SLATE_UNTIL=0
 LAST_WAIT_LOG=0
 LAST_LIVE_NUDGE=0
 LAST_QUOTA_LOG=0
+LAST_LIVE_CHECK=0
 MODE=""            # camera | slate
 STUCK=0
 LAST_FRAME=""
@@ -273,9 +284,33 @@ while true; do
     continue
   fi
 
-  # 1. a broadcast must exist BEFORE ingest starts (YouTube only auto-starts a bound one)
+  # 1a. the recorded broadcast may be DEAD. YouTube auto-stops it ~9 s after ingest stops,
+  # so after a publisher outage the state file still names an ended broadcast and this loop
+  # would happily restart an encoder that can never appear. yt-dlp answers "post_live" for
+  # free, so this costs no quota; it runs at most every couple of minutes.
+  if [[ -s "$BSTATE" ]] && (( $(date +%s) >= LAST_LIVE_CHECK + 120 )); then
+    LAST_LIVE_CHECK=$(date +%s)
+    local ls
+    ls=$(~/.local/bin/yt-dlp --no-warnings --skip-download --print "%(live_status)s" \
+          "https://www.youtube.com/watch?v=$(broadcast_id)" 2>/dev/null | head -1)
+    if [[ "$ls" == "post_live" || "$ls" == "was_live" || "$ls" == "not_live" ]]; then
+      vlog "BROADCAST: $(broadcast_id) has ENDED ($ls) - dropping the stale state and preparing a new one"
+      rm -f "$BSTATE"
+      stop_publisher
+    fi
+  fi
+
+  # 1b. a broadcast must exist BEFORE ingest starts (YouTube only auto-starts a bound one)
   if [[ -z "$(broadcast_id)" || ! -s "$BSTATE" ]]; then
-    prepare_broadcast || { sleep 30; continue; }
+    stop_publisher        # there is nothing to publish to; do not push into a dead room
+    # A quota refusal cannot succeed by retrying: back off instead of writing two log lines
+    # every 30 s for hours (measured 2026-10-28: quota out from 05:46 to ~11:40).
+    if prepare_broadcast; then
+      :
+    else
+      if [[ -s "$BASE/log/quota_exhausted" ]]; then sleep 300; else sleep 30; fi
+      continue
+    fi
   fi
 
   # 2. rotation, measured on the BROADCAST's age so a restart cannot extend a segment
