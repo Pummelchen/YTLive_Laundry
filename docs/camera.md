@@ -47,8 +47,9 @@ changed the delivered bitrate by nothing - verified on a freshly established RTS
 not just the running one. `SRC_FPS="14"` in conf/stream.env was already right.
 
 Two things follow. The denoise and sharpen filters are compensating for a genuinely
-starved source (~0.026 bits/pixel at 14fps) and are not gratuitous. And OUT_FPS=30 from a
-14fps source means half the encoded frames are duplicates.
+starved source (~0.026 bits/pixel at 14fps) and are not gratuitous. And OUT_FPS=20 from a
+14fps source means a third of the encoded frames are duplicates (it was 30 until
+2026-10-28; see docs/architecture.md for why that made the 16:9 feed drift).
 
 To probe the camera directly, stop the reader first - it holds the only RTSP session and
 this camera is unreliable with two:

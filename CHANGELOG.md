@@ -24,6 +24,12 @@ in the tree.
   later, so a slow 16:9 rotation cannot cause a double cut (`tests/t22_rotation_sync.sh`).
 - **Thumbnails**: four hours after a cut, the 01:00:00 frame of that video is set; a sweep repairs
   the ten most recent videos still showing the generic image.
+- **Picture in step, and black where it should be**: the 9:16 letterbox bars and its offline
+  card are pure black (operator request). The feeds were minutes apart because the 16:9
+  publisher's timeline slid at 0.914x wall time at 30 fps (0.919x at 25) — the box cannot
+  sustain those rates — so it fell behind the camera-driven Shorts feed, which held 1x. At
+  `OUT_FPS=20` it holds 1x; the two feeds' pictures are now seconds apart
+  (`docs/architecture.md`, "Why 20 and not 30").
 - **Cleanup**: releases and tags removed; `backup/1.0`, `backup/2.7`, `release.sh`, `RELEASE.md`,
   the per-release notes, `docs/v3-datacenter-plan.md` and `docs/task-table-standard.md` deleted;
   README rewritten; wiki's rollback and tracker pages removed.

@@ -2,8 +2,21 @@
 
 ## Video processing
 Camera delivers ~14fps at 1920x1080 (after crop - already full HD, no upscaling).
-Output to YouTube is a CONSTANT 30fps at `ENC_BITRATE="6800k"` (the rate YouTube Studio
-asks for at 1080p30).
+Output to YouTube is a CONSTANT 20fps at `ENC_BITRATE="6800k"`.
+
+**Why 20 and not 30 (measured 2026-10-28).** The publisher's timeline is paced by the BASE
+layer's `-re` still loop, so its media clock only keeps real time while the machine can
+sustain the output rate. At `OUT_FPS=30` the publisher achieved 27.4 fps and its timeline
+advanced at **0.914x wall time**; at 25 fps it achieved 22.5-23 and still ran at **0.919x**.
+A slow timeline does not show up as choppiness - it accumulates: the 16:9 feed fell 6
+minutes behind the camera (and behind the 9:16 feed, which is camera-driven and held 1x)
+within an hour, and fell further until the publisher restarted. At 20 fps the publisher
+holds **1x (fps 19.99)** and catches up after load spikes. Diagnose with:
+
+    grep -E '^(fps|out_time_us|speed)=' ~/Downloads/YTLive/log/progress.txt | tail -3
+
+If `speed` sits below 1 for more than a minute, the target is above what the box can
+sustain - do not raise `OUT_FPS` without re-measuring.
 
 The literal chain (stream.sh) is:
 
@@ -19,12 +32,12 @@ The camera chain itself is:
     unsharp=5:5:0.7:5:5:0   gentle sharpen
     eq=saturation=1.05      +5% colour
 
-The output is genuine CFR 30 because the base layer is 30fps and `overlay=repeatlast` holds
+The output is genuine CFR 20 because the base layer is 20fps and `overlay=repeatlast` holds
 the last camera frame in between; the camera's own rate never becomes the output rate.
 
 **Frame interpolation:** true motion-compensated interpolation (`minterpolate`) was
 benchmarked on this machine at **0.04x realtime - about 25x too slow**. It is not usable.
-`fps=30` duplicates frames instead: motion judder is unchanged from the 14fps source, but
+`fps=OUT_FPS` duplicates frames instead: motion judder is unchanged from the 14fps source, but
 the stream is genuine CFR 30 and duplicated frames cost almost no bitrate. `FPS_MODE` is
 declared in conf/stream.env.example but read by no script - the chain is hardcoded to
 `fps=OUT_FPS`, so setting `FPS_MODE="blend"` (the `framerate` filter, which blends
@@ -34,7 +47,10 @@ neighbours into synthetic frames) does nothing today. It is kept as a record of 
 yuv420p->rgb24->yuv420p round-trip that measured ~3x slower. `eq=saturation` works
 natively in YUV. Same visual goal, near-zero cost.
 
-Measured: ~106% CPU of 400% available (4 logical cores) = comfortable headroom.
+Measured 2026-10-28, both feeds live: the 16:9 publisher uses ~2.0 of 4 logical cores, the
+9:16 publisher ~0.65, the reader ~0.01; with the monitor and the periodic yt-dlp probes the
+machine runs at ~94% busy (5-6% idle). That is the real reason the 16:9 target is 20 fps:
+25 and 30 both outran the box and the timeline drifted.
 
 ## Audio
 CCTV microphone audio is **never streamed** (privacy). It is dropped in the READER (`-c:v
