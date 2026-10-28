@@ -718,3 +718,27 @@ The 01:00:00 frame grab itself was proven against a finished video (1920x1080 JP
 and runs it against a stubbed yt_api: nothing happens before the 4 h mark; when due it calls
 `frame-thumbnail <id> 01:00:00` (never a suggestion); `SET` clears the pending slot and then
 runs the repair sweep; `NOTREADY` keeps the video queued and reschedules it. 21 checks.
+
+## 20. The quota guard is a circuit breaker now, not a clock
+
+The 2026-10-28 afternoon is the argument. A process carrying the old six-hour default armed
+the guard at 11:40; YouTube's pool came back around 14:00; the guard refused every call until
+17:37 anyway. The streamer reported "quota exhausted" for three and a half hours against a
+service that was answering, the vertical feed stayed dark, and the 16:9 rotation was refused
+four times while its segment grew to 11.2 h - close enough to the 12 h archive limit to matter.
+
+A fixed timer cannot tell whether reality changed, so the guard is now a circuit breaker:
+
+* **capped** - the backoff doubles on repeated refusals but never exceeds
+  `YT_QUOTA_MAX_COOLDOWN` (1 h). Whatever an environment or an old process says, no guard can
+  hide a whole afternoon.
+* **half-open** - once the deadline passes the next call is allowed through to find out. A
+  refusal re-arms it; a success ends the episode.
+* **cleared by success** - every HTTP 200 calls `quota_clear()`, so a guard that raced the reset
+  disappears on the first request that gets through instead of counting down a stale deadline.
+* **visible** - `status.sh` prints `=== API quota breaker ===` with the time left, the attempt
+  count and the last error, and says so plainly when no guard is armed.
+
+`tests/t19_quota_breaker.sh` (9 checks) proves the ceiling clamps a six-hour setting, that
+doubling stops at the cap, that an expired guard lets the next call through, that an armed one
+still refuses, and that both `quota_clear()` and the HTTP success path remove the file.

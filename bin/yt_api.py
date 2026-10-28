@@ -53,7 +53,11 @@ CAPTURED = BASE / "log/broadcast_captured.json"
 # spends nothing) and lets the rotation REFUSE to cut rather than cut into a state where no
 # successor broadcast can be created. It expires by time, and a fresh 403 re-arms it.
 QUOTA_FILE = BASE / "log/quota_exhausted"
-QUOTA_COOLDOWN = int(os.environ.get("YT_QUOTA_COOLDOWN", "21600"))   # 6h
+QUOTA_COOLDOWN = int(os.environ.get("YT_QUOTA_COOLDOWN", "1800"))        # first backoff
+# A guard that outlives the real reset by hours is worse than an extra probe: on 2026-10-28 a
+# process carrying the old 6 h default blocked every call until 17:37 while YouTube's pool had
+# been back since ~14:00. The ceiling makes that impossible whatever the environment says.
+QUOTA_MAX_COOLDOWN = int(os.environ.get("YT_QUOTA_MAX_COOLDOWN", "3600"))
 # The channel's branded still, reused at every rotation. Kept in whatever format it was
 # given - PNG included - because re-encoding it is not ours to decide.
 # Order matters: the first that exists wins, so a stray PNG dropped in later would
@@ -91,6 +95,22 @@ def die(msg, code=2):
     sys.exit(code)
 
 
+def _quota_span(prev, base, cap):
+    """How long to stay quiet after a quota refusal. Pure, so it can be tested without time.
+
+    Doubles while the pool keeps refusing, but NEVER above cap. A stale guard is the failure
+    mode that matters: it answers "no" to a question that has stopped being true.
+    """
+    base = max(60, min(int(base), int(cap)))
+    prev_span = 0
+    try:
+        if prev.get("until") and prev.get("armed_at"):
+            prev_span = max(0, int(prev["until"]) - int(prev["armed_at"]))
+    except Exception:
+        prev_span = 0
+    return max(60, min(max(base, prev_span * 2), int(cap)))
+
+
 def quota_record():
     """The armed quota cooldown, or {} when the API may be called. Never raises."""
     try:
@@ -102,13 +122,33 @@ def quota_record():
     return {}
 
 
+def quota_clear():
+    """Forget the cooldown. Called after ANY successful request.
+
+    This is what stops a guard outliving reality: the moment a call gets through - even one
+    that raced the reset - the file is gone instead of counting down a stale deadline.
+    """
+    try:
+        QUOTA_FILE.unlink()
+    except OSError:
+        pass
+
+
 def quota_arm(detail):
-    """Record that the pool is empty until now+QUOTA_COOLDOWN. Returns the deadline."""
-    until = int(time.time()) + QUOTA_COOLDOWN
+    """Record that the pool is empty, backing off up to QUOTA_MAX_COOLDOWN. Returns the deadline."""
+    now = int(time.time())
+    try:
+        prev = json.loads(QUOTA_FILE.read_text())
+    except Exception:
+        prev = {}
+    span = _quota_span(prev, QUOTA_COOLDOWN, QUOTA_MAX_COOLDOWN)
+    until = now + span
     try:
         QUOTA_FILE.parent.mkdir(parents=True, exist_ok=True)
-        QUOTA_FILE.write_text(json.dumps({"until": until, "armed_at": int(time.time()),
-                                          "detail": detail[:300]}, indent=2) + "\n")
+        QUOTA_FILE.write_text(json.dumps({
+            "until": until, "armed_at": now, "span": span,
+            "attempts": int(prev.get("attempts", 0)) + 1,
+            "detail": detail[:300]}, indent=2) + "\n")
     except OSError:
         pass
     return until
@@ -125,8 +165,9 @@ def die_quota(detail=""):
     print(json.dumps({"status": "QUOTA",
                       "msg": "YouTube Data API quota is exhausted - no request was made",
                       "until": r.get("until"), "reset_in_s": max(0, int(r.get("until", 0)) - int(time.time())),
+                      "attempts": r.get("attempts"), "span_s": r.get("span"),
                       "detail": (detail or r.get("detail", ""))[:200],
-                      "hint": "rotations are refused while this lasts (ROTATE_WITHOUT_API=no); the channel stays live"}))
+                      "hint": "the guard is capped at YT_QUOTA_MAX_COOLDOWN and any successful call clears it; rotations stay refused while it lasts (the channel stays live)"}))
     sys.exit(2)
 
 
@@ -304,6 +345,7 @@ def api(method, path, token, params=None, body=None):
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             raw = r.read()
+            quota_clear()      # a request that got through means any armed guard is stale
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as e:
         detail = e.read().decode()[:500]

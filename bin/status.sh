@@ -60,6 +60,33 @@ else
   bad "no heartbeat file - the watchdog has not run since this was installed"
 fi
 
+print "\n=== API quota breaker ==="
+# The guard is a circuit breaker, not a clock: it is capped at YT_QUOTA_MAX_COOLDOWN and any
+# successful request clears it. Showing its age here is what makes a stale one visible before
+# it turns into "why has nothing rotated since lunch".
+qfile="$BASE/log/quota_exhausted"
+if [[ -s "$qfile" ]]; then
+  qline=$(python3 - "$qfile" <<'QPY' 2>/dev/null
+import json, sys, time
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    print("unreadable"); raise SystemExit
+left = int(d.get("until", 0)) - int(time.time())
+print(f"{max(0, left // 60)}m left, attempt {d.get('attempts', '?')}, span {int(d.get('span', 0)) // 60}m, last error: {str(d.get('detail', ''))[:70]}")
+QPY
+)
+  if [[ -z "${qline:-}" || "$qline" == "unreadable" ]]; then
+    warn "quota guard file exists but cannot be read"
+  elif [[ "$qline" == *"0m left"* ]]; then
+    ok "guard expired and is about to probe: $qline"
+  else
+    warn "quota guard armed: $qline"
+  fi
+else
+  ok "no quota guard armed - the API is being used normally"
+fi
+
 print "\n=== OAuth token: can this installation still talk to YouTube? ==="
 # `token` PROBES the credential by minting a real access token, so it is authoritative; the day
 # countdown is only advisory and is wrong once the OAuth app is published (a published app's
