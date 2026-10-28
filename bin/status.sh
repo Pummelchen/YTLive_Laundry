@@ -121,9 +121,14 @@ if [[ "$NET" == yes ]]; then
     if (( secs >= 40500 )); then
       bad "this segment is ${hours}h${mins}m old - past the 11h15m cliff, a cut is forced even without the API (12h = recording discarded)"
     elif (( secs >= 32400 )); then
-      warn "this segment is ${hours}h${mins}m old - the 8h03m cut is overdue; the cliff is 12h"
+      warn "this segment is ${hours}h${mins}m old - the ${rh:-8}h${rm:-10}m cut is overdue; the cliff is 12h"
     else
-      ok "segment age ${hours}h${mins}m (rotation at 8h03m, forced cut at 11h15m, archive lost at 12h)"
+      rot_s=$(( ${ROTATE_HOURS:-8} * 3600 + ${ROTATE_MINUTES:-0} * 60 ))
+      hard_s=${ROTATE_HARD_STOP_AFTER:-40500}
+      rh=$(( rot_s / 3600 )); rm=$(( (rot_s % 3600) / 60 ))
+      hh=$(( hard_s / 3600 )); hm=$(( (hard_s % 3600) / 60 ))
+      due=$(date -r $(( age + rot_s )) '+%H:%M' 2>/dev/null)
+      ok "segment age ${hours}h${mins}m - cut at ${rh}h${rm}m (${due}), forced cut at ${hh}h${hm}m, archive lost at 12h"
     fi
   fi
   print -r -- "$st" | grep -q '"status": *"LIVE"' && ok "$st" || bad "$st"
