@@ -393,7 +393,11 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
   if [[ -z "${PUBPID:-}" ]] || ! kill -0 "$PUBPID" 2>/dev/null; then
     if [[ -n "${PUBPID:-}" ]]; then
       DEATHS=$(( DEATHS + 1 ))
-      vlog "PUBLISHER exited on its own (mode=$MODE, ${DEATHS} in a row) - restarting"
+      # Log WHY it went, not just that it did: an unexplained exit every few minutes is a
+      # different fault from YouTube closing the ingest (224), an input timeout, or a kill (137).
+      local death_rc=0
+      wait "$PUBPID" 2>/dev/null; death_rc=$?
+      vlog "PUBLISHER exited on its own (mode=$MODE, rc=$death_rc, ${DEATHS} in a row) - restarting"
       if (( DEATHS >= 3 )); then
         if [[ "$MODE" == "camera" ]]; then
           SLATE_UNTIL=$(( $(date +%s) + 120 ))
