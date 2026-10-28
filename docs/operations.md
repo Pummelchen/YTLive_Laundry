@@ -152,7 +152,7 @@ another copy of a multi-megabyte `publisher.log`. `.git` is 353 MB, but the logs
 measured across the whole history, `log/` accounts for 26.6 MB and `conf/` for 3.7 MB, while
 the tracked `MP3/` library is **328.4 MB** of it. The weight is the music. Both are gitignored
 now, which stops new copies but does not remove the blobs already in the public history (see
-the accepted-risk note in the wiki Project-Tracker).
+the accepted-risk note in the wiki's Risks and notes page).
 
     LOG_MAX_BYTES=524288      512 KB cap per log file (the shipped conf/stream.env.example)
     HOUSEKEEP_EVERY=300       stream.sh trims every 5 min, and once at startup
@@ -174,4 +174,4 @@ publisher start). `MP3/` stays tracked: it is write-once, so it does not grow - 
 it is nearly the whole 353 MB `.git`, so it is also not a rounding error. The blobs already in
 public history (the MP3 library, plus the `log/` and `conf/golden.jpg` copies that were tracked
 until 2026-09-05) are untouched; removing any of them needs a history rewrite and a force-push,
-which is a separate, deliberate decision - see the accepted-risk note in the wiki Project-Tracker.
+which is a separate, deliberate decision - see the accepted-risk note in the wiki's Risks and notes page.

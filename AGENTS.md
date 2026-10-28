@@ -17,11 +17,8 @@ macOS-only **operational system, not a reusable library**: zsh scripts plus
 stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h03m broadcast
 rotation, with a second process watching the public stream and repairing it. It is
 in production — the docs record real outages with timestamps and measured
-CPU/bitrate figures. Deployment is `install.sh` on a Mac, or unpacking a release archive;
-releases are **source** archives (`1.0` = the code that was live on 2026-09-16, `2.0` = the
-audit fixes, `2.1` = the installer fixes on 2026-09-17, `2.2` = the external watchdog and host
-hardening on 2026-09-19, `2.3` = the host forensics and the verified `pmset` hardening), built and
-published by `release.sh`. The architecture is a deliberate
+CPU/bitrate figures. Deployment is `install.sh` on a Mac. `main` is the only artifact: there are no GitHub releases
+and no version tags. The architecture is a deliberate
 two-process split: a
 **reader** (camera RTSP → local UDP, restarts freely) and a **publisher** (UDP + MP3
 playlist → YouTube RTMP, runs continuously), so a camera dropout never tears down the
@@ -47,22 +44,16 @@ RTMP session.
   watchdog's `watchdog.env.example` (the tracked template; the live `conf/watchdog.env`
   holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
   unit for the always-on host).
-- `docs/` — the design/ops notes, plus the per-release notes `release-notes-vX.Y.md`.
-  `docs/v3-datacenter-plan.md` is the v3.0 analysis, **closed 2026-09-20**: the streamer
-  stays on the shop Mac and no VPS is used on the streaming side. It is kept as reasoning,
-  not as a plan.
-  `MP3/` — 25 tracks (328 MB, tracked; never in a release archive).
+- `docs/` — the design and operations notes, including the 2026-10-28 outage postmortem.
+  `MP3/` — 25 tracks (328 MB, tracked).
 - `VERSION` at the root is the **only** version declaration; `CHANGELOG.md` is the record.
-  `release.sh` builds and (`--publish`) publishes a source release from a tag — dry run by
-  default. `tests/` is the credential-free harness; `backup/` holds the frozen snapshots of what
-  was deployed (see `backup/README.md`).
+  `tests/` is the credential-free harness.
 - **Audit reports are not kept in the working tree.** A finished audit is archived by commit
   permalink and its outcome is recorded permanently in `CHANGELOG.md`, in the release notes and in
   the wiki project tracker, so the next audit does not read a stale one and mistake it for current.
   The 2026-09-16 report is at
   <https://github.com/Pummelchen/YTLive_Laundry/blob/d603fdcf92dff17bfb7aa770562b04b84e37e71d/AUDIT/2026-09-16-full-audit.md>;
-  recover the tree with `git checkout d603fdc -- AUDIT`. `release.sh` excludes `AUDIT/` from every
-  archive as well, so the convention is enforced rather than remembered.
+  recover the tree with `git checkout d603fdc -- AUDIT`.
 - `install.sh` at the root. Gitignored at runtime: `log/`, `conf/stream.env`,
   `conf/yt_oauth.json`, `conf/golden.jpg` and `.release-build/` (transient release scratch).
 
@@ -117,8 +108,7 @@ and binding afterwards leaves the broadcast in `ready` forever.
 ## Identity
 
 **One version declaration, at the root, and nowhere else.** `VERSION` holds a two-component
-`MAJOR.MINOR` version and is authoritative: `release.sh` **fails the build** when it disagrees
-with the tag being released. No script carries a version literal. Every tunable is declared in
+`MAJOR.MINOR` version and is authoritative. No script carries a version literal. Every tunable is declared in
 `conf/stream.env` (`ROTATE_HOURS`, `ROTATE_MINUTES`, `MODE`,
 `OUT_FPS`, `CHECK_INTERVAL`, `CORR_MIN`, `FAIL_SECONDS`, `OFFLINE_SECONDS`,
 `BLIND_SECONDS`, `ROTATE_NATIVE_WAIT`, `ROTATE_GRACE`, `ROTATE_MIN_INTERVAL`,
@@ -145,9 +135,6 @@ The gates, still worth running by hand before restarting anything:
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
 
-`release.sh` runs the syntax gate and the test suite **from the exported archive** before it
-packs it, so a release cannot ship a tree that fails either.
-
 ## Traps
 
 - **The heartbeat token lives in a mode 600 file and is NEVER passed on a command line
@@ -163,7 +150,7 @@ packs it, so a release cannot ship a tree that fails either.
 - **A change that spans the streamer and the watchdog host is not live until BOTH are
   deployed — and nothing tells you when they disagree.** They are separate installs with
   separate installers and no version stamp on the host: `bin/deploy-release.sh --tag vX.Y`
-  on the streamer, `bin/watchdog-install.sh --start` on the watchdog host (it keeps an
+  on the streamer (a tag you create deliberately - none are published), `bin/watchdog-install.sh --start` on the watchdog host (it keeps an
   existing live `conf/watchdog.env`, so a re-install cannot disarm a configured heartbeat).
   Measured 2026-09-19: the host was still running a **pre-2.4** `yt_watchdog.py` — the
   stale-heartbeat rule existed only in the repo, so a freshly deployed push/listener pair
@@ -378,55 +365,3 @@ packs it, so a release cannot ship a tree that fails either.
   the firmware accepts ONVIF encoder writes, reports them back correctly, and
   **ignores them** — the delivered stream stayed at ~2.3 Mbit/s and 14 fps through
   bitrate settings of 8192, 12288, 16384 and 20480.
-
-## Task tracker
-
-Open work lives in exactly one place: the wiki's **[Project Tracker](https://github.com/Pummelchen/YTLive_Laundry/wiki/Project-Tracker)**.
-It is a single table under `## Tasks`, and it is the only backlog — no Open/Blocked/
-Parked sections, no second list, status is a column rather than a heading.
-
-The rules that govern the table — the columns, the four types, the three statuses, the
-S/M/L sizes, ownership, and the ordering that *is* the priority — are defined once in
-[`docs/task-table-standard.md`](docs/task-table-standard.md). Read it before adding,
-changing or closing a row.
-
-- **An epic is a project, not a row.** Split it until each row is one independently
-  closable outcome.
-- **IDs are stable and never reused.** Closing deletes the row; the gap is correct.
-- **Every row has a next step.** If you cannot name one, split it, block it or park it.
-- **History does not live in the table.** What was tried, measured or rejected goes to
-  `CHANGELOG.md` and the closing commit; the open row links to the evidence.
-- **Update a row the moment its state changes**, and read the table top to bottom
-  before starting work — the top Open row is the default next task.
-- **A row is a measured defect or an improvement this checkout can implement in code.**
-  Not a wish, not a purchase, not "we should ask someone to buy a UPS": buying hardware
-  is not work the repository can do, so it is not a row — the operator keeps those
-  decisions in their own notes. If the next step is "someone buys/installs something",
-  it is out of scope here. Measured symptoms of an unowned class of failure are a row
-  only when there is a code change or a test that would close them.
-
-## Releasing
-
-**Read [`RELEASE.md`](RELEASE.md) before cutting a release.** It is this repository's
-own release standard — edited here, not deployed from anywhere — and it carries both
-the general rules and this repository's own section. Do not improvise a release.
-
-The non-negotiables:
-
-- **Apple Silicon only** — build native `arm64` (M1–M6). Never `--arch x86_64`,
-  never `ARCHS=arm64 x86_64`, and never `lipo -create`, which is how a universal
-  binary gets made.
-- **Assert it** — `lipo -archs <binary>` must report exactly `arm64`. A build that
-  silently produced a fat binary is a release defect, not a build option.
-- **Every release carries the artifacts.** A tag alone is not a release.
-- **Identity is single-sourced and enforced** — never bump one declaration of the
-  version or build number on its own; the build or CI must fail on a mismatch.
-- **Dry run first**; publish only on an explicit flag.
-- **Never fetch a model, dataset or dependency to make a gate pass.** A check that
-  cannot run is reported *not checked*, and the release notes must name it.
-
-**Part 2 modifies these for this repository, and Part 2 wins.** There is no compiled artifact and
-no `arm64` build to assert: a release here is a **source archive** with a `.sha256` beside it,
-built and published by `release.sh`. So §1.2.5, §1.2.6 and §1.8 apply, while §1.6's macOS binary
-packaging does not. Identity is the two-component `VERSION` at the root, enforced against the tag.
-Archives contain no `MP3/`, no `backup/` and never an audit report.

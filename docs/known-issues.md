@@ -1,10 +1,7 @@
 # Known issues
 
-**This page is cosmetic and known-limitation notes, not the task list.** The authoritative
-open-work list is the
-[wiki Project-Tracker](https://github.com/Pummelchen/YTLive_Laundry/wiki/Project-Tracker);
-closed items are deleted from it, so this file can only ever lag it. Open there at the tracker's
-last update (2026-09-17): T-01, T-02, T-06, T-08–T-10, T-12–T-20, T-23–T-26 and T-28.
+**This page is cosmetic and known-limitation notes, not a task list.** There is no separate
+tracker: what is known and unfixed is described here, and what changed is in `CHANGELOG.md`.
 
 ## Known cosmetic issues
 - The two ffmpeg warnings this page used to list are suppressed by `-loglevel error` and no

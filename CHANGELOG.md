@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-10-28 — two feeds, and no more releases
+
+The channel now runs a second, independent 9:16 broadcast for the Shorts feed, and the project
+stopped publishing releases: `main` is the only artifact, with no tags and no `backup/` snapshots
+in the tree.
+
+- **9:16 Shorts feed** (`bin/vertical.sh`, `com.user.cctv-vertical`): its own broadcast, rotation,
+  slate and launchd job, showing the same single camera panel as the 16:9 feed (verified at
+  1080x1920 on YouTube and seen live in the Shorts feed). It inherits the 16:9 settings from
+  `conf/broadcast_template.json` via `_inherit`, so only the title differs.
+- **Camera loss no longer becomes channel loss**: the reader feeds an offline card into the local
+  UDP port, a camera that accepts on 554 but never streams gets slate bursts and an ONVIF reboot,
+  and the main loop restarts a dead reader.
+- **Camera discovery**: `bin/find_rtsp.py` (TCP sweep from every interface), `bin/cam_scan.py`
+  plus `com.user.cctv-camscan` (a 10-minute dual-interface report into `log/cam_ip`).
+- **Quota guard is a circuit breaker**: 30-minute first backoff, doubling, capped at 1 h, cleared
+  by any successful request, and shown by `status.sh`.
+- **Rotation**: cut at 8h10m; a cut refused for an unusable API forces through at 11h15m so a
+  segment can never cross YouTube's 12 h archive cliff unrecorded.
+- **Thumbnails**: four hours after a cut, the 01:00:00 frame of that video is set; a sweep repairs
+  the ten most recent videos still showing the generic image.
+- **Cleanup**: releases and tags removed; `backup/1.0`, `backup/2.7`, `release.sh`, `RELEASE.md`,
+  the per-release notes, `docs/v3-datacenter-plan.md` and `docs/task-table-standard.md` deleted;
+  README rewritten; wiki's rollback and tracker pages removed.
+
+Full evidence and timeline: `docs/2026-10-28-outage-postmortem-and-plan.md`.
+
+
 The scheme is two-component `MAJOR.MINOR`, released as the tags `v1.0`, `v2.0`, `v2.1`, `v2.2`,
 `v2.3` and `v2.4`. The
 authoritative version is the `VERSION` file at the repository root; a release refuses to build

@@ -2,6 +2,9 @@
 # Deploy a tagged release onto this machine, with a rollback that covers everything the install
 # actually changes.
 #
+# NOTE: no tags are published in this repository any more (main is the only artifact). This
+# script still works against a tag you create deliberately; it is not part of the normal flow.
+#
 #   deploy-release.sh --tag v2.1 [--dry-run]        check everything, change nothing (default)
 #   deploy-release.sh --tag v2.1 --go               deploy now
 #   deploy-release.sh --tag v2.1 --wait-for-cut      wait for the next rotation, then deploy

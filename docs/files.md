@@ -2,8 +2,10 @@
 
 ## Files
     install.sh               provision the STREAMER: ffmpeg, yt-dlp, two LaunchAgents
-    release.sh               build and publish a source release from a tag (RELEASE.md)
-    bin/stream.sh            the streamer (reader + publisher, watchdog, rotation, VOD check)
+    bin/stream.sh            the 16:9 streamer (reader + publisher, watchdog, rotation, VOD check)
+    bin/vertical.sh          the 9:16 Shorts streamer: its own broadcast, rotation, slate and
+                             LaunchAgent. Inherits the 16:9 settings via conf/vertical_template.json
+                             and differs only in the title. Never touches the 16:9 state.
     bin/shuffle_playlist.sh  regenerate the random track order
     bin/status.sh            health check
     bin/preflight.sh         probe camera codecs
@@ -17,14 +19,21 @@
                              ignores the encoder settings. See docs/camera.md.
     bin/onvif_probe.py       pull RTSP URLs from an ONVIF camera
     bin/find_cam.py          ONVIF WS-Discovery, used by cam_ip.py as the last resort
+    bin/find_rtsp.py         a TCP sweep for RTSP, from EVERY local address - the fallback when
+                             ONVIF multicast is blocked or the camera moved to a new address
+    bin/cam_scan.py          the independent 10-minute scanner: ONVIF + TCP on each interface,
+                             writes log/cam_ip and log/cam_scan.log (LaunchAgent cctv-camscan)
+    bin/cam_scan.sh          the zsh entry point for it - launchd jobs run through zsh because
+                             Full Disk Access is granted to /bin/zsh, not to python3
     bin/ssh_mesh.sh          build and verify a full SSH key mesh between the Macs
     bin/smoke_test.sh        RUN THIS BEFORE RESTARTING ANYTHING - see below
     bin/lib.sh               yt_api_ready/yt_api_call, shared by stream.sh and yt_monitor.sh
     bin/yt_api.py            YouTube Live API: create/bind/end, and the config reference
     bin/yt_check.py          pulls a frame from the public stream and grades it
     bin/yt_monitor.sh        the watchdog loop
-    bin/yt_watchdog.py       the EXTERNAL watchdog: runs OFF the streamer and emails a human
-                             when the channel goes dark (the only code allowed to notify)
+    bin/yt_watchdog.py       the EXTERNAL watchdog: runs OFF the streamer (the only code
+                             allowed to notify). Its transport is configurable; the deployed
+                             copy writes alert files rather than email.
     bin/yt_heartbeat.py      the dead-man heartbeat, both halves in one file so the wire format
                              has one implementation: `serve` (on the watchdog host) accepts an
                              authenticated POST and atomically writes the file the watchdog
@@ -44,6 +53,9 @@
                              service - see its own header for why both matter.
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
+    conf/vertical_template.json   the 9:16 overrides: it declares _inherit pointing at
+                             broadcast_template.json, so it carries ONLY the title. Inheritance
+                             is resolved at load time, so it follows every capture.
     conf/broadcast_template.json  THE REFERENCE: title, description, tags, category,
                              language, privacy, latency - enforced onto every new broadcast.
                              TRACKED, and `capture` (which runs at every rotation) writes it

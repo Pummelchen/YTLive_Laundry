@@ -215,7 +215,7 @@ if verify; then
   else
     say "HARDENED. This survives a reboot and a lid close."
   fi
-  say "Record it: the wiki Project-Tracker carries this as T-29, and it can now be closed."
+  say "Record it in CHANGELOG.md: this was the outstanding host-hardening item."
   exit 0
 fi
 
