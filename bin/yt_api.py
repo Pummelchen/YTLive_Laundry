@@ -720,11 +720,39 @@ def template_path():
     return pathlib.Path(override) if override else TEMPLATE
 
 
-def load_template():
+def _read_json(path):
     try:
-        return json.loads(template_path().read_text())
+        return json.loads(path.read_text())
     except Exception:
         return {}
+
+
+def _deep_merge(base, over):
+    """Recursive merge: dicts merge key by key, anything else in `over` replaces."""
+    out = dict(base)
+    for k, v in over.items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = _deep_merge(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+
+def load_template():
+    """The settings reference, optionally INHERITING another one.
+
+    A second feed must be configured identically to the first except for the parts that make
+    it a different video. Copying the values would drift: the 16:9 reference is rewritten at
+    every rotation by cmd_capture, so a copied vertical template would be stale within a day.
+    So the vertical template carries only its overrides and points at the parent with
+    "_inherit"; everything else - description, tags, category, privacy, broadcast options,
+    localisations - comes from the parent at load time, forever.
+    """
+    t = _read_json(template_path())
+    parent = t.pop("_inherit", None)
+    if parent:
+        t = _deep_merge(_read_json(BASE / "conf" / str(parent)), t)
+    return t
 
 
 def save_template(t):
@@ -737,6 +765,10 @@ def save_template(t):
     write is what keeps the deployed tree clean, so it is a correctness fix, not an optimisation.
     """
     path = template_path()
+    # Never flatten an inheriting template: writing the merged result back would bake today's
+    # parent values into the child and silently end the inheritance.
+    if _read_json(path).get("_inherit"):
+        return False
     path.parent.mkdir(parents=True, exist_ok=True)
     body = json.dumps(t, indent=2, ensure_ascii=False)
     try:

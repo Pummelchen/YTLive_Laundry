@@ -742,3 +742,31 @@ A fixed timer cannot tell whether reality changed, so the guard is now a circuit
 `tests/t19_quota_breaker.sh` (9 checks) proves the ceiling clamps a six-hour setting, that
 doubling stops at the cap, that an expired guard lets the next call through, that an armed one
 still refuses, and that both `quota_clear()` and the HTTP success path remove the file.
+
+## 21. The 9:16 feed is now the 16:9 configuration, title aside
+
+The vertical template used to be a **copy**: its own shorter description, its own 15 tags.
+Copies drift - `stream.sh` rewrites `conf/broadcast_template.json` at every rotation
+(`cmd_capture`), so the copy was stale within a day, and every difference had to be fixed by
+hand on the live video.
+
+It is now an **override file** that inherits:
+
+```json
+{ "_inherit": "broadcast_template.json",
+  "video": { "title": "... Bengkong #shorts #live #livestream #cctv #batam #indonesia" },
+  "localizations": { "id": { "title": "... same ..." } } }
+```
+
+`load_template()` deep-merges the parent under those overrides, so description, tags (38),
+category, privacy, language, broadcast options and localisations are the parent's - read at
+load time, forever. `save_template()` refuses to write an inheriting template, so a capture can
+never flatten the child and silently end the inheritance.
+
+Applied to the live broadcast with `enforce`, and verified field by field against the 16:9
+video: title is the only difference; description, 38 tags, category 24, privacy and languages
+all match.
+
+`tests/t20_templates.sh` (4 checks): the merged child differs from its parent ONLY in the
+title, a tag added to the parent at runtime appears in the child (proving it is inheritance,
+not a copy), `save_template` refuses to flatten it, and `_inherit` is still declared.
