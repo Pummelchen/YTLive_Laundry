@@ -96,5 +96,20 @@ s = open(sys.argv[1]).read()
 sys.exit(0 if s.find("2a. SYNC") < s.find("2b. fallback") else 1)
 PY
 
+# The clock file must name the new broadcast as soon as that broadcast is live. At the next
+# housekeeping pass (up to 300 s later) is too late: the 9:16 cut would trail the 16:9 successor
+# by minutes, and the two segments would not line up.
+python3 - "$PWD/bin/stream.sh" <<'PY' && t_ok "the new broadcast is published to the clock immediately, not at the next housekeeping pass" || t_bad "the clock may wait for housekeeping, so the Shorts cut trails the 16:9 by minutes"
+import sys
+s = open(sys.argv[1]).read()
+ok = True
+for marker in ('await_broadcast "$old_id" rotation', 'await_broadcast "" start'):
+    i = s.find(marker)
+    if i < 0 or s.find("refresh_broadcast_clock", i, i + 400) < 0:
+        print(f"no refresh after {marker!r}")
+        ok = False
+sys.exit(0 if ok else 1)
+PY
+
 t_teardown
 t_summary

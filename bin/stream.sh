@@ -1233,6 +1233,10 @@ rotate_broadcast() {
   hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
   log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_LABEL}"
   await_broadcast "$old_id" rotation
+  # The 9:16 feed cuts when log/broadcast_started names a new broadcast, so write it the moment
+  # the successor is live. Leaving it to the next housekeeping pass (up to HOUSEKEEP_EVERY=300 s)
+  # started the Shorts cut minutes after this one - the drift this file exists to remove.
+  refresh_broadcast_clock
 }
 
 log "starting: MODE=$MODE ${OUT_FPS}fps ${ENC_BITRATE} cam=$CAM_URL audio=${AAC_ENC}@${AUD_BITRATE} (cctv mic NOT streamed)"
@@ -1264,6 +1268,9 @@ verify_pending_vods         # catch up on any recording we have not confirmed ye
 recheck_final_vods          # and read the PUBLISHED duration of the ones that have settled
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
+# Same reason as at the end of a rotation: after a restart that fragmented the broadcast, the
+# new id is live by now and the 9:16 feed must see it immediately, not within 5 minutes.
+refresh_broadcast_clock
 
 # Publisher watchdog: only a genuinely stuck publisher warrants a YouTube reconnect.
 last=""; stuck=0; housekeep_in=0
