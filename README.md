@@ -31,9 +31,11 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 ## How it behaves
 
 - **Rotation.** Each segment is cut after **8 h 10 m**, so YouTube keeps a watchable recording
-  instead of dropping it at its 12 h archive limit. A cut needs the API to create the successor
-  broadcast, so a cut is refused while the API is unusable — with a **hard stop at 11 h 15 m**,
-  past which the cut happens anyway, because a lost recording is worse than a short dark gap.
+  instead of dropping it at its 12 h archive limit. The 9:16 feed follows the 16:9 rotation clock
+  (`log/broadcast_started`), so both cuts land together and the two feeds stay in step. A cut
+  needs the API to create the successor broadcast, so a cut is refused while the API is
+  unusable — with a **hard stop at 11 h 15 m**, past which the cut happens anyway, because a
+  lost recording is worse than a short dark gap.
 - **Camera loss is not channel loss.** The reader feeds a slate card into the same local UDP
   port the publisher reads, so the broadcast stays live; a camera that answers on 554 but cannot
   stream gets slate bursts and, after 10 minutes, an ONVIF reboot.

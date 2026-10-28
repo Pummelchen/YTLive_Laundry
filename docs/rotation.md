@@ -109,6 +109,22 @@ it takes YouTube's own actualStartTime. When the age is uncertain it assumes the
 is OLDER, never younger - rotating early costs a shorter VOD, rotating late costs the
 recording outright.
 
+**Both feeds cut together (2026-10-28).** The 9:16 feed used to run its own 8h10m timer, so
+after a restart the two segments ended hours apart. It now watches `log/broadcast_started`,
+which stream.sh rewrites with the NEW id when the 16:9 successor goes live, and cuts at that
+moment (`SYNC: the 16:9 feed rotated to ...` in `log/vertical.log`). Two rules keep it from
+cutting twice:
+
+- the FIRST id it sees is only adopted, never acted on, so a vertical process that starts
+  mid-segment does not cut the live broadcast just because it came up;
+- its own age fallback waits `VERT_FALLBACK_GRACE` (20 min) past 8h10m. The 16:9 cut can
+  take up to 1020 s to name its successor (600 wait + 60 gap + 360 native), so an equal
+  clock would fire first, cut, and then cut AGAIN when the new id appeared. The fallback
+  exists only for the case where the other feed never moves (a long outage, a dead API).
+
+`tests/t22_rotation_sync.sh` drives the decision function and also asserts the grace exceeds
+the 16:9 rotation's worst case.
+
 ## Did the recording actually save?
 The whole point of cutting at 8h is a reviewable VOD, and a rotation can look perfectly
 successful while producing nothing watchable. Past 12h YouTube answers "This live stream

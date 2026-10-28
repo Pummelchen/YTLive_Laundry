@@ -18,7 +18,10 @@ in the tree.
 - **Quota guard is a circuit breaker**: 30-minute first backoff, doubling, capped at 1 h, cleared
   by any successful request, and shown by `status.sh`.
 - **Rotation**: cut at 8h10m; a cut refused for an unusable API forces through at 11h15m so a
-  segment can never cross YouTube's 12 h archive cliff unrecorded.
+  segment can never cross YouTube's 12 h archive cliff unrecorded. The 9:16 feed follows the
+  16:9 clock (`log/broadcast_started`) instead of running its own timer, so both cuts land at
+  the same moment and the two feeds cannot drift apart; its own fallback only fires 20 minutes
+  later, so a slow 16:9 rotation cannot cause a double cut (`tests/t22_rotation_sync.sh`).
 - **Thumbnails**: four hours after a cut, the 01:00:00 frame of that video is set; a sweep repairs
   the ten most recent videos still showing the generic image.
 - **Cleanup**: releases and tags removed; `backup/1.0`, `backup/2.7`, `release.sh`, `RELEASE.md`,

@@ -28,6 +28,8 @@ PROG="$BASE/log/vertical.progress"
 PIDFILE="$BASE/log/vertical.pid"
 PUB_PID="$BASE/log/vertical.publisher.pid"
 BSTATE="$BASE/log/vertical.broadcast"    # "<broadcast id> <epoch>" of the CURRENT vertical one
+MASTER="$BASE/log/broadcast_started"     # the 16:9 feed's "<broadcast id> <epoch>": the clock this
+                                         # feed follows, so both cuts land together
 SLATE="$BASE/log/vertical_slate.jpg"
 CAMIP_FILE="$BASE/log/cam_ip"
 PLAYLIST="$BASE/conf/playlist.txt"
@@ -50,6 +52,12 @@ source "$VCONF"
 : ${VERT_ROTATE_HOURS:=8}
 : ${VERT_ROTATE_MINUTES:=3}
 : ${VERT_GAP:=45}                 # seconds of silence between ending and re-creating a broadcast
+# How long past its OWN interval this feed waits before cutting on its own clock. The 16:9 cut
+# takes up to ROTATE_MAX_WAIT + ROTATE_GAP + ROTATE_NATIVE_WAIT (600+60+360 = 1020 s) to name the
+# successor, so a fallback that fired at exactly 8h10m would almost always cut a few seconds
+# BEFORE the sync, and then cut again when the 16:9 id finally appeared - two cuts per cycle.
+# 20 min keeps the normal path synced while still cutting at 8h30m if the other feed never moves.
+: ${VERT_FALLBACK_GRACE:=1200}
 : ${VERT_SLATE:=yes}              # stay live on a slate when the camera is gone
 : ${VERT_START_ON_CAMERA:=yes}    # do not go public until the camera has been up once
 : ${VERT_TITLE:=Live CCTV Batam - Ternak Laundry Bengkong (Shorts)}
@@ -95,6 +103,26 @@ cam_ip() {
 cam_up() { nc -z -G "$VERT_CAM_TIMEOUT" "$(cam_ip)" 554 2>/dev/null }
 
 broadcast_id() { sed -n '1s/ .*//p' "$BSTATE" 2>/dev/null }
+master_id() { sed -n '1s/ .*//p' "$MASTER" 2>/dev/null; }
+
+# Called once per loop with the id in the 16:9 clock file. 0 means: that broadcast was started
+# after the last one this feed cut for, so cut now. The FIRST id ever seen is only adopted
+# (MASTER_SEEN), never acted on - a vertical process that starts mid-segment must not cut the
+# live broadcast just because it is starting. With no vertical broadcast live there is nothing
+# to cut, so the id is adopted too; otherwise the next loop would cut the broadcast that the
+# start-up path is about to create.
+sync_pending() {
+  local mid=$1
+  [[ -n "$mid" ]] || return 1
+  if [[ -z "${MASTER_SEEN:-}" ]]; then
+    MASTER_SEEN=$mid
+    return 1
+  fi
+  [[ "$mid" != "$MASTER_SEEN" ]] || return 1
+  [[ -n "$(broadcast_id)" ]] || { MASTER_SEEN=$mid; return 1; }
+  return 0
+}
+
 broadcast_age() {
   local at
   at=$(sed -n '1s/[^ ]* //p' "$BSTATE" 2>/dev/null)
@@ -221,7 +249,10 @@ print(d.get("broadcast_id") or "")' 2>/dev/null)
 }
 
 rotate() {
-  vlog "ROTATE: ending the vertical broadcast after $(( VERT_ROTATE_SECONDS / 60 )) min"
+  # The age is reported, not the configured interval: since 2026-10-28 most cuts are triggered
+  # by the 16:9 clock, so "after 490 min" would be wrong for every one of them.
+  vlog "ROTATE: ending the vertical broadcast (age $(( $(broadcast_age) / 60 )) min)"
+
   stop_publisher
   vapi end >>"$LOG" 2>&1
   rm -f "$BSTATE"
@@ -250,6 +281,7 @@ SLATE_UNTIL=0
 LAST_WAIT_LOG=0
 LAST_LIVE_NUDGE=0
 LAST_QUOTA_LOG=0
+MASTER_SEEN=""
 LAST_LIVE_CHECK=0
 MODE=""            # camera | slate
 STUCK=0
@@ -336,8 +368,23 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
     fi
   fi
 
-  # 2. rotation, measured on the BROADCAST's age so a restart cannot extend a segment
-  if (( $(broadcast_age) > VERT_ROTATE_SECONDS )); then
+  # 2a. SYNC: follow the 16:9 rotation. Both feeds must cut at the same moment, so the 16:9
+  # broadcast is the clock. stream.sh rewrites log/broadcast_started with the NEW id when its
+  # successor goes live, which is exactly when this feed should start its own cut - the two
+  # new broadcasts then begin within a minute of each other.
+  mid=$(master_id)
+  if sync_pending "$mid"; then
+    vlog "SYNC: the 16:9 feed rotated to $mid - rotating this one too"
+    MASTER_SEEN=$mid
+    rotate "$WANT" || { sleep 60; continue; }
+    MODE="$WANT"; STUCK=0; LAST_FRAME=""
+    continue
+  fi
+
+  # 2b. fallback: the age clock still applies if a sync was missed (a long outage of the
+  # other feed, a restart that never saw a change). The grace keeps this from firing in the
+  # minute between the 16:9 cut and its successor's id appearing - that would cut twice.
+  if (( $(broadcast_age) > VERT_ROTATE_SECONDS + VERT_FALLBACK_GRACE )); then
     rotate "$WANT" || { sleep 60; continue; }
     MODE="$WANT"; STUCK=0; LAST_FRAME=""
   fi
