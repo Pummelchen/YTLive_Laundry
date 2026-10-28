@@ -770,3 +770,39 @@ all match.
 `tests/t20_templates.sh` (4 checks): the merged child differs from its parent ONLY in the
 title, a tag added to the parent at runtime appears in the child (proving it is inheritance,
 not a copy), `save_template` refuses to flatten it, and `_inherit` is still declared.
+
+## 22. Why a 10 h 57 m segment exists, and the hard stop that bounds it
+
+The Studio list shows `Hw_dwnT16ew` at **10:57:43** next to a normal 8:06:05. That long
+segment is not a missed rotation - it is the segment that spanned the quota outage.
+
+The 8h03m cut fired **on time** at 13:20:15 and was refused, then refused eleven more times:
+
+```
+13:20:15 ROTATE (scheduled 8h3m reached): REFUSED - API quota is exhausted ... Staying LIVE
+15:20:31 / 15:35:31 / 15:50:34 / 16:05:38   ... the same
+16:33:46 ROTATE ... LIVE (native): YouTube started EhO1O-HNYf4 by itself after 22s
+```
+
+Refusing is deliberate: a cut without a usable API ends the broadcast and cannot create its
+successor, which darkens the channel until credentials return. So the streamer stays live -
+and keeps a recording that is still under YouTube's 12 h archive limit (10:57 < 12:00).
+
+**But staying live was unbounded, and that is the flaw.** At 12 h YouTube discards the
+recording entirely, so "never cut blind" could silently trade a saved segment for nothing.
+Two bounds now exist:
+
+* `ROTATE_WARN_AFTER` (9 h) - a refusal while the segment is already past 9 h says so loudly,
+  including how far the cliff is.
+* `ROTATE_HARD_STOP_AFTER` (11 h 15 m) - past this age the cut happens **anyway**, even with
+  the quota exhausted or the credential dead. The channel may go dark until the API returns,
+  but 11 h 15 m is safely inside the archive window; it is the difference between a dark
+  channel and a lost recording.
+
+`status.sh` now prints the segment age against both markers
+(`segment age 0h38m (rotation at 8h03m, forced cut at 11h15m, archive lost at 12h)`) and fails
+once the segment is past the cliff, so an overdue rotation is visible on the health page
+instead of only in Studio afterwards.
+
+`tests/t21_rotation_cliff.sh` (7 checks) asserts the forced cut lands between 10 h and 12 h,
+that BOTH refusal paths honour it, and that the status page states the age.

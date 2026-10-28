@@ -110,6 +110,22 @@ print "  and a cut with no usable credential is refused rather than taken dark (
 if [[ "$NET" == yes ]]; then
   print "\n=== YouTube says ==="
   st=$(BASE="$BASE" python3 "$BASE/bin/yt_api.py" status 2>&1)
+  # The 12 h cliff, made visible. YouTube archives a live stream only up to 12 h; past that
+  # the recording is gone. On 2026-10-28 a quota outage let a segment reach 10 h 57 m because
+  # every cut was refused - a rotation that is overdue is a fact the health page must state,
+  # not something to discover from the Studio list afterwards.
+  age=$(print -r -- "$st" | sed -n 's/.*"started_epoch": *\([0-9]*\).*/\1/p')
+  if [[ "$age" == <-> ]]; then
+    secs=$(( $(date +%s) - age ))
+    hours=$(( secs / 3600 )); mins=$(( (secs % 3600) / 60 ))
+    if (( secs >= 40500 )); then
+      bad "this segment is ${hours}h${mins}m old - past the 11h15m cliff, a cut is forced even without the API (12h = recording discarded)"
+    elif (( secs >= 32400 )); then
+      warn "this segment is ${hours}h${mins}m old - the 8h03m cut is overdue; the cliff is 12h"
+    else
+      ok "segment age ${hours}h${mins}m (rotation at 8h03m, forced cut at 11h15m, archive lost at 12h)"
+    fi
+  fi
   print -r -- "$st" | grep -q '"status": *"LIVE"' && ok "$st" || bad "$st"
 
   # YouTube's OWN verdict on the ingest, with its severities respected. The platform grades

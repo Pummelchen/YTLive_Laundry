@@ -672,6 +672,13 @@ ROTATE_LABEL="${ROTATE_HOURS:-8}h$( (( ${ROTATE_MINUTES:-0} > 0 )) && print -n "
 : ${ROTATE_WITHOUT_API:=no}    # yes = cut even when the API cannot create a successor. That goes
                                # dark the moment the old broadcast closes, so the default is no.
 : ${ROTATE_API_RETRY:=900}     # when a cut is refused for that reason, try again this often
+# THE CLIFF. YouTube archives a live stream only up to 12 h; past that the recording is gone
+# entirely. Staying live through a quota outage is the right default (2026-10-28 proved a cut
+# without a successor leaves a dark channel), but it must not be unbounded: on 2026-10-28 the
+# segment reached 10 h 57 m because the cut was refused twelve times. Past this age the cut is
+# taken anyway - a saved recording beats a lost one, even at the price of a dark gap.
+: ${ROTATE_HARD_STOP_AFTER:=40500}   # 11 h 15 m: forced cut if the segment is older than this
+: ${ROTATE_WARN_AFTER:=32400}        # 9 h: say loudly that the cliff is approaching
 ROTATE_BLOCKED_UNTIL=0         # set by a refused rotation; the main loop will not retry before it
 ROTATE_HISTORY="$BASE/log/rotation_history.log"
 BSTATE="$BASE/log/broadcast_started"   # "<broadcast id> <epoch>"
@@ -1141,14 +1148,23 @@ rotate_broadcast() {
   # when the day's 10,000 units are gone. Cutting on that alone is the audit's quota hole: the cut
   # happens, `prepare` then cannot create the successor, and the channel goes dark. This check is
   # local and free, so ask it every rotation.
-  local q
+  local q age
+  age=$(( now - BROADCAST_STARTED ))
   q=$(yt_api_call quota)
   if ! print -r -- "$q" | grep -q '"status": *"OK"'; then
-    rm -f "$ROTATE_NOW"
-    ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
-    LAST_ROTATE=$now
-    log "ROTATE ($why): REFUSED - API quota is exhausted ($q). Staying LIVE: a cut now would leave a broadcast that cannot be created. Next attempt in ${ROTATE_API_RETRY}s."
-    return
+    if (( age >= ROTATE_HARD_STOP_AFTER )); then
+      log "ROTATE ($why): quota is exhausted BUT the segment is $(( age / 60 )) min old - past 12h YouTube discards the recording entirely, so this cut happens anyway. The channel WILL go dark until the API returns; a saved recording beats a lost one at the cliff."
+    else
+      rm -f "$ROTATE_NOW"
+      ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
+      LAST_ROTATE=$now
+      if (( age >= ROTATE_WARN_AFTER )); then
+        log "ROTATE ($why): REFUSED - API quota is exhausted ($q), and the segment is now $(( age / 60 )) min old. Staying LIVE: a cut now would leave a broadcast that cannot be created. At 12h the recording is lost, so a cut is forced at ${ROTATE_HARD_STOP_AFTER}s. Next attempt in ${ROTATE_API_RETRY}s."
+      else
+        log "ROTATE ($why): REFUSED - API quota is exhausted ($q). Staying LIVE: a cut now would leave a broadcast that cannot be created. Next attempt in ${ROTATE_API_RETRY}s."
+      fi
+      return
+    fi
   fi
   if print -r -- "$pre" | grep -q '"probe": *"LIVE"'; then
     usable=yes
@@ -1156,11 +1172,15 @@ rotate_broadcast() {
     usable=no
   fi
   if [[ "$usable" != yes && "$ROTATE_WITHOUT_API" != yes ]]; then
-    rm -f "$ROTATE_NOW"
-    ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
-    LAST_ROTATE=$now
-    log "ROTATE ($why): REFUSED - the API cannot create the next broadcast ($pre). Staying LIVE rather than cutting to darkness; this segment will NOT be archived. Fix with: bin/yt_api.py auth. Next attempt in ${ROTATE_API_RETRY}s."
-    return
+    if (( age >= ROTATE_HARD_STOP_AFTER )); then
+      log "ROTATE ($why): the API cannot create the next broadcast BUT the segment is $(( age / 60 )) min old - at 12h the recording is discarded, so cutting anyway. The channel will go dark until credentials return. Fix with: bin/yt_api.py auth"
+    else
+      rm -f "$ROTATE_NOW"
+      ROTATE_BLOCKED_UNTIL=$(( now + ROTATE_API_RETRY ))
+      LAST_ROTATE=$now
+      log "ROTATE ($why): REFUSED - the API cannot create the next broadcast ($pre). Staying LIVE rather than cutting to darkness; this segment will NOT be archived. Fix with: bin/yt_api.py auth. Next attempt in ${ROTATE_API_RETRY}s."
+      return
+    fi
   fi
   if [[ "$usable" != yes ]]; then
     log "ROTATE ($why): API unusable ($pre) but ROTATE_WITHOUT_API=yes - cutting anyway; the channel will go dark until credentials return."
