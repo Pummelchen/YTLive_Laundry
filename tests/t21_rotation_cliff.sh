@@ -40,7 +40,10 @@ sys.exit(0 if 'ROTATE_HARD_STOP_AFTER' in seg else 1)
 PY
 
 # And the health page must state the age, or the overrun is invisible until Studio shows it.
-contains bin/status.sh 'rotation at 8h03m, forced cut at 11h15m, archive lost at 12h' "status.sh states the segment age against the cliff"
+# The page must state the age against BOTH markers, and it must take the interval from the
+# config rather than print a hard-coded one (it used to say 8h03m after the cut moved to 8h10m).
+contains bin/status.sh 'cut at ${rh}h${rm}m (${due}), forced cut at ${hh}h${hm}m, archive lost at 12h' "status.sh states the segment age against the cliff"
+contains bin/status.sh 'ROTATE_MINUTES' "and derives the interval from the config, not a literal"
 contains bin/status.sh 'past the 11h15m cliff' "and fails when the segment is past it"
 
 t_teardown

@@ -1,3 +1,7 @@
+> **Retired 2026-10-28.** This repository no longer publishes GitHub releases, and its
+> version tags have been removed: the code on `main` is the only artifact. `release.sh`
+> (which built and published them) is gone. The process below is kept as history.
+
 # Release and build rules — YTLive_Laundry
 
 The release and build standard for this repository.

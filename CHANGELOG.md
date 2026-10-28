@@ -7,7 +7,7 @@ when `VERSION` and the tag disagree. There is no version literal in any script: 
 tunables live in `conf/stream.env`.
 
 Each release is a source archive of the tagged tree with a SHA-256 beside it. There is nothing
-to compile. See `release.sh` and [`RELEASE.md`](RELEASE.md).
+to compile. See [`RELEASE.md`](RELEASE.md).
 
 ## 2.11 — 2026-09-20
 
