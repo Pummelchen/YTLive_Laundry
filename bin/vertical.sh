@@ -382,8 +382,9 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
   fi
 
   # 2b. fallback: the age clock still applies if a sync was missed (a long outage of the
-  # other feed, a restart that never saw a change). The grace keeps this from firing in the
-  # minute between the 16:9 cut and its successor's id appearing - that would cut twice.
+  # other feed, a restart that never saw a change). The grace keeps this from firing during
+  # the up-to-1020 s between the 16:9 cut and its successor's id appearing - that would cut
+  # twice.
   if (( $(broadcast_age) > VERT_ROTATE_SECONDS + VERT_FALLBACK_GRACE )); then
     rotate "$WANT" || { sleep 60; continue; }
     MODE="$WANT"; STUCK=0; LAST_FRAME=""
