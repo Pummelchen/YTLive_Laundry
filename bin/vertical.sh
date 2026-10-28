@@ -154,7 +154,11 @@ publisher_args() {
   [[ -n "$path" ]] || path="$VERT_CAM_PATH"
   url="rtsp://${ip}/${path}"
   if [[ "$mode" == camera ]]; then
-    CAM_IN=( -rtsp_transport tcp -timeout 8000000 -i "$url" )
+    # Read the FAN-OUT from the 16:9 reader, not a second RTSP session: two clients on this
+    # camera corrupt the H.264 within hours and the encoder freezes every couple of minutes.
+    # A 5 s timeout means a dead feed errors out and the watchdog restarts us, instead of
+    # blocking forever.
+    CAM_IN=( -f mpegts -i "udp://127.0.0.1:5001?fifo_size=8000000&overrun_nonfatal=1&buffer_size=8388608&timeout=5000000" )
   else
     CAM_IN=( -re -loop 1 -framerate 15 -i "$SLATE" )
   fi
@@ -294,9 +298,28 @@ while true; do
     ls=$(~/.local/bin/yt-dlp --no-warnings --skip-download --print "%(live_status)s" \
           "https://www.youtube.com/watch?v=$(broadcast_id)" 2>/dev/null | head -1)
     if [[ "$ls" == "post_live" || "$ls" == "was_live" || "$ls" == "not_live" ]]; then
-      vlog "BROADCAST: $(broadcast_id) has ENDED ($ls) - dropping the stale state and preparing a new one"
-      rm -f "$BSTATE"
-      stop_publisher
+      # A recorded id that ended is not proof that THIS stream is off air: an earlier prepare
+      # may have left a different broadcast bound to the same stream and YouTube auto-started
+      # that one instead. On 2026-10-28 19:23 that produced a live broadcast while the state
+      # named a never-started one, and the supervisor enforced settings on the wrong video.
+      local st live_id live_start
+      st=$(vapi status 2>/dev/null)
+      live_id=$(print -r -- "$st" | python3 -c 'import json,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+print(d.get("broadcast_id") or "") if d.get("status")=="LIVE" else print("")' 2>/dev/null)
+      if [[ -n "$live_id" ]]; then
+        live_start=$(print -r -- "$st" | python3 -c 'import json,time,sys
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
+        vlog "BROADCAST: recorded id ended ($ls) but $live_id is LIVE on this stream - adopting it instead of creating another"
+        print -r -- "$live_id ${live_start:-$(date +%s)}" > "$BSTATE"
+      else
+        vlog "BROADCAST: $(broadcast_id) has ENDED ($ls) - dropping the stale state and preparing a new one"
+        rm -f "$BSTATE"
+        stop_publisher
+      fi
     fi
   fi
 

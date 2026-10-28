@@ -221,6 +221,12 @@ start_heartbeat() {
 [[ -z "$YT_KEY" ]] && { log "FATAL: YT_KEY empty in $CONF"; exit 1; }
 DEST="${YT_URL}/${YT_KEY}"
 UDP="udp://127.0.0.1:${UDP_PORT}"
+# The 9:16 feed reads the SAME camera session, fanned out here. It used to open its own RTSP
+# connection, and this cheap camera degrades under two clients: after a few hours the second
+# session delivered corrupt H.264 ("error while decoding MB ... bytestream") and the Shorts
+# encoder froze every couple of minutes (measured 2026-10-28 19:16-19:21). One client, two
+# consumers.
+VERT_FEED="udp://127.0.0.1:${UDP_PORT_VERTICAL:-5001}"
 
 # --- audio ------------------------------------------------------------------
 [[ "$RESHUFFLE_ON_START" == "yes" ]] && { "$BASE/bin/shuffle_playlist.sh" >>"$LOG" 2>&1 && log "playlist reshuffled"; }
@@ -414,7 +420,9 @@ reader_loop() {
     url="rtsp://${ip}/${CAM_PATH}"
     start=$(date +%s)
     "$FF" -v error -rtsp_transport tcp -timeout 15000000 -fflags +genpts \
-      -i "$url" -c:v copy -an -f mpegts "${UDP}?pkt_size=1316&bitrate=20000000" 2>>"$BASE/log/reader.log"
+      -i "$url" -c:v copy -an -map 0:v -f tee \
+      "[f=mpegts]${UDP}?pkt_size=1316&bitrate=20000000|[f=mpegts]${VERT_FEED}?pkt_size=1316&bitrate=20000000" \
+      2>>"$BASE/log/reader.log"
     dur=$(( $(date +%s) - start ))
     if (( dur > 30 )); then
       log "READER: feed from $ip ended after ${dur}s, retrying in ${backoff}s (YouTube unaffected)"
