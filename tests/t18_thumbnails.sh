@@ -1,5 +1,5 @@
 #!/bin/zsh
-# t18 - the post-stream thumbnail: our own frame, four hours later, plus a repair sweep.
+# t18 - the post-stream thumbnail: our own frame, 12 h later and every 12 h after, plus a sweep.
 #
 # What went wrong (measured 2026-10-28): the scheduler waited an hour for YouTube to offer its
 # "pick one of 3" suggestions, they never arrived for an 8 h stream ("no suggestion after
@@ -8,9 +8,9 @@
 # cut) kept the channel's generic thumbnail forever, which the operator had been fixing by
 # hand.
 #
-# The replacement is deliberately dumb: four hours after the cut, take the 01:00:00 frame and
-# set it; retry until YouTube can serve the video; and repair the ten most recent videos that
-# still show the generic image.
+# The replacement is deliberately dumb: 12 h after the cut, take the 01:00:00 frame and set
+# it; if YouTube is still processing, retry every 12 h (12, 24, 36, ...); and check the ten
+# most recent videos on the same cadence until each shows its own image.
 source "${0:A:h}/lib.sh"
 t_begin t18
 t_setup >/dev/null          # the scheduler test needs a scratch tree
@@ -22,7 +22,8 @@ contains() {   # contains FILE NEEDLE LABEL
 }
 
 # --- the schedule ----------------------------------------------------------------------
-contains bin/stream.sh ': ${THUMB_DELAY:=14400}' "the thumbnail is taken 4 h after the cut, not 1 h"
+contains bin/stream.sh ': ${THUMB_DELAY:=43200}' "the first thumbnail attempt is 12 h after the cut"
+contains bin/stream.sh ': ${THUMB_RETRY:=43200}' "a still-processing video is retried every 12 h (12, 24, 36, ...)"
 contains bin/stream.sh ': ${THUMB_SWEEP_COUNT:=10}' "the repair sweep covers the 10 most recent videos"
 contains bin/stream.sh 'yt_api_call frame-thumbnail "$vid" "$THUMB_FRAME_AT"' "the pending worker grabs a FRAME from the video"
 if grep -q 'yt_api_call pick-thumbnail' bin/stream.sh; then
@@ -34,6 +35,8 @@ contains bin/stream.sh 'THUMB_FRAME_AT:="01:00:00"' "the frame comes from the on
 
 # --- the sweep -------------------------------------------------------------------------
 contains bin/stream.sh 'sweep_thumbnails          # repair any recent video' "the repair sweep runs once at startup"
+contains bin/stream.sh "    do_pending_thumbnail
+" "and the 12 h sweep rides the housekeeping pass"
 contains bin/stream.sh 'sweep_thumbnails' "and after a successful post-cut thumbnail"
 contains bin/stream.sh 'THUMB-SWEEP: checking the' "the sweep says what it is doing"
 # A quota refusal must not count as a completed sweep, or a 12 h window is wasted.
@@ -73,7 +76,7 @@ CALLS="$T_BASE/log/thumb_calls.log"
 { t_extract_fn "$REPO_DIR/bin/stream.sh" do_pending_thumbnail
   printf "BASE='%s'\n" "$T_BASE"
   printf "THUMB_PENDING='%s/log/thumb_pending'\n" "$T_BASE"
-  printf "THUMB_RETRY=1800\nTHUMB_FRAME_AT='01:00:00'\n"
+  printf "THUMB_RETRY=43200\nTHUMB_FRAME_AT='01:00:00'\n"
   printf "CALLS='%s'\n" "$CALLS"
   cat <<'EOF'
 log() { print -r -- "log: $*" >> "$CALLS"; }
@@ -89,7 +92,7 @@ run_pending() { : > "$CALLS"; FAKE_OUT="$1" BASE="$T_BASE" /bin/zsh -c "source '
 
 pending "abcdefghijk $(( $(date +%s) + 3600 )) 0 $(date +%s)"
 run_pending '{"status":"SET"}'
-if [[ -s "$CALLS" ]]; then t_bad "the scheduler acted an hour BEFORE it was due"; else t_ok "nothing happens before the 4 h mark"; fi
+if [[ -s "$CALLS" ]]; then t_bad "the scheduler acted an hour BEFORE it was due"; else t_ok "nothing happens before the 12 h mark"; fi
 
 pending "abcdefghijk $(( $(date +%s) - 60 )) 0 $(( $(date +%s) - 3600 ))"
 run_pending '{"status":"SET","source":"frame"}'
@@ -103,10 +106,10 @@ pending "abcdefghijk $(( $(date +%s) - 60 )) 1 $(( $(date +%s) - 3600 ))"
 run_pending '{"status":"NOTREADY","msg":"video not seekable yet"}'
 [[ -s "$T_BASE/log/thumb_pending" ]] && t_ok "a NOTREADY keeps the video queued" || t_bad "a NOTREADY dropped the video"
 newdue=$(<"$T_BASE/log/thumb_pending" | awk '{print $2}')
-if [[ "$newdue" == <-> ]] && (( newdue >= $(date +%s) + 600 )); then
-  t_ok "and reschedules it for the retry interval"
+if [[ "$newdue" == <-> ]] && (( newdue >= $(date +%s) + 43100 )); then
+  t_ok "and reschedules it 12 h out (12, 24, 36, ...)"
 else
-  t_bad "NOTREADY did not reschedule (due=$newdue)"
+  t_bad "NOTREADY did not reschedule by 12 h (due=$newdue)"
 fi
 
 t_teardown

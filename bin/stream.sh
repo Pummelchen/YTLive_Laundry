@@ -509,9 +509,10 @@ do_pending_thumbnail() {
 
   # OUR OWN FRAME - never YouTube's suggestion. Suggestions never arrived for these 8h
   # streams (measured 2026-10-28: "no suggestion after 321 min", six hours of retries
-  # wasted), so waiting for them only delayed the real work. THUMB_DELAY is 4 h because
-  # YouTube needs hours to turn an 8h live stream into a seekable video; when it is still
-  # not ready the retry keeps coming back until it is.
+  # wasted), so waiting for them only delayed the real work. THUMB_DELAY is 12 h because
+  # YouTube needs well over 8 h to turn an 8 h live stream into a seekable video (measured
+  # 2026-10-29: still not seekable at 8 h); the retry then comes back every THUMB_RETRY
+  # (12 h) until the frame can be taken, so the checks land at 12 h, 24 h, 36 h and so on.
   out=$(yt_api_call frame-thumbnail "$vid" "$THUMB_FRAME_AT")
   log "THUMB: $out"
   if print -r -- "$out" | grep -q '"status": *"NOTREADY"'; then
@@ -709,10 +710,11 @@ VOD_PENDING="$BASE/log/vod_pending"
 : ${VOD_RECHECK_AFTER:=86400} # re-read the published duration this long after the first verdict
 VOD_RECHECK="$BASE/log/vod_recheck"    # "<id> <due epoch>": ids awaiting their finalised duration
 THUMB_PENDING="$BASE/log/thumb_pending"   # "<video id> <due epoch> <attempts>"
-: ${THUMB_DELAY:=14400}                # 4 h after a cut: YouTube needs hours to finish an 8h video
-: ${THUMB_SWEEP_EVERY:=43200}          # repair sweep of the newest videos, at most twice a day
+: ${THUMB_DELAY:=43200}                # 12 h after a cut: YouTube now needs well over 8 h to
+                                        # turn an 8 h live stream into a seekable video
+: ${THUMB_SWEEP_EVERY:=43200}          # repair sweep of the newest videos, every 12 h
 : ${THUMB_SWEEP_COUNT:=10}             # how many recent videos the sweep insists on
-: ${THUMB_RETRY:=1800}                  # if the video is still processing, look again in 30 min
+: ${THUMB_RETRY:=43200}                 # still processing? look again in 12 h: 12, 24, 36, ...
 : ${THUMB_GIVEUP:=7200}                 # legacy: no longer used, the frame is taken, not awaited
                                         # suggestions and take a frame from the video instead
 : ${THUMB_FRAME_AT:="01:00:00"}         # which moment to grab if it comes to that
@@ -1285,6 +1287,10 @@ while true; do
     refresh_broadcast_clock
     enforce_drift
     do_pending_thumbnail
+    # The ten most recent videos are checked on their own 12 h cadence, so a video whose
+    # thumbnail could not be set at its cut is still repaired later; the sweep stops
+    # bothering about any video that already shows its own image.
+    sweep_thumbnails
   fi
   # A dead READER means no frames ever reach the publisher, so the channel is dark until a
   # human notices. The 2026-10-28 05:13 crash is why this check exists: the subshell exited on
