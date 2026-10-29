@@ -82,10 +82,10 @@ fi
 
 # --- the vertical feed ------------------------------------------------------------------
 t_assert_file bin/vertical.sh "vertical.sh exists"
-contains bin/vertical.sh "scale=1080:-2" "the vertical feed scales to 1080 wide"
-contains bin/vertical.sh "pad=1080:1920"  "and pads to a true 9:16 frame"
+contains bin/vertical.sh 'scale=${VERT_W}:-2' "the vertical feed scales to VERT_SIZE's width"
+contains bin/vertical.sh 'pad=${VERT_W}:${VERT_H}' "and pads to a true 9:16 frame"
 contains bin/vertical.sh "color=black" "with a black background above and below it (operator request 2026-10-28)"
-contains bin/vertical.sh "color=c=black:s=1080x1920" "and the offline card is black too, not the brand navy"
+contains bin/vertical.sh 'color=c=black:s=${VERT_W}x${VERT_H}' "and the offline card is black too, not the brand navy"
 contains bin/vertical.sh "YT_KEY=\"\$VERT_KEY\"" "every vertical API call is scoped to its own key"
 contains bin/vertical.sh "ROTATE" "the vertical feed rotates before YouTube's 12h archive limit"
 contains bin/vertical.sh "vertical.seen_camera" "it will not go public with only a slate before the first sighting"

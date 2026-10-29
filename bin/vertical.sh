@@ -44,7 +44,7 @@ source "$VCONF"
 : ${VERT_ENABLED:=no}
 : ${VERT_KEY:=}
 : ${VERT_URL:=rtmp://a.rtmp.youtube.com/live2}
-: ${VERT_SIZE:=1080x1920}
+: ${VERT_SIZE:=1080x1920}       # WxH of the Shorts canvas; 720x1280 is enough for a phone
 : ${VERT_BITRATE:=2500k}
 : ${VERT_AUDIO_BITRATE:=128k}
 : ${VERT_FPS:=30}
@@ -65,6 +65,8 @@ source "$VCONF"
 : ${VERT_CAM_TIMEOUT:=5}
 : ${VERT_CAM_PATH:=ch00_0}   # ch00_1/2 are the 640x1080 fallbacks
 VERT_ROTATE_SECONDS=$(( VERT_ROTATE_HOURS * 3600 + VERT_ROTATE_MINUTES * 60 ))
+VERT_W=${VERT_SIZE%x*}
+VERT_H=${VERT_SIZE#*x}
 
 [[ "${VERT_ENABLED}" == "yes" ]] || { print -r -- "vertical: disabled in $VCONF"; exit 0 }
 [[ -n "${VERT_KEY}" ]] || { print -r -- "vertical: VERT_KEY is empty"; exit 1 }
@@ -144,19 +146,21 @@ make_slate() {
   print -r -- "Kamera CCTV kembali" >> "$tf"
   print -r -- "dalam beberapa jam" >> "$tf"
   print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$tf"
-  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits at y=320
-  # and the frame at y=700, so a phone viewer reads the sign first and the shop second.
-  # 1080x1920, not a letterboxed 16:9 still: a 16:9 card inside a 9:16 frame is two thirds
-  # empty bars, which looks broken in the Shorts feed. Black background (operator request
-  # 2026-10-28: the offline card must be black like the live feed), the last camera frame
-  # fitted to the width, and the message underneath.
+  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits above the
+  # frame, so a phone viewer reads the sign first and the shop second. The card is a 9:16
+  # canvas, not a letterboxed 16:9 still. Black background (operator request 2026-10-28:
+  # the offline card must be black like the live feed), the last camera frame fitted to the
+  # width, and the message underneath. The layout is expressed as fractions of VERT_SIZE so
+  # 1080x1920 and 720x1280 produce the same card.
+  local ty=$(( VERT_H * 320 / 1920 )) py=$(( VERT_H * 700 / 1920 ))
+  local fs=$(( VERT_W * 42 / 1080 )) ls=$(( VERT_W * 16 / 1080 )) bw=$(( VERT_W * 26 / 1080 ))
   if [[ -s "$src" && -r "$FONT" ]]; then
-    "$FF" -y -v error -f lavfi -i "color=c=black:s=1080x1920" -i "$src" \
-      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=1080:-2[p];[0:v][p]overlay=0:700[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=42:line_spacing=16:box=1:boxcolor=black@0.55:boxborderw=26:x=(w-text_w)/2:y=320" \
+    "$FF" -y -v error -f lavfi -i "color=c=black:s=${VERT_W}x${VERT_H}" -i "$src" \
+      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=${VERT_W}:-2[p];[0:v][p]overlay=0:${py}[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=${fs}:line_spacing=${ls}:box=1:boxcolor=black@0.55:boxborderw=${bw}:x=(w-text_w)/2:y=${ty}" \
       -frames:v 1 -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0
-  "$FF" -y -v error -f lavfi -i "color=c=black:s=1080x1920" -frames:v 1 "$SLATE" 2>/dev/null
+  "$FF" -y -v error -f lavfi -i "color=c=black:s=${VERT_W}x${VERT_H}" -frames:v 1 "$SLATE" 2>/dev/null
 }
 
 # --- the encoder --------------------------------------------------------------------------
@@ -203,9 +207,9 @@ start_publisher() {
     # Showing the whole 1920x3240 composite was both wrong (three cameras in a 9:16 frame)
     # and expensive: scaling 3240 lines to 1824 at 30 fps is what made this encoder stall
     # every few minutes on the 2015 i5. Cropping first removes ~85% of the pixels.
-    VFILTER="crop=${CROP_GEOM:-1920:1080:0:0},scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
+    VFILTER="crop=${CROP_GEOM:-1920:1080:0:0},scale=${VERT_W}:-2:flags=bilinear,pad=${VERT_W}:${VERT_H}:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
   else
-    VFILTER="scale=1080:-2:flags=bilinear,pad=1080:1920:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
+    VFILTER="scale=${VERT_W}:-2:flags=bilinear,pad=${VERT_W}:${VERT_H}:0:(oh-ih)/2:color=black,fps=${VERT_FPS},format=yuv420p"
   fi
   local -a AUDIO_IN
   if [[ -s "$PLAYLIST" ]]; then
