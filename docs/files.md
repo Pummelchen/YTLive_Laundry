@@ -1,12 +1,15 @@
 # What it is
 
 ## Files
-    install.sh               provision the STREAMER: ffmpeg, yt-dlp, two LaunchAgents
+    install.sh               provision the STREAMER: ffmpeg, yt-dlp, four LaunchAgents,
+                             both env files seeded from their tracked examples
     bin/stream.sh            the 16:9 streamer (reader + publisher, watchdog, rotation, VOD check)
     bin/vertical.sh          the 9:16 Shorts streamer: its own broadcast, slate and LaunchAgent.
-                             Follows the 16:9 rotation clock (log/broadcast_started) so both feeds
-                             cut together. Inherits the 16:9 settings via conf/vertical_template.json
-                             and differs only in the title. Only READS the 16:9 state.
+                             With VERT_ROTATE=yes it follows the 16:9 rotation clock
+                             (log/broadcast_started) so both feeds cut together; with VERT_ROTATE=no
+                             (this box) it keeps one broadcast forever. Inherits the 16:9 settings via
+                             conf/vertical_template.json and differs only in the title. Only READS the
+                             16:9 state.
     bin/shuffle_playlist.sh  regenerate the random track order
     bin/status.sh            health check
     bin/preflight.sh         probe camera codecs

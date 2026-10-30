@@ -7,7 +7,7 @@ streaming Mac, and the only one allowed to notify anyone.
 ## Why it exists
 
 On **2026-09-18** the streamer dropped off the network at `10:19:54Z`, 5 h 14 m into an
-8 h 03 m segment. The publisher's own watchdog, the monitor, `stream.sh`'s retry loops and
+8 h 10 m segment. The publisher's own watchdog, the monitor, `stream.sh`'s retry loops and
 launchd's `KeepAlive` all behaved correctly and all were useless, because the machine had lost
 its transport — DNS and its own LAN — while it stayed awake and logging: every retry in them was
 an application-layer retry that never touched the network interface. The channel stayed dark for

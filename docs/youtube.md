@@ -224,10 +224,10 @@ branded still had text in two corners and had to be pillarboxed instead.
 There is no local file-size check. YouTube documents a 2 MB limit but does not enforce it -
 a 2.29 MB PNG uploaded fine. Refusing a file the service would accept is not validation.
 
-## Suggested thumbnail for the finished video  (added 2026-09-07)
+## The finished video's thumbnail  (added 2026-09-07, rewritten 2026-10-30)
 **YouTube SOMETIMES throws the thumbnail away when a broadcast becomes a video**, falling
-back to a frame of its own choosing - which is why Studio then offers "pick one of 3".
-It is not consistent, and both outcomes have been observed:
+back to a frame of its own choosing - which is why Studio then offers "pick one of 3". Both
+outcomes have been observed:
 
     ufmT_Fjg9aw   lost it   maxresdefault was byte-identical to YouTube's own maxres1,
                             despite the branded thumbnail having been enforced for the
@@ -238,32 +238,33 @@ It is not consistent, and both outcomes have been observed:
 The difference appears to be how recently the thumbnail was set before the cut - the one
 that survived had been re-applied ten minutes earlier by a publisher restart, the one that
 did not had last been set eight hours before. That is a plausible explanation from two data
-points, not a proven rule, so the code does not rely on it: it checks what the video
-actually has and acts accordingly.
+points, not a proven rule, so the code checks what the video actually has and acts.
 
-The three suggestions are fetchable at predictable URLs. `1/2/3.jpg` are only 120x90, far
-under the 640x360 minimum for an upload - but `maxres1/2/3.jpg` are the same frames at
-1280x720, exactly the recommended size. Uploading maxres1 back through thumbnails.set turns
-the auto-pick into a real custom thumbnail.
+**It no longer waits for YouTube's suggestions.** They never arrived for the 8 h streams
+("no suggestion after 321 min"), so the old path burned hours of retries and left videos
+with the channel's generic image. `stream.sh` now takes OUR OWN frame: the 01:00:00 frame of
+the finished video, with nearby offsets tried when that moment is black or featureless
+(`yt_api.py frame-thumbnail <id> 01:00:00`).
 
-    bin/yt_api.py pick-thumbnail <videoId> [1|2|3] [--force]
+**It only starts when the video can serve a frame.** YouTube needs well over 8 h to turn an
+8 h live stream into a seekable video (still not seekable at 8 h, measured 2026-10-29), so
+the first attempt is 12 h after the cut and a `NOTREADY` answer re-arms it 12 h out: 12, 24,
+36 h and so on, without giving up. The pending slot is `log/thumb_pending`, so a restart does
+not lose it.
 
-It refuses only when the video has a DELIBERATELY CHOSEN thumbnail. Two things count as
-"still the default" and are replaced:
+**The recent past is repaired too.** A cut overwrites the single pending slot, so the video
+before it can only be found by a sweep: `yt_api.py sweep-thumbnails 10` checks the ten most
+recent videos and replaces any that still show the channel's image or YouTube's auto-pick,
+on the same 12 h cadence.
 
-    byte-identical to one of the three suggestions   YouTube's auto-pick
-    visually identical to conf/thumbnail.jpg          our branded still
+    bin/yt_api.py frame-thumbnail <videoId> 01:00:00     # take and set our own frame
+    bin/yt_api.py sweep-thumbnails 10                    # repair the ten most recent
+    bin/yt_api.py pick-thumbnail <videoId> [1|2|3]       # legacy: adopt a YouTube suggestion
 
-The second one matters and was originally missing. conf/thumbnail.jpg is the same image on
-every video - it is the default, and replacing it with a frame from that video's own
-content is the entire point. Treating it as a deliberate choice meant two finished streams
-kept an identical generic still while a third correctly showed its own footage.
-
-stream.sh schedules this at every cut for the outgoing video, THUMB_DELAY (1h) later, via
-log/thumb_pending rather than a sleeping subshell so it survives a restart. The file is
-OVERWRITTEN at each cut, so only ever the most recent video is pending - there is no queue.
-A video still processing returns NOTREADY and is retried every THUMB_RETRY (15 min) up to
-THUMB_MAX_TRIES (8), then given up on rather than retried forever.
+A thumbnail counts as "still the default" when it is byte-identical to one of the three
+suggestions or visually identical (greyscale correlation >= 0.95) to `conf/thumbnail.jpg`.
+The branded still is the same image on every video, so it must be replaced by that video's
+own content, not treated as a deliberate choice.
 
 ## Dual stream
 Soft issue, not chased. No field for it exists anywhere in youtube/v3 - checked against the

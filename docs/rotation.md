@@ -2,14 +2,15 @@
 
 ## 8-hour broadcast rotation  (added 2026-09-05)
 YouTube only archives live streams up to 12h, so every ROTATE_HOURS + ROTATE_MINUTES
-(8h03m) the current broadcast is ended and saved as a VOD, and a successor is created and
+(8h10m) the current broadcast is ended and saved as a VOD, and a successor is created and
 bound via the API before ingest resumes. Pushing RTMP alone never creates one.
 
-**Why 8h03m and not 8h.** The cut is timed so the SAVED RECORDING clears 8 hours, not the
+**Why 8h10m and not 8h.** The cut is timed so the SAVED RECORDING clears 8 hours, not the
 wall clock. YouTube's encode loses time turning a live stream into a VOD - measured across
 five broadcasts, wall times of 8.004-8.023h came back as VODs of 7.962-7.990h, a shortfall
 of 0.6 to 2.3 minutes. Cutting at exactly 8h therefore always produced a recording just
-UNDER 8h. Three extra minutes covers the worst observed loss with margin, and is still far
+UNDER 8h. The margin was originally three minutes; it is now ten (operator choice,
+2026-10-28), so the cut no longer depends on the trim staying small, and 8h10m is still far
 inside the 12h archive limit.
 
 **Ingest alone cannot create a broadcast - the project's founding mistake, correct in
@@ -125,6 +126,12 @@ cutting twice:
 `tests/t22_rotation_sync.sh` drives the decision function and also asserts the grace exceeds
 the 16:9 rotation's worst case.
 
+**`VERT_ROTATE=no` instead.** `conf/vertical.env` on this streamer sets it, which skips both
+paths: the Shorts keeps ONE broadcast for as long as it runs and no longer follows the 16:9
+cut. YouTube stops archiving a broadcast at 12 h, so that recording is lost past the limit
+while the live stream continues - the deliberate trade for a Shorts feed that never stops.
+Set `VERT_ROTATE=yes` (the default) to get the synced behaviour described above.
+
 ## Did the recording actually save?
 The whole point of cutting at 8h is a reviewable VOD, and a rotation can look perfectly
 successful while producing nothing watchable. Past 12h YouTube answers "This live stream
@@ -141,7 +148,7 @@ processing. status.sh reports the tally.
     tzlsZ_Nv6VE ok 2026-09-05 23:24:30 7h57m
 
 ## Timing settings, and why they are what they are
-    ROTATE_HOURS=8 + ROTATE_MINUTES=3   cut at 8h03m so the SAVED recording clears 8h -
+    ROTATE_HOURS=8 + ROTATE_MINUTES=10  cut at 8h10m so the SAVED recording clears 8h -
                                         YouTube's encode loses 0.6-2.3 min making the VOD
     CHECK_INTERVAL=20                   each monitor check spawns yt-dlp AND ffmpeg for
                                         ~2.0 CPU-seconds; at 10s that was ~15% of a core

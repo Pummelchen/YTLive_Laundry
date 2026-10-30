@@ -20,6 +20,7 @@ mkdir -p "$REPO/bin" "$REPO/conf" "$REPO/log" "$BIN" "$LA" "$PYDIR"
 
 cp "$REPO_DIR/install.sh" "$REPO/install.sh"; chmod +x "$REPO/install.sh"
 cp "$REPO_DIR/conf/stream.env.example" "$REPO/conf/" 2>/dev/null
+cp "$REPO_DIR/conf/vertical.env.example" "$REPO/conf/" 2>/dev/null
 # ffmpeg/ffprobe already present, so install.sh never touches the network.
 for t in ffmpeg ffprobe; do
   printf '#!/bin/zsh\nexit 0\n' > "$BIN/$t"; chmod +x "$BIN/$t"
@@ -77,15 +78,18 @@ t_assert_contains "$OUT" "using python: $PYDIR/new314/python3" "picks the interp
 t_assert_contains "$OUT" "yt-dlp 2026.08.19" "the working yt-dlp survives the install"
 
 # ============================================================================
-t_begin "both LaunchAgents are written and are valid plists"
-for l in com.user.cctv-stream com.user.cctv-monitor; do
+t_begin "all four LaunchAgents are written and are valid plists"
+for l in com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
   t_assert_file "$LA/$l.plist" "$l.plist written"
+  t_assert_eq "" "$(plutil -lint "$LA/$l.plist" 2>&1 | grep -v 'OK$' | head -1)" "$l plist passes plutil -lint"
 done
-t_assert_eq "" "$(plutil -lint "$LA/com.user.cctv-stream.plist" 2>&1 | grep -v 'OK$' | head -1)" "stream plist passes plutil -lint"
-t_assert_eq "" "$(plutil -lint "$LA/com.user.cctv-monitor.plist" 2>&1 | grep -v 'OK$' | head -1)" "monitor plist passes plutil -lint"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-stream.plist" 2>/dev/null)" "Interactive" "stream plist keeps ProcessType Interactive (Background would be CPU-throttled)"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-vertical.plist" 2>/dev/null)" "Standard" "vertical plist keeps ProcessType Standard"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-monitor.plist" 2>/dev/null)" "Standard" "monitor plist keeps ProcessType Standard"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-stream.plist" 2>/dev/null)" "$REPO/bin/stream.sh" "stream plist points at THIS tree"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-vertical.plist" 2>/dev/null)" "$REPO/bin/vertical.sh" "vertical plist points at THIS tree"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-camscan.plist" 2>/dev/null)" "StartInterval" "camscan is a periodic job, not a daemon"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-camscan.plist" 2>/dev/null)" "600" "camscan runs every 10 minutes"
 t_assert_no_file "$LA/com.user.fdaprobe.plist" "the temporary FDA-probe plist is cleaned up"
 
 # ============================================================================
@@ -110,11 +114,15 @@ t_assert_contains "$OUT" "keeping the existing" "refuses to replace a newer yt-d
 t_assert_eq "2026.08.19" "$("$BIN/yt-dlp" --version 2>/dev/null)" "the working yt-dlp is still 2026.08.19"
 
 # ============================================================================
-t_begin "conf/stream.env is seeded from the tracked example on a fresh clone"
-rm -f "$REPO/conf/stream.env"
+t_begin "both env files are seeded from their tracked examples on a fresh clone"
+rm -f "$REPO/conf/stream.env" "$REPO/conf/vertical.env"
 OUT=$(run_install "$PYDIR/new314"); RC=$?
 t_assert_file "$REPO/conf/stream.env" "stream.env created from the example"
 t_assert_contains "$OUT" "created conf/stream.env from the example" "and says so"
+t_assert_file "$REPO/conf/vertical.env" "vertical.env created from the example"
+t_assert_contains "$OUT" "created conf/vertical.env from the example" "and says so"
+t_assert_contains "$(cat "$REPO/conf/vertical.env")" 'VERT_ENABLED="no"' "the Shorts stays disabled until its key is set"
+t_assert_contains "$(cat "$REPO/conf/vertical.env")" 'VERT_ROTATE="no"' "and the template records the run-forever choice"
 
 rm -rf "$SB"
 t_summary

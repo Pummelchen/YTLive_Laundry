@@ -6,13 +6,13 @@ YouTube live broadcasts run from one camera:
 | Feed | Format | What it is |
 |---|---|---|
 | **16:9** | 1080p, music + shop view | the channel's main live stream |
-| **9:16** | 1080×1920, same view | a companion broadcast that lands in the **Shorts** feed |
+| **9:16** | 720×1280 (up to 1080×1920), same view | a companion broadcast for the **Shorts** feed |
 
 Both are always on: when the camera drops, each feed shows an "offline" card instead of going
 dark, and both come back by themselves when the camera returns.
 
 ```
-bin/status.sh              is it healthy? one page: both feeds, both agents, camera, quota, disk
+bin/status.sh              is it healthy? one page: both feeds, all four agents, camera, quota, disk
 bin/smoke_test.sh          RUN BEFORE RESTARTING ANYTHING - exit 0 means safe
 bin/yt_api.py status       what YouTube thinks is live on the 16:9 stream
 tail -f log/stream.log     the main feed
@@ -31,8 +31,10 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 ## How it behaves
 
 - **Rotation.** Each segment is cut after **8 h 10 m**, so YouTube keeps a watchable recording
-  instead of dropping it at its 12 h archive limit. The 9:16 feed follows the 16:9 rotation clock
-  (`log/broadcast_started`), so both cuts land together and the two feeds stay in step. A cut
+  instead of dropping it at its 12 h archive limit. The 9:16 feed can follow the 16:9 rotation
+  clock (`log/broadcast_started`) so both cuts land together, or — as this box runs it, with
+  `VERT_ROTATE=no` — keep one broadcast forever (its recording past 12 h is then not archived).
+  A cut
   needs the API to create the successor broadcast, so a cut is refused while the API is
   unusable — with a **hard stop at 11 h 15 m**, past which the cut happens anyway, because a
   lost recording is worse than a short dark gap.
@@ -45,9 +47,9 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 - **Quota is a circuit breaker.** The YouTube Data API allows 10 000 units a day. When it runs
   out the guard backs off (30 min, doubling, never above 1 h) and is cleared by the first
   successful request — it cannot outlive the reset. `status.sh` shows its state.
-- **Thumbnails.** Four hours after a cut, the **01:00:00 frame from that video** becomes its
-  thumbnail; a sweep repairs the ten most recent videos that still show the channel's generic
-  image.
+- **Thumbnails.** Starting **12 hours after a cut** — and again every 12 hours until it works —
+  the **01:00:00 frame from that video** becomes its thumbnail; the ten most recent videos are
+  swept on the same 12 h cadence until each shows its own image.
 
 ## Documentation
 

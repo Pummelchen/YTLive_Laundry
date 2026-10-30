@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-30 — the Shorts runs forever, and the feeds are honest about it
+
+- **The Shorts never cuts** (`VERT_ROTATE=no` in `conf/vertical.env`): the 9:16 feed keeps ONE
+  broadcast and no longer follows the 16:9 rotation or its own age timer. YouTube stops
+  archiving a broadcast at 12 h, so that recording is lost past the limit while the stream
+  continues — the deliberate trade. `VERT_ROTATE=yes` (default) restores the synced cuts.
+- **Shorts canvas is 720×1280** (`VERT_SIZE`, which was declared but read by nothing until now):
+  two thirds of a 9:16 frame is black letterbox, so 1080×1920 cost 2.25× the pixels for the same
+  visible picture. At 1500k it sends ~0.9 Mbps; the offline card is black too, like the bars.
+- **Thumbnails get 12 h to become possible**: first attempt 12 h after a cut (YouTube now needs
+  well over 8 h to make an 8 h stream seekable), retried every 12 h (12, 24, 36, …), and the ten
+  most recent videos are swept on the same 12 h cadence until each shows its own image.
+- **16:9 back at 20 fps with the denoise/sharpen look**: at 30 and 25 fps the publisher's media
+  clock ran at 0.914×/0.919× wall time and fell minutes behind the Shorts; at 20 fps it holds
+  1× and ~7.2 Mbps. The machine had to be rebooted first — see the note below.
+- **`install.sh` provisions the whole box**: all four LaunchAgents (stream, vertical, monitor,
+  camscan) and both env files seeded from their tracked examples; `conf/vertical.env.example`
+  is now in the repo, so a rebuild reproduces the Shorts setup except for the stream key.
+- **Quota outage, 2026-10-29 03:44–14:00 WIB**: the API refused every call, the 16:9 could not
+  rotate and its 00:59 broadcast ran past 12 h (that recording was lost); the Shorts' own cut
+  failed to create a successor and went dark until the reset. A reboot of the streamer restored
+  the encoding throughput, which had collapsed to ~13 fps at 1080p.
+
 ## 2026-10-28 — two feeds, and no more releases
 
 The channel now runs a second, independent 9:16 broadcast for the Shorts feed, and the project

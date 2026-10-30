@@ -14,7 +14,7 @@
 
 A shop CCTV camera in Batam streamed 24/7 to YouTube from one MacBook. This is a
 macOS-only **operational system, not a reusable library**: zsh scripts plus
-stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h03m broadcast
+stdlib-only Python drive ffmpeg from an ONVIF camera into an 8h10m broadcast
 rotation, with a second process watching the public stream and repairing it. It is
 in production — the docs record real outages with timestamps and measured
 CPU/bitrate figures. Deployment is `install.sh` on a Mac. `main` is the only artifact: there are no GitHub releases
@@ -26,9 +26,11 @@ RTMP session.
 
 ## Layout
 
-- `bin/` — `stream.sh` (774 lines: reader/publisher, watchdog, rotation, VOD
-  verification), `yt_monitor.sh` (the watchdog loop), `yt_api.py` (1250 lines, the
-  only thing that can create a broadcast), `yt_check.py` (grades one pulled frame),
+- `bin/` — `stream.sh` (the 16:9 reader/publisher, watchdog, rotation, VOD
+  verification), `vertical.sh` (the 9:16 Shorts feed: its own broadcast, slate, rotation
+  switch and LaunchAgent), `cam_scan.sh`/`cam_scan.py` (the 10-minute camera locator) and
+  `find_rtsp.py`, `yt_monitor.sh` (the watchdog loop), `yt_api.py` (the only thing that
+  can create a broadcast), `yt_check.py` (grades one pulled frame),
   `yt_watchdog.py` (the EXTERNAL watchdog: the one thing that runs off the streamer and
   the only code allowed to notify), `watchdog-install.sh` (installs that watchdog on an
   always-on host as a systemd unit or a LaunchAgent), `lib.sh` (shared API helpers), the
@@ -39,8 +41,10 @@ RTMP session.
   gateway/DNS/WAN and repairs a lost network; started by `stream.sh`), and
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
   `ssh_mesh.sh`.
-- `conf/` is **tracked**: `stream.env.example`, `broadcast_template.json` (the
-  enforced reference), `playlist.txt`, thumbnails, camera XML dumps, and the external
+- `conf/` is **tracked**: `stream.env.example`, `vertical.env.example` (the Shorts
+  feed's template; the live `conf/vertical.env` holds its own stream key and is
+  gitignored), `broadcast_template.json` (the enforced reference), `playlist.txt`,
+  thumbnails, camera XML dumps, and the external
   watchdog's `watchdog.env.example` (the tracked template; the live `conf/watchdog.env`
   holds a Gmail app password and is gitignored) and `ytlive-watchdog.service` (the systemd
   unit for the always-on host).
@@ -62,7 +66,7 @@ RTMP session.
 No build step, and no Python dependency to install: every `.py` is
 `#!/usr/bin/env python3` importing only the standard library. `install.sh`
 provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe` into
-`~/.local/bin`, `pip install --user yt-dlp`, and writes two LaunchAgents. Nothing
+`~/.local/bin`, `pip install --user yt-dlp`, and writes four LaunchAgents. Nothing
 needs sudo.
 
 ```bash
@@ -89,18 +93,26 @@ alone and passed it.
 ## Run
 
 ```bash
-launchctl load -w ~/Library/LaunchAgents/com.user.cctv-stream.plist
-launchctl load -w ~/Library/LaunchAgents/com.user.cctv-monitor.plist
+for l in stream vertical monitor camscan; do
+  launchctl load -w ~/Library/LaunchAgents/com.user.cctv-$l.plist
+done
 bin/status.sh          # --no-net skips the API calls
 touch log/rotate_now   # force a rotation
 ```
 
-Both agents are required, and `bin/status.sh` reports on both — it is the single
-place that answers "is it healthy". Health covers both jobs, the moving frame
-counter, heartbeat age, the token, YouTube's own view, camera port 554, disk,
-rotation history, config drift and VOD tallies.
+All four agents are required (the camera scanner is periodic, the other three are
+keep-alive) and `bin/status.sh` is the single place that answers "is it healthy".
+Health covers the jobs, the moving frame counter, heartbeat age, the token,
+YouTube's own view, camera port 554, disk, rotation history, config drift and VOD
+tallies.
 
-**The rotation order is mandatory.** Every 8h03m the publisher is killed so YouTube
+**Two feeds, one cut clock.** The 16:9 feed rotates at 8h10m. The 9:16 feed has its
+own broadcast and stream key (`conf/vertical.env`, `com.user.cctv-vertical`) and, with
+`VERT_ROTATE=yes` (default), follows `log/broadcast_started` so both cut together; with
+`VERT_ROTATE=no` (this box) it keeps ONE broadcast forever and YouTube stops archiving
+it after 12 h, which is the deliberate trade for a stream that never stops.
+
+**The rotation order is mandatory.** Every 8h10m the publisher is killed so YouTube
 closes and saves the VOD, and `prepare_broadcast()` must create and bind the next
 broadcast **before** ffmpeg pushes — `enableAutoStart` fires on ingest *arrival*,
 and binding afterwards leaves the broadcast in `ready` forever.

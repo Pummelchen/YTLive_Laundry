@@ -12,8 +12,9 @@
 #       it runs under Rosetta 2 - install Rosetta first:  softwareupdate --install-rosetta)
 #    2. yt-dlp via pip --user, symlinked into ~/.local/bin (needed by the monitor)
 #    3. ~/.local/bin on PATH in ~/.zshrc
-#    4. LaunchAgents for the stream + monitor, written with THIS user's home path
-#    5. log dirs, permissions, playlist
+#    4. LaunchAgents for the stream, the 9:16 Shorts feed, the monitor and the camera
+#       scanner, written with THIS user's home path
+#    5. log dirs, permissions, playlist, and both env files seeded from their examples
 #
 #  What it CANNOT do (you must, once, in the GUI)
 #    - Full Disk Access for /bin/zsh: System Settings > Privacy & Security > Full Disk
@@ -218,6 +219,18 @@ if [[ ! -f "$BASE/conf/stream.env" ]]; then
   fi
 fi
 chmod 600 "$BASE/conf/stream.env"
+# The 9:16 feed's config is separate because it has its OWN stream key (never share the 16:9
+# key: two publishers on one key fight each other on YouTube). It ships disabled so a
+# half-configured Shorts agent cannot go live with an empty key.
+if [[ ! -f "$BASE/conf/vertical.env" ]]; then
+  if [[ -f "$BASE/conf/vertical.env.example" ]]; then
+    cp "$BASE/conf/vertical.env.example" "$BASE/conf/vertical.env"
+    say "created conf/vertical.env from the example - the Shorts feed stays disabled until VERT_ENABLED=yes and VERT_KEY are set"
+  else
+    say "WARNING: conf/vertical.env and its example are both missing - the Shorts feed will not start"
+  fi
+fi
+[[ -f "$BASE/conf/vertical.env" ]] && chmod 600 "$BASE/conf/vertical.env"
 # The refresh token grants CONTROL of the channel, so it gets the same 0600 as the stream key.
 # install.sh used to chmod only stream.env and leave this one to whatever yt_api.py had set.
 [[ -f "$BASE/conf/yt_oauth.json" ]] && chmod 600 "$BASE/conf/yt_oauth.json"
@@ -280,6 +293,39 @@ write_plist com.user.cctv-stream  stream.sh     Interactive 10
 # Standard, not Background: macOS CPU-throttles Background jobs and every check of the
 # watchdog spawns yt-dlp and ffmpeg.
 write_plist com.user.cctv-monitor yt_monitor.sh Standard    30
+# The Shorts feed: same keep-alive shape as the streamer (it owns a second, independent
+# broadcast). It exits at once while conf/vertical.env says VERT_ENABLED="no", so loading the
+# agent before the key exists is harmless.
+write_plist com.user.cctv-vertical vertical.sh   Standard    30
+
+# The camera scanner is a periodic job, not a daemon: KeepAlive would make it loop.
+write_plist_interval() {
+  local label="$1"
+  local script="$2"
+  local interval="$3"
+  local out="$LA/$label.plist"
+  cat > "$out" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$label</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>$BASE/bin/$script</string>
+  </array>
+  <key>StartInterval</key><integer>$interval</integer>
+  <key>RunAtLoad</key><true/>
+  <key>StandardOutPath</key><string>$LOGS/${script%.sh}.out.log</string>
+  <key>StandardErrorPath</key><string>$LOGS/${script%.sh}.err.log</string>
+</dict>
+</plist>
+EOF
+  plutil -lint "$out" >/dev/null || die "bad plist $out"
+  say "wrote $out"
+}
+write_plist_interval com.user.cctv-camscan cam_scan.sh 600
 
 # --- 6. Full Disk Access check --------------------------------------------------
 # A LaunchAgent cannot read ~/Downloads without FDA. Probe it the same way launchd will.
@@ -315,7 +361,7 @@ if [[ "$START" == "yes" ]]; then
   [[ "$FDA" == "OK" ]] || die "refusing to start: grant Full Disk Access to /bin/zsh first, then run ./install.sh --start"
   [[ "$YT_EMPTY" == yes ]] && die "refusing to start: YT_KEY is empty in conf/stream.env - paste your YouTube stream key in first"
   say "starting services (remember: only ONE machine per YouTube stream key)"
-  for l in com.user.cctv-stream com.user.cctv-monitor; do
+  for l in com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
     launchctl unload "$LA/$l.plist" 2>/dev/null; launchctl load -w "$LA/$l.plist" && say "loaded $l"
   done
   sleep 8; launchctl list | grep cctv
