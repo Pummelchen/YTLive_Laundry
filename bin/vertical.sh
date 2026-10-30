@@ -49,6 +49,9 @@ source "$VCONF"
 : ${VERT_AUDIO_BITRATE:=128k}
 : ${VERT_FPS:=30}
 : ${VERT_GOP:=60}
+: ${VERT_ROTATE:=yes}              # no = ONE broadcast, forever: no cut when the 16:9 rotates
+                                        # and no age fallback. The recording past YouTube's 12 h
+                                        # limit is lost, but the live stream never stops.
 : ${VERT_ROTATE_HOURS:=8}
 : ${VERT_ROTATE_MINUTES:=3}
 : ${VERT_GAP:=45}                 # seconds of silence between ending and re-creating a broadcast
@@ -375,26 +378,32 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
     fi
   fi
 
-  # 2a. SYNC: follow the 16:9 rotation. Both feeds must cut at the same moment, so the 16:9
-  # broadcast is the clock. stream.sh rewrites log/broadcast_started with the NEW id when its
-  # successor goes live, which is exactly when this feed should start its own cut - the two
-  # new broadcasts then begin within a minute of each other.
-  mid=$(master_id)
-  if sync_pending "$mid"; then
-    vlog "SYNC: the 16:9 feed rotated to $mid - rotating this one too"
-    MASTER_SEEN=$mid
-    rotate "$WANT" || { sleep 60; continue; }
-    MODE="$WANT"; STUCK=0; LAST_FRAME=""
-    continue
-  fi
+  # 2a/2b. ROTATION, only when VERT_ROTATE=yes (the default). With VERT_ROTATE=no this feed
+  # keeps ONE broadcast for as long as it runs: it ignores the 16:9 rotation and has no age
+  # fallback of its own. YouTube stops archiving a broadcast at 12 h, so the recording is
+  # lost past that point - that is the deliberate trade for a stream that never stops.
+  if [[ "$VERT_ROTATE" == "yes" ]]; then
+    # 2a. SYNC: follow the 16:9 rotation. Both feeds must cut at the same moment, so the 16:9
+    # broadcast is the clock. stream.sh rewrites log/broadcast_started with the NEW id when its
+    # successor goes live, which is exactly when this feed should start its own cut - the two
+    # new broadcasts then begin within a minute of each other.
+    mid=$(master_id)
+    if sync_pending "$mid"; then
+      vlog "SYNC: the 16:9 feed rotated to $mid - rotating this one too"
+      MASTER_SEEN=$mid
+      rotate "$WANT" || { sleep 60; continue; }
+      MODE="$WANT"; STUCK=0; LAST_FRAME=""
+      continue
+    fi
 
-  # 2b. fallback: the age clock still applies if a sync was missed (a long outage of the
-  # other feed, a restart that never saw a change). The grace keeps this from firing during
-  # the up-to-1020 s between the 16:9 cut and its successor's id appearing - that would cut
-  # twice.
-  if (( $(broadcast_age) > VERT_ROTATE_SECONDS + VERT_FALLBACK_GRACE )); then
-    rotate "$WANT" || { sleep 60; continue; }
-    MODE="$WANT"; STUCK=0; LAST_FRAME=""
+    # 2b. fallback: the age clock still applies if a sync was missed (a long outage of the
+    # other feed, a restart that never saw a change). The grace keeps this from firing during
+    # the up-to-1020 s between the 16:9 cut and its successor's id appearing - that would cut
+    # twice.
+    if (( $(broadcast_age) > VERT_ROTATE_SECONDS + VERT_FALLBACK_GRACE )); then
+      rotate "$WANT" || { sleep 60; continue; }
+      MODE="$WANT"; STUCK=0; LAST_FRAME=""
+    fi
   fi
 
   # 3. start / switch / restart the encoder

@@ -15,6 +15,10 @@ contains() {   # contains FILE NEEDLE LABEL
 }
 
 contains bin/vertical.sh 'MASTER="$BASE/log/broadcast_started"' "the vertical follows the 16:9 clock file"
+# ...but only when it is allowed to rotate at all. VERT_ROTATE=no is the "run forever" mode:
+# the 9:16 feed keeps one broadcast, ignoring both the 16:9 cut and its own age.
+contains bin/vertical.sh ': ${VERT_ROTATE:=yes}' "rotation is a switch, defaulting on"
+contains bin/vertical.sh 'if [[ "$VERT_ROTATE" == "yes" ]]; then' "and the sync plus the fallback sit inside it"
 contains bin/vertical.sh 'vlog "SYNC: the 16:9 feed rotated to $mid - rotating this one too"' "and rotates when that id changes"
 contains bin/vertical.sh 'if sync_pending "$mid"; then' "the loop asks the decision function, so this test drives the same code"
 
