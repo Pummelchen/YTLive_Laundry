@@ -10,6 +10,10 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   before the publisher was moved to `-loglevel error`.
 
 ## Todo / notes
+- **The Shorts feed runs without rotation on purpose** (`VERT_ROTATE=no`), so YouTube stops
+  archiving its broadcast after 12 h: the stream stays up, the recording past that point is
+  lost. Set `VERT_ROTATE=yes` if a continuous archive matters more than an uninterrupted
+  Shorts stream.
 - The camera delivers only ~2.3 Mbit/s for the whole 3-up composite, so one panel is low
   detail. This is NOT fixable from the camera web UI: the firmware accepts ONVIF encoder
   writes, reports them back and ignores them - the delivered stream stayed at ~2.3 Mbit/s and
