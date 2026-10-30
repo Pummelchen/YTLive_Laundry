@@ -53,6 +53,8 @@
                              safe to run by hand. It never notifies and never power-cycles a
                              service - see its own header for why both matter.
     conf/stream.env          settings + YouTube key (chmod 600, gitignored)
+    conf/vertical.env        the 9:16 feed's settings + its own YouTube key (chmod 600,
+                             gitignored; conf/vertical.env.example is the template)
     conf/yt_oauth.json       OAuth refresh token (chmod 600, gitignored)
     conf/vertical_template.json   the 9:16 overrides: it declares _inherit pointing at
                              broadcast_template.json, so it carries ONLY the title. Inheritance

@@ -87,6 +87,8 @@ contains bin/vertical.sh 'pad=${VERT_W}:${VERT_H}' "and pads to a true 9:16 fram
 contains bin/vertical.sh "color=black" "with a black background above and below it (operator request 2026-10-28)"
 contains bin/vertical.sh 'color=c=black:s=${VERT_W}x${VERT_H}' "and the offline card is black too, not the brand navy"
 contains bin/vertical.sh "YT_KEY=\"\$VERT_KEY\"" "every vertical API call is scoped to its own key"
+t_assert_file conf/vertical.env.example "the Shorts config has a tracked template"
+contains conf/vertical.env.example 'VERT_ROTATE="no"' "which records the run-forever choice"
 contains bin/vertical.sh "ROTATE" "the vertical feed rotates before YouTube's 12h archive limit"
 contains bin/vertical.sh "vertical.seen_camera" "it will not go public with only a slate before the first sighting"
 

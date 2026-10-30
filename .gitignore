@@ -53,6 +53,8 @@ tests/.tmp/
 # Editor/tool backups of the scripts. Git IS the backup.
 bin/*.bak-*
 conf/*.bak-*
+# The 9:16 feed's config. Same rule as stream.env: conf/vertical.env.example is the
+# tracked template and conf/vertical.env holds its own stream key.
 conf/vertical.env
 conf/vertical.env.bak-*
 conf/vertical_template.local.json
