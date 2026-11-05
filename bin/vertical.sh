@@ -28,6 +28,8 @@ PROG="$BASE/log/vertical.progress"
 PIDFILE="$BASE/log/vertical.pid"
 PUB_PID="$BASE/log/vertical.publisher.pid"
 BSTATE="$BASE/log/vertical.broadcast"    # "<broadcast id> <epoch>" of the CURRENT vertical one
+LIVEOK="$BASE/log/vertical.live_ok"  # the broadcast id the API has CONFIRMED live; while it
+                                    # matches, the 60 s liveness poll is skipped entirely
 MASTER="$BASE/log/broadcast_started"     # the 16:9 feed's "<broadcast id> <epoch>": the clock this
                                          # feed follows, so both cuts land together
 SLATE="$BASE/log/vertical_slate.jpg"
@@ -265,7 +267,7 @@ rotate() {
 
   stop_publisher
   vapi end >>"$LOG" 2>&1
-  rm -f "$BSTATE"
+  rm -f "$BSTATE" "$LIVEOK"
   sleep "$VERT_GAP"
   if prepare_broadcast; then
     start_publisher "$1"
@@ -466,7 +468,12 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
 
   # 5. if ingest is flowing but YouTube has not gone live, let the API drive the transition
   #    (bounded: once every 60s, and never in the first minute after a prepare)
-  if (( $(date +%s) >= LAST_LIVE_NUDGE + 60 )) && (( $(broadcast_age) > 60 )); then
+  # The API is not free: every status call is ~2-3 of the day's 10,000 units. Polling it
+  # every 60 s burned the pool by early morning, which is what left the 16:9 rotations
+  # unable to create successors and the videos running long. Once the API has confirmed THIS
+  # broadcast live there is nothing to nudge, so the poll stops until the id changes.
+  if [[ "$(cat "$LIVEOK" 2>/dev/null)" != "$(broadcast_id)" ]] \
+     && (( $(date +%s) >= LAST_LIVE_NUDGE + 60 )) && (( $(broadcast_age) > 60 )); then
     local_out=$(vapi status 2>/dev/null)
     # The API being exhausted is not "the feed is dark". Prodding ensure-live every minute
     # against an exhausted quota only writes two log lines a minute and can never succeed
@@ -483,6 +490,7 @@ print(int(d.get("started_epoch") or time.time()))' 2>/dev/null)
 try: print(json.loads(sys.stdin.read()).get("status",""))
 except Exception: print("")' 2>/dev/null)
     if [[ "$local_st" == "LIVE" ]]; then
+      print -r -- "$(broadcast_id)" > "$LIVEOK"
       # apply the template (description, tags, privacy) once per broadcast
       if [[ "$(cat "$BASE/log/vertical.enforced" 2>/dev/null)" != "$(broadcast_id)" ]]; then
         vapi enforce "$(broadcast_id)" >>"$LOG" 2>&1
@@ -490,6 +498,7 @@ except Exception: print("")' 2>/dev/null)
       fi
     elif [[ "$local_st" != "LIVE" ]]; then
       vlog "not live yet - ensure-live"
+      rm -f "$LIVEOK"
       vapi ensure-live >>"$LOG" 2>&1
       LAST_LIVE_NUDGE=$(date +%s)
       STUCK=0

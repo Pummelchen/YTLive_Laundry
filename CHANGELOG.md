@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-05 — why the videos ran long: the API pool was spent by morning
+
+- **Root cause found.** The 9:16 supervisor's liveness nudge re-armed its 60 s timer only on the
+  "not live" branch, so once the Shorts was live it called the status API on **every loop
+  iteration** (~8 s apart) — roughly 15-20k units a day against a 10,000-unit pool. The pool was
+  gone by early morning, the 08:06 rotation could not create a successor, the code stayed live to
+  the 11h15m hard stop and then went dark until the 14:00 reset. That is why recent archives are
+  9-11 h instead of 8h10m, and why several days show a "failed" rotation.
+- **Fix**: a confirmed-live marker (`log/vertical.live_ok`) stops the poll as soon as the API has
+  confirmed THIS broadcast; it is cleared on rotation and before an ensure-live attempt. The poll
+  now costs a couple of calls per rotation instead of thousands per day.
+- **The recording audit no longer delays the cut.** `verify_pending_vods`/`recheck_final_vods`
+  ran before the kill and took 10-21 minutes on a full recheck list, stretching 8h10m segments to
+  8h30m. They now run in the background under a lock once the successor is live (and at startup),
+  so the cut fires on time and the new segment is supervised immediately.
+- **`log/api_usage.log`** (bounded, 1 line per real API request) records what the pool is being
+  spent on; it is how the above was found.
+
 ## 2026-10-30 — the Shorts runs forever, and the feeds are honest about it
 
 - **The Shorts never cuts** (`VERT_ROTATE=no` in `conf/vertical.env`): the 9:16 feed keeps ONE

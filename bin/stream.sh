@@ -878,6 +878,21 @@ recheck_final_vods() {
   (( kept == 0 )) || log "VOD-FINAL: $kept recording(s) still awaiting a settled duration"
 }
 
+# One audit at a time, and never in the way of a cut. Both functions are idempotent bookkeeping;
+# the lock only stops a background audit from racing the next one (a stale lock expires in 2 h).
+vod_audit_once() {
+  local lock="$BASE/log/vod_audit.lock" now since
+  now=$(date +%s)
+  if [[ -d "$lock" ]]; then
+    since=$(/usr/bin/stat -f %m "$lock" 2>/dev/null) || since=0
+    (( now - since > 7200 )) && rmdir "$lock" 2>/dev/null
+  fi
+  mkdir "$lock" 2>/dev/null || return 0
+  trap 'rmdir "$lock" 2>/dev/null' EXIT
+  verify_pending_vods
+  recheck_final_vods
+}
+
 verify_pending_vods() {
   local id tries now dur rc
   now=$(date '+%Y-%m-%d %H:%M:%S')
@@ -1196,11 +1211,6 @@ rotate_broadcast() {
     log "ROTATE ($why): API unusable ($pre) but ROTATE_WITHOUT_API=yes - cutting anyway; the channel will go dark until credentials return."
   fi
 
-  # Before cutting again, confirm the recording the LAST cut was supposed to produce
-  # actually exists. Eight hours is ample processing time.
-  verify_pending_vods
-  recheck_final_vods
-
   old_id=$(yt_live_id)
   schedule_thumbnail "$old_id"
   # Snapshot what is configured on the outgoing broadcast BEFORE ending it, so anything
@@ -1239,6 +1249,11 @@ rotate_broadcast() {
   # the successor is live. Leaving it to the next housekeeping pass (up to HOUSEKEEP_EVERY=300 s)
   # started the Shorts cut minutes after this one - the drift this file exists to remove.
   refresh_broadcast_clock
+  # The recording audit used to run HERE, before the kill, and it took 10-21 minutes on a
+  # 199-line recheck list - so an 8h10m segment regularly ran 8h30m and the archive above
+  # YouTube's 12 h limit became a real risk. It is bookkeeping, not part of the cut: run it
+  # in the background now that the successor is live, guarded so two audits never overlap.
+  ( vod_audit_once ) >>"$LOG" 2>&1 &
 }
 
 log "starting: MODE=$MODE ${OUT_FPS}fps ${ENC_BITRATE} cam=$CAM_URL audio=${AAC_ENC}@${AUD_BITRATE} (cctv mic NOT streamed)"
@@ -1266,8 +1281,9 @@ sweep_thumbnails          # repair any recent video still showing the generic im
 BROADCAST_STARTED=$(date +%s)
 LAST_ROTATE=$BROADCAST_STARTED
 refresh_broadcast_clock     # adopt the running broadcast's real age, not this process's
-verify_pending_vods         # catch up on any recording we have not confirmed yet
-recheck_final_vods          # and read the PUBLISHED duration of the ones that have settled
+# Same audit, backgrounded: it can take 20+ minutes and must not hold up the loop that
+# supervises the publisher (that wait used to leave the publisher unsupervised for its duration).
+( vod_audit_once ) >>"$LOG" 2>&1 &
 log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 # Same reason as at the end of a rotation: after a restart that fragmented the broadcast, the

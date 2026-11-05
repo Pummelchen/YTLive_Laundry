@@ -342,6 +342,18 @@ def api(method, path, token, params=None, body=None):
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     })
+    # Quota forensics: one line per REAL request (guarded skips return above), bounded to a
+    # few hundred KB. The path and method are enough to tell a 1-unit list from a 50-unit
+    # write, and the timestamps show what the daily pool is actually being spent on.
+    try:
+        ulog = BASE / "log/api_usage.log"
+        if ulog.exists() and ulog.stat().st_size > 262144:
+            kept = ulog.read_text().splitlines()[-1000:]
+            ulog.write_text("\n".join(kept) + "\n")
+        with ulog.open("a") as fh:
+            fh.write(f"{int(time.time())} {method} {path}\n")
+    except OSError:
+        pass
     try:
         with urllib.request.urlopen(req, timeout=60) as r:
             raw = r.read()

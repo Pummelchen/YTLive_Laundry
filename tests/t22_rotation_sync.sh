@@ -18,6 +18,12 @@ contains bin/vertical.sh 'MASTER="$BASE/log/broadcast_started"' "the vertical fo
 # ...but only when it is allowed to rotate at all. VERT_ROTATE=no is the "run forever" mode:
 # the 9:16 feed keeps one broadcast, ignoring both the 16:9 cut and its own age.
 contains bin/vertical.sh ': ${VERT_ROTATE:=yes}' "rotation is a switch, defaulting on"
+# The API liveness poll is NOT free (2-3 units of a 10,000/day pool): polling it every loop
+# while the broadcast is live burned the quota by early morning and left rotations unable to
+# create successors. A confirmed-live marker stops the poll until the broadcast id changes.
+contains bin/vertical.sh 'LIVEOK="$BASE/log/vertical.live_ok"' "the API poll is gated by a confirmed-live marker"
+contains bin/vertical.sh 'if [[ "$(cat "$LIVEOK" 2>/dev/null)" != "$(broadcast_id)" ]]' "so a live broadcast is not polled every iteration"
+contains bin/vertical.sh 'print -r -- "$(broadcast_id)" > "$LIVEOK"' "and the confirmation is recorded"
 contains bin/vertical.sh 'if [[ "$VERT_ROTATE" == "yes" ]]; then' "and the sync plus the fallback sit inside it"
 contains bin/vertical.sh 'vlog "SYNC: the 16:9 feed rotated to $mid - rotating this one too"' "and rotates when that id changes"
 contains bin/vertical.sh 'if sync_pending "$mid"; then' "the loop asks the decision function, so this test drives the same code"
