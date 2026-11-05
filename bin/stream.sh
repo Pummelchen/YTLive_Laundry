@@ -888,7 +888,10 @@ vod_audit_once() {
     (( now - since > 7200 )) && rmdir "$lock" 2>/dev/null
   fi
   mkdir "$lock" 2>/dev/null || return 0
-  trap 'rmdir "$lock" 2>/dev/null' EXIT
+  # Double quotes, not single: the trap body runs when the subshell exits, after the local
+  # scope is gone, and a single-quoted body then expands an unset variable (set -u: "lock:
+  # parameter not set") and leaves the lock behind.
+  trap "rmdir '$lock' 2>/dev/null" EXIT
   verify_pending_vods
   recheck_final_vods
 }
