@@ -259,6 +259,18 @@ def vod_problem(base, window=86400):
     return f"short {vid} {dur} - under the 8h00m floor"
 
 
+def file_age_s(path):
+    """Seconds since the file was last written, as an int; None when it is missing.
+
+    The off-host watchdog uses this to notice that the in-box 10-minute recovery pass
+    (bin/watchguard.sh) has stopped - the one failure a live channel cannot otherwise show.
+    """
+    try:
+        return int(time.time() - os.stat(path).st_mtime)
+    except OSError:
+        return None
+
+
 def build_payload(base):
     """The wire document. Every read degrades to null; this function does not raise."""
     running, pid = publisher_state(base)
@@ -274,6 +286,9 @@ def build_payload(base):
         # A recording that came out short or vanished, so the off-host watchdog can alert on it
         # without a credential and without reading YouTube: the streamer already knows.
         "vod_problem": vod_problem(base),
+        # How long since the watchguard's last pass. Absent (None) on an older streamer, which
+        # the watchdog treats as "not reported" and never alerts on.
+        "watchguard_age_s": file_age_s(os.path.join(base, "log", "watchguard.heartbeat")),
     }
 
 

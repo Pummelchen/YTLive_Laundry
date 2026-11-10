@@ -52,7 +52,13 @@ five minutes every eight hours, so any alert threshold has to sit well above tha
 2. **The streamer host**, via `tailscale status --json`. This is what turns "dark" into a
    diagnosis — host gone means power or network; host up means publisher, token or camera —
    and it cannot be blinded by a YouTube change the way `yt-dlp` can.
-3. **The streamer application's heartbeat**, if a file is configured (`WATCH_HEARTBEAT`). Its
+3. **The streamer's watchguard**, from the same push: `watchguard_age_s` is how long since the
+   in-box 10-minute recovery pass last completed. A stale age means the component that restarts
+   dead agents, reboots a wedged camera and repairs a broadcast is itself gone - and the channel
+   can still be `live` while that is true, which is the one failure every other signal here
+   cannot see. An absent field (an older streamer) is never an alert, and a stale push is not
+   believed: the same freshness rule as the disk figure and the recording problem.
+4. **The streamer application's heartbeat**, if a file is configured (`WATCH_HEARTBEAT`). Its
    modification time going stale is positive evidence that the app itself has gone silent —
    a different failure from "the channel is dark", and one the channel read cannot always
    describe. A stale heartbeat is reported **even while the channel read is `UNKNOWN`**. An

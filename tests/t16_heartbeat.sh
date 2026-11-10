@@ -282,6 +282,28 @@ t_assert_eq "$SLEEPPID" "$(fv publisher_pid)" "and the payload names that pid so
   && t_ok "the payload carries an epoch and an uptime in seconds" \
   || t_bad "timestamp/uptime missing ($(fv ts) / $(fv uptime_s))"
 t_assert_contains "$FIELDS" "host=" "the payload names the host"
+
+# The off-host watchdog can only alert on the in-box recovery pass if the push carries its
+# age. Absent means an older streamer -> the watchdog stays silent, so both sides matter.
+print -r -- "$(date +%s) OK actions=0" > "$T_BASE/log/watchguard.heartbeat"
+python3 "$HB" push --url "http://127.0.0.1:$PORT/heartbeat" --token-file "$TOKENFILE" \
+  --base "$T_BASE" >"$T_BASE/log/push-wg.log" 2>&1
+WGAGE=$(python3 -c "
+import json
+print(json.load(open('$STATE')).get('watchguard_age_s'))
+")
+[[ "$WGAGE" == <-> ]] \
+  && t_ok "the payload carries the watchguard's age in seconds ($WGAGE)" \
+  || t_bad "the payload has no watchguard_age_s number ($WGAGE)"
+rm -f "$T_BASE/log/watchguard.heartbeat"
+python3 "$HB" push --url "http://127.0.0.1:$PORT/heartbeat" --token-file "$TOKENFILE" \
+  --base "$T_BASE" >"$T_BASE/log/push-wg2.log" 2>&1
+WGAGE2=$(python3 -c "
+import json
+print(json.load(open('$STATE')).get('watchguard_age_s'))
+")
+t_assert_eq "None" "$WGAGE2" \
+  "with no heartbeat file the field is null, which the watchdog reads as 'not reported'"
 kill "$SLEEPPID" 2>/dev/null
 
 # --- the token is NEVER in argv ----------------------------------------------------------

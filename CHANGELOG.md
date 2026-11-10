@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-11-11 — the off-host watchdog can see the recovery pass itself
+
+- **The last blind spot of the supervision chain.** launchd restarts what exits, stream.sh
+  restarts the monitor and the watchguard, the watchguard restarts everything - but a HUNG
+  watchguard together with a HUNG stream.sh would leave a live channel with nobody repairing
+  it, and every off-host signal would still read healthy (the publisher and the pusher are
+  separate processes and keep running).
+- **The streamer now reports it.** `yt_heartbeat.py` adds `watchguard_age_s` (seconds since
+  `log/watchguard.heartbeat`) to the same push that carries the disk figure and the recording
+  problem; `null` on a streamer without a watchguard.
+- **The host pages on it.** `yt_watchdog.py` gains `WATCH_WATCHGUARD_MAX` (default 1800 = three
+  cadences) and a `watchguard_stale` / `watchguard_recover` episode with the usual reminder
+  cadence. It obeys the same rules as every other signal here: only a **fresh** push is
+  believed, an absent field is never an alert, and it does not consume the dark/blind episode
+  key - so a dead recovery pass can neither hide nor be hidden by an unrelated outage.
+  `status` prints it next to the disk and the recordings.
+- Asserted in `tests/t16_heartbeat.sh` (payload field, and null when the file is gone) and
+  `tests/t07_watchdog.sh` (stale pages once, reminds, recovers, absent is silent, 0 disables,
+  a stale push is not believed).
+
 ## 2026-11-10 — the Wi-Fi rung now proves it re-associated, because `networksetup` lies
 
 - **Measured on the streamer:** `networksetup -setairportnetwork en0 "TERNAK LAUNDRY -5G"` printed

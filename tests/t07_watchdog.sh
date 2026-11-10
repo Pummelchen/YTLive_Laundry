@@ -262,6 +262,55 @@ ck("network" in body_d.lower(), "and does not present the pmset work as the fix 
 out, st = run([(0, "unknown", "live"), (2000, "unknown", "live")])
 ck("dark" not in out[0] + out[1], "UNKNOWN alone still never alerts as dark")
 
+# --- the recovery pass: a live channel with nobody repairing it --------------------------
+# stream.sh watches the watchguard and launchd watches stream.sh, but a HUNG watchguard and a
+# HUNG stream.sh together would leave a live, unsupervised channel, and every reader here would
+# still report "live". The streamer therefore sends the age of its last 10-minute pass.
+def run_wg(seq, wg):
+    st = wd.new_state(); out = []
+    for t, age in seq:
+        st, acts = wd.decide(t, st, "live", "live", C, "fresh", 10, None, None, wg(age))
+        out.append([a["kind"] for a in acts])
+    return out, st
+
+def wgs(age):
+    return {"age_s": age, "threshold": C.num("WATCH_WATCHGUARD_MAX")}
+
+out, st = run_wg([(0, 60), (600, 700)], wgs)
+ck(out == [[], []], "a watchguard inside its cadence raises nothing, even with the channel live")
+
+out, st = run_wg([(0, 1900), (60, 1900)], wgs)
+ck(out[0] == ["watchguard_stale"], "a stale watchguard pages once")
+ck(out[1] == [], "and does not repeat inside WATCH_REMIND")
+
+out, st = run_wg([(0, 1900), (C.num("WATCH_REMIND") + 1, 4000)], wgs)
+ck(out[1] == ["watchguard_stale"], "an unresolved stale watchguard is reminded after WATCH_REMIND")
+
+out, st = run_wg([(0, 1900), (600, 30)], wgs)
+ck(out[1] == ["watchguard_recover"], "and coming back produces one recovery mail")
+
+# A stale watchguard must not be able to hide or be hidden by the outage story.
+out, st = run_wg([(0, 1900)], wgs)
+ck(st.get("last_alert_kind") is None, "a watchguard alert does not consume the outage episode key")
+
+# An older streamer does not send the field at all: silent, forever - not a fault.
+out, st = run_wg([(0, None), (60, None), (600, None)], lambda a: None)
+ck(out == [[], [], []], "a streamer that does not report a watchguard never pages")
+
+# The threshold is configurable and 0 disables the rule - in the reader, like the other knobs.
+c0 = cfg(WATCH_WATCHGUARD_MAX="0")
+ck(wd.watchguard_state(c0, "fresh", {"watchguard_age_s": 99999}) is None,
+   "WATCH_WATCHGUARD_MAX=0 disables the rule")
+
+# The freshness rule lives in the reader, not in decide(): decide() is handed plain values.
+ck(wd.watchguard_state(C, "stale", {"watchguard_age_s": 99999}) is None,
+   "a stale push is not trusted for the watchguard age")
+ck(wd.watchguard_state(C, "fresh", {"watchguard_age_s": 42}) ==
+   {"age_s": 42, "threshold": C.num("WATCH_WATCHGUARD_MAX")},
+   "a fresh push yields the age and the configured limit")
+ck(wd.watchguard_state(C, "fresh", {}) is None,
+   "an older streamer that sends no field yields nothing to judge")
+
 # purity: the caller's state must not be mutated
 before = wd.new_state(); snapshot = dict(before)
 wd.decide(0, before, "offline", "down", C)

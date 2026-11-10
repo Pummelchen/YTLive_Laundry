@@ -118,6 +118,8 @@ DEFAULTS = {
     "WATCH_REMIND": "21600",        # repeat an unresolved alert every 6 h
     "WATCH_HEARTBEAT": "",          # path to a file the streamer app touches; empty = disabled
     "WATCH_HEARTBEAT_MAX": "900",   # 15 min without a touch -> the app is silent
+    "WATCH_WATCHGUARD_MAX": "1800", # 3x the watchguard's 600s cadence; older -> the recovery
+                                    # pass itself is not running. 0 disables the rule.
     "WATCH_DISK_MIN_MB": "2000",    # the streamer's push carries free MB; below this -> alert.
                                     # 0 disables. Chosen above stream.sh's DISK_LOW_MB (1000), so
                                     # the repair runs first and this fires only if it cannot keep up.
@@ -485,6 +487,24 @@ def vod_state(heartbeat, payload):
     return problem.strip()
 
 
+def watchguard_state(cfg, heartbeat, payload):
+    """The streamer's watchguard age as {"age_s", "threshold"}, or None.
+
+    The watchguard is the in-box 10-minute recovery pass. This host cannot see it, so the
+    streamer reports the age of its heartbeat in the same push as the disk figure. A MISSING
+    field means an older streamer that has no watchguard - that is not a fault and stays silent,
+    otherwise every host that has not been upgraded would page forever. Same freshness rule as
+    everything else here: only a fresh push is believed.
+    """
+    limit = cfg.num("WATCH_WATCHGUARD_MAX")
+    if limit <= 0 or heartbeat != "fresh" or not isinstance(payload, dict):
+        return None
+    age = payload.get("watchguard_age_s")
+    if not isinstance(age, int) or isinstance(age, bool):
+        return None
+    return {"age_s": age, "threshold": limit}
+
+
 def disk_state(cfg, heartbeat, payload):
     """The pusher's free-space figure as a plain value for decide(), or None.
 
@@ -521,6 +541,7 @@ def new_state():
         "last_heartbeat_age": None,
         "disk": None,               # {"free_mb","min_mb","threshold","since","alerted_at"}
         "vod": None,                # {"problem","since","alerted_at"} - a published-recording fault
+        "watchguard": None,         # {"age_s","threshold","since","alerted_at"} - the recovery pass
         "last_broadcast": None,     # the streamer's own broadcast id, for display when vid is unknown
         "last_error": None,
         "checks": 0,
@@ -551,7 +572,8 @@ def save_state(path, state):
 # --------------------------------------------------------------------------------------
 # The decision, as a pure function of (time, state, signals, config)
 # --------------------------------------------------------------------------------------
-def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None, disk=None, vod=None):
+def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=None, disk=None,
+           vod=None, watchguard=None):
     """Return (new_state, actions). Pure - no clock, no network, no I/O - so the whole
     alerting policy is testable without waiting 15 minutes or touching YouTube.
 
@@ -628,6 +650,39 @@ def decide(now, state, channel, host, cfg, heartbeat="disabled", heartbeat_age=N
                 actions.append(dict(kind="disk_recover", free_mb=free_mb, threshold=threshold))
             s["disk"] = {"free_mb": free_mb, "min_mb": disk.get("min_mb"), "threshold": threshold,
                          "since": None, "alerted_at": None}
+
+    # --- the watchguard itself: its own episode, like the disk and the recording --------------
+    # The last blind spot of the whole design: stream.sh watches the watchguard, launchd watches
+    # stream.sh, and this host watches the box - but a HUNG watchguard and a HUNG stream.sh
+    # together would leave a live channel with nobody supervising it, and every reader here
+    # would still say "live". The streamer therefore reports how long since its last 10-minute
+    # pass, and a stale age pages even while the channel is live.
+    if watchguard is None:
+        prior = s.get("watchguard")
+        if isinstance(prior, dict) and prior.get("since") is not None:
+            # The number went away (push stopped / older streamer). Not a recovery, no mail -
+            # but forget the episode so a later one is new.
+            s["watchguard"] = dict(prior, since=None, alerted_at=None)
+    else:
+        age = watchguard["age_s"]
+        threshold = watchguard["threshold"]
+        prior = s.get("watchguard") if isinstance(s.get("watchguard"), dict) else {}
+        if age > threshold:
+            since = prior.get("since")
+            if since is None:
+                since = now
+            alerted_at = prior.get("alerted_at")
+            s["watchguard"] = {"age_s": age, "threshold": threshold, "since": since,
+                               "alerted_at": alerted_at}
+            if alerted_at is None or (now - alerted_at) >= remind:
+                s["watchguard"]["alerted_at"] = now
+                actions.append(dict(kind="watchguard_stale", age_s=age, threshold=threshold,
+                                    stale_for=now - since))
+        else:
+            if isinstance(prior.get("since"), int):
+                actions.append(dict(kind="watchguard_recover", age_s=age))
+            s["watchguard"] = {"age_s": age, "threshold": threshold, "since": None,
+                               "alerted_at": None}
 
     # --- a recording problem YouTube published: its own episode, like the disk -----------------
     # Reported from the same push and independently of the outage story: a healthy live stream
@@ -804,6 +859,18 @@ def human_vod(state):
     return f"{entry['problem']}{age}"
 
 
+def human_watchguard(state):
+    """One line for the streamer's recovery pass: its age, and whether it is overdue."""
+    entry = state.get("watchguard")
+    if not isinstance(entry, dict) or entry.get("age_s") is None:
+        return "not reported by the streamer (older build, or no push yet)"
+    age = human_duration(entry["age_s"])
+    if entry.get("since") is not None:
+        return (f"NOT RUNNING - last pass {age} ago (limit "
+                f"{human_duration(entry.get('threshold') or 0)})")
+    return f"running - last pass {age} ago"
+
+
 def program_version(cfg):
     """The release this install came from, written by watchdog-install.sh, or "unknown".
 
@@ -897,6 +964,19 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
                 f"whole again (or a newer, complete one has replaced it in the report). Nothing to "
                 f"do unless it repeats.")
 
+    elif kind == "watchguard_stale":
+        subject = "[YTLive] the recovery pass is not running"
+        head = (f"The streamer's watchguard has not completed a pass for "
+                f"{human_duration(action.get('age_s'))} (limit "
+                f"{human_duration(action.get('threshold'))}). That is the 10-minute pass that "
+                f"restarts dead agents, reboots a wedged camera and repairs a broadcast - the "
+                f"channel may still be live, but nothing is repairing it. stream.sh reloads it "
+                f"when it can; if this repeats, check "
+                f"`launchctl list | grep cctv-watchguard` and log/watchguard.log on the streamer.")
+    elif kind == "watchguard_recover":
+        subject = "[YTLive] the recovery pass is running again"
+        head = (f"The streamer's watchguard is completing passes again (last one "
+                f"{human_duration(action.get('age_s'))} ago). Nothing to do unless this repeats.")
     elif kind == "disk_low":
         free = action.get("free_mb")
         limit = action.get("threshold")
@@ -927,6 +1007,7 @@ def compose(action, state, channel, host, host_last_seen, vid, cfg):
         f"heartbeat     : {human_heartbeat(state, cfg)}",
         f"disk          : {human_disk(state, cfg)}",
         f"recordings    : {human_vod(state)}",
+        f"watchguard    : {human_watchguard(state)}",
         f"video id      : {vid or state.get('last_broadcast') or 'none'}",
         f"now           : {human_time(time.time(), cfg)}",
     ]
@@ -1086,11 +1167,13 @@ def check_once(cfg, state):
     payload = heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip())
     disk = disk_state(cfg, heartbeat, payload)
     vod = vod_state(heartbeat, payload)
+    watchguard = watchguard_state(cfg, heartbeat, payload)
     if isinstance(payload, dict) and payload.get("broadcast"):
         # Display only: when the primary reader cannot name the video (it is bot-blocked from this
         # address), the alert can still say WHICH segment, because the streamer pushed its id.
         state["last_broadcast"] = payload.get("broadcast")
-    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age, disk, vod)
+    new, actions = decide(now, state, channel, host, cfg, heartbeat, heartbeat_age, disk, vod,
+                          watchguard)
     return new, actions, channel, host, host_last_seen, vid, heartbeat, heartbeat_age
 
 
