@@ -20,7 +20,7 @@
   rebooted or the publisher restarted (stream.sh's own 5 s watchdog gets first refusal), a
   cooldown on every repair, a hard `WG_MAX_ACTIONS` cap per pass, and one instance at a time. It
   never reboots the Mac, never touches a network interface or the service order, never cuts a
-  live broadcast, never signals by pattern. `tests/t23_watchguard.sh` (57 checks) asserts every
+  live broadcast, never signals by pattern. `tests/t23_watchguard.sh` (60 checks) asserts every
   one of those, including a static scan of the source for the forbidden commands.
 - **What it cannot do is stated, not hidden.** A MacBook with no power is unreachable from
   inside it and `pmset autorestart` is unsupported on this hardware, so "no power" is answered
@@ -28,7 +28,7 @@
   to live the moment the power returns, with nobody touching it.
 - **`status.sh`** now prints the watchguard's verdict, heartbeat age and counters, and fails when
   the heartbeat is more than four intervals old - a dead watchguard cannot look like a quiet one.
-  `install.sh` provisions the fifth agent; the suite is **923 checks**.
+  `install.sh` provisions the fifth agent; the suite is **926 checks**.
 
 ## 2026-11-10 — the heartbeat listener refused connections while it resolved its own address
 

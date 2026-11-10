@@ -85,6 +85,10 @@ cat > "$FAKE/df" <<'STUB'
 print -r -- "Filesystem 512-blocks Used Available Capacity Mounted_on"
 print -r -- "/dev/disk1s7s1 100 10 ${FAKE_DF_FREE:-900000} 9% /"
 STUB
+cat > "$FAKE/sysctl" <<'STUB'
+#!/bin/zsh
+print -r -- "{ sec = ${FAKE_BOOT_SEC:-1}, usec = 0 } Tue Nov 10 11:37:09 2026"
+STUB
 cat > "$FAKE/pmset" <<'STUB'
 #!/bin/zsh
 print -r -- "${FAKE_PMSET:-Now drawing from 'AC Power'}"
@@ -274,6 +278,24 @@ run_case FAKE_LC_PRINT_RC=1 FAKE_YT_STATUS='{"status": "READY"}' FAKE_FFPROBE_RC
 t_assert_eq "1" "$(acts)" "WG_MAX_ACTIONS caps the actions in one pass"
 t_assert_contains "$(cat "$T_BASE/log/watchguard.log")" "ACTION-LIMIT" \
   "and the refusal is logged rather than silently dropped"
+kill $PUB 2>/dev/null
+
+# E9: right after a boot every state file is stale - that must not restart stream.sh
+reset_case
+# net_watch stopped reporting 20 minutes ago
+python3 - "$T_BASE/log/net_state" <<'PY'
+import os, sys, time
+os.utime(sys.argv[1], (time.time() - 1200, time.time() - 1200))
+PY
+launchctl_log="$T_BASE/log/launchctl.calls"
+run_case FAKE_BOOT_SEC=$(( $(date +%s) - 60 )) >/dev/null
+t_assert_eq "0" "$(grep -c 'kickstart -k gui/'"$UID"'/com.user.cctv-stream' "$launchctl_log" 2>/dev/null || true)" \
+  "inside the boot window a stale net_state does not restart stream.sh"
+t_assert_contains "$(cat "$T_BASE/log/watchguard.log")" "startup window" \
+  "and it says why it stood down"
+run_case FAKE_BOOT_SEC=$(( $(date +%s) - 4000 )) >/dev/null
+t_assert_eq "1" "$(grep -c 'kickstart -k gui/'"$UID"'/com.user.cctv-stream' "$launchctl_log" 2>/dev/null || true)" \
+  "past the boot window the silent transport watchdog IS a restart"
 kill $PUB 2>/dev/null
 
 # --- F. the never-do list, as a static assertion ----------------------------

@@ -185,7 +185,10 @@ without anyone touching it.
 
 **It is deliberately conservative.** Two passes are required before the camera is rebooted or
 the publisher is restarted (stream.sh's own watchdog gets first refusal), every repair has a
-cooldown and there is a hard cap of `WG_MAX_ACTIONS` per pass. A watchdog that thrashes is worse
+cooldown and there is a hard cap of `WG_MAX_ACTIONS` per pass. For `WG_BOOT_GRACE` (15 min) after
+a boot it will not restart stream.sh for a stale `net_state`, because every state file is stale
+then and the agents are still starting themselves - restarting there would only fragment a
+broadcast. A watchdog that thrashes is worse
 than the outage it is chasing. To pause it during maintenance:
 `launchctl unload -w ~/Library/LaunchAgents/com.user.cctv-watchguard.plist`.
 

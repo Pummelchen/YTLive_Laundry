@@ -93,6 +93,7 @@ source "$BASE/bin/lib.sh"
 : ${WG_DISK_LOW_MB:=1500}           # free space that makes a pass trim logs
 : ${WG_NET_STALE:=300}              # net_state older than this means net_watch stopped writing
 : ${WG_NET_RESTART_AFTER:=900}      # ... and this long a silence restarts stream.sh
+: ${WG_BOOT_GRACE:=900}             # after a boot, give the agents this long to start themselves
 : ${WG_CAM_FAILS_BEFORE_REBOOT:=2}  # consecutive frame-less passes before an ONVIF reboot
 : ${WG_CAM_REBOOT_COOLDOWN:=3600}   # never reboot the camera twice inside this window
 : ${WG_CAM_PROBE_TIMEOUT:=12}       # seconds for one RTSP frame probe (passed to ffprobe in us)
@@ -241,6 +242,15 @@ launchctl_loaded() {
   launchctl print "gui/$UID/$1" >/dev/null 2>&1
 }
 
+boot_age() {   # seconds since this Mac booted (999999 when it cannot be read)
+  local b
+  # Match "{ sec = N" and not "usec = N": a plain `.*sec = ` also matches the usec field and
+  # captured the wrong number (found by tests/t23_watchguard.sh on the first run).
+  b=$(sysctl -n kern.boottime 2>/dev/null | sed -n 's/.*{ sec = \([0-9][0-9]*\).*/\1/p')
+  [[ "$b" == <-> ]] || { print 999999; return }
+  print $(( $(now) - b ))
+}
+
 metric_age() {   # metric_age FILE -> seconds since mtime, or a huge number when absent
   [[ -e "$1" ]] || { print 999999; return }
   local m; m=$(/usr/bin/stat -f %m "$1" 2>/dev/null) || { print 999999; return }
@@ -371,6 +381,13 @@ check_agents() {
 check_net() {
   local age; age=$(metric_age "$NET_STATE")
   (( age > WG_NET_STALE )) || return 0
+  # Right after a boot, every state file is stale by definition and stream.sh is still starting
+  # its own children. Restarting it there would fragment a perfectly good broadcast for nothing,
+  # so the boot window is exempt (the other checks still run).
+  if (( $(boot_age) < WG_BOOT_GRACE )); then
+    wlog "NET: net_state is ${age}s old but this host booted $(boot_age)s ago - inside the startup window"
+    return 0
+  fi
   mark_trouble net
   # net_watch is a child of stream.sh. A stale state file means it stopped writing; if that
   # lasts, the only repair is restarting stream.sh - a controlled bounce, so it is rate-limited
