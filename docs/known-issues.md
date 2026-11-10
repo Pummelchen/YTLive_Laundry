@@ -14,6 +14,17 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   archiving its broadcast after 12 h: the stream stays up, the recording past that point is
   lost. Set `VERT_ROTATE=yes` if a continuous archive matters more than an uninterrupted
   Shorts stream.
+- **`prepare` has no backoff on the publisher-start path, so a permanent configuration fault
+  becomes a 15-second loop.** Measured 2026-11-10: every `prepare` answered `no liveStream on
+  this channel uses the configured YT_KEY` from 11:44:50 to 19:52:24, and because
+  `start_publisher()` calls `prepare_broadcast()` unconditionally and starts the publisher
+  anyway, ffmpeg died `rc=251` within 15 s and was restarted: **1,704 prepares, 1,589 deaths,
+  4,292 API calls (2,989 `liveStreams.list`) in 8 h 08 m** — most of a day's 10,000-unit pool
+  spent on a condition no retry could fix. The rotation path already refuses to retry faster
+  than `ROTATE_API_RETRY` (900 s) and the quota breaker stops calls once the pool is gone, but
+  neither covers a publisher start. A fix (treat repeated `ERROR` answers as a backoff, not a
+  restart trigger, and say so on the status page) needs the publisher-restart loop changed and
+  watched on the box; it is not in yet. Timeline: `docs/2026-11-09-streamer-offline.md`.
 - The camera delivers only ~2.3 Mbit/s for the whole 3-up composite, so one panel is low
   detail. This is NOT fixable from the camera web UI: the firmware accepts ONVIF encoder
   writes, reports them back and ignores them - the delivered stream stayed at ~2.3 Mbit/s and
@@ -27,12 +38,14 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   unrebooted (see CHANGELOG 2.4), and no `pmset` setting touches the transport. The power
   class still needs a UPS on the Mac **and** the router. Commands and verification:
   docs/operations.md, "Host hardening".
-- The streamer's wired NIC has **no carrier** and traffic runs on Wi-Fi. The adapter is a cheap
-  WCH `1a86:5394` USB part whose link did not survive a network-service toggle on 2026-09-19.
-  A `169.254` self-assigned address on a first-in-order service is a linked-but-unusable
-  primary: check the cable, the port it lands on, and replace the adapter with a better one if
-  the wired path is wanted as the primary. `bin/status.sh` warns while reality and intent
-  disagree. See docs/operations.md, "LAN primary, Wi-Fi backup".
+- The streamer's wired NIC lost its carrier on 2026-09-19 (a cheap WCH `1a86:5394` USB part,
+  whose link did not survive a network-service toggle) and the stream ran on Wi-Fi for weeks.
+  **It is back:** after the 2026-11-09 router/cabling work `en2` is `active` at 100baseTX with
+  `192.168.1.3`, holds the default route via `192.168.1.1`, and `bin/status.sh` reports intent
+  and reality agreeing (primary `en2`, carrying `en2`). The lesson still stands for the next
+  time it goes: a `169.254` self-assigned address on a first-in-order service is a
+  linked-but-unusable primary — check the cable and the port it lands on, and prefer replacing
+  the adapter over trusting it. See docs/operations.md, "LAN primary, Wi-Fi backup".
 - If the camera IP changes, nothing needs doing by hand: stream.sh's cam_ip_watcher probes
   port 554 every 30s, re-discovers via ONVIF, rewrites CAM_URL in conf/stream.env and the
   reader follows log/cam_ip. bin/camscan.py is still there to inspect the LAN by hand.

@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-11-09/10 — the network work: 26 hours dark, and 1,704 prepares that could not succeed
+
+- **The shop's network was being changed on 2026-11-09** (the operator's note records a router
+  replacement, with the box to be re-plugged on site). The streamer went off air at 17:29 WIB
+  mid-segment (`XkyqG8AWXnI` ended at 4h11m of 8h10m) and the channel was live again at
+  19:56 WIB on 2026-11-10 — about 26 h 27 m, with a short return between 06:29 and 07:25. The
+  host booted several times that day (~06:29, ~10:21, 11:37); there is no wtmp record for any
+  of those boots (`who -b` reports `Jan 1 07:00`), so they were not clean shutdowns, and the
+  unified log kept no shutdown-cause entry. Power or a forced restart on site — not a panic,
+  a sleep, a hang or a full disk: `bin/forensics.sh --deep` rules all four out.
+- **No code change was needed to recover.** `launchd` restarted both agents at each boot, the
+  rotate-refuses-to-cut-blind rule held, `net_watch.sh` repaired the transport twice using
+  only its DNS rung, and both feeds were live again on their own: Shorts `IRq5gAhWlFw` at
+  20:17, 16:9 `D-NlhLhdHwY` at 20:51 (native, 22 s). Both verified by pulling a frame from
+  the public stream, not from the slate.
+- **The external watchdog completed its first multi-hour real outage:** 15 emails in the
+  window, with the right attribution and cadence (`SILENT + host unreachable`, `channel DARK
+  for 15m21s` then `6h15m`, recording-problem open/clear, and one `LIVE again`). Its journal
+  is the only clock that survived the reboots.
+- **The recovery exposed a real defect, recorded but not yet fixed:** between 11:44:50 and
+  19:52:24 every `prepare` answered `no liveStream on this channel uses the configured
+  YT_KEY`. That is a configuration fault no retry can fix, but the publisher-start path has no
+  backoff — only the rotation path has `ROTATE_API_RETRY` — so it retried every ~17 s:
+  **1,704 `prepare` attempts, 1,589 `rc=251` ffmpeg deaths and 4,292 API calls in 8 h 08 m**,
+  most of a day's 10,000-unit pool. The key matched again at 19:52 with no host-side change
+  visible in the logs; `conf/stream.env`'s only write that evening is `cam_ip_watcher`'s
+  camera-IP rewrite at 20:14:21. See `docs/known-issues.md`.
+- **Evidence, timeline and the "if this happens again" checklist:**
+  `docs/2026-11-09-streamer-offline.md`.
+
 ## 2026-11-05 — why the videos ran long: the API pool was spent by morning
 
 - **Root cause found.** The 9:16 supervisor's liveness nudge re-armed its 60 s timer only on the

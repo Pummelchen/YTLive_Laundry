@@ -64,6 +64,9 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 - [docs/files.md](docs/files.md) — files and layout
 - [docs/2026-10-28-outage-postmortem-and-plan.md](docs/2026-10-28-outage-postmortem-and-plan.md)
   — the October 2026 outage, what caused it, and everything built in response
+- [docs/2026-11-09-streamer-offline.md](docs/2026-11-09-streamer-offline.md)
+  — the November 2026 outage: 26 hours dark, the watchdog's record, and the `prepare`
+  retry loop it exposed
 - [wiki](https://github.com/Pummelchen/YTLive_Laundry/wiki) — the operator's guide
 
 ## Testing
