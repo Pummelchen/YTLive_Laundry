@@ -16,7 +16,7 @@
   Treating that as fatal would have darked a healthy channel during an API hiccup.
 - **`tests/t24_prepare_backoff.sh`** (20 checks) pins the delay curve, the classification by
   name, the loop's refusal to spin, and that a refused start is never logged as
-  "publisher back up (pid )". Suite **947 checks**.
+  "publisher back up (pid )". Suite **954 checks**.
 
 ## 2026-11-10 — the watchguard: one recovery pass every 10 minutes over the whole system
 
@@ -44,6 +44,11 @@
   inside it and `pmset autorestart` is unsupported on this hardware, so "no power" is answered
   by a UPS (T-30) plus the off-host watchdog; the watchguard's half is to drive both feeds back
   to live the moment the power returns, with nobody touching it.
+- **The watchguard is itself watched.** `stream.sh` reads `log/watchguard.heartbeat` on its
+  housekeeping pass and kickstarts the agent by label when it is older than `WATCHGUARD_STALE`
+  (1800 s) - the same rule it already applies to the monitor. launchd restarts a job that EXITS,
+  never one that HANGS, so without this the one component whose job is noticing everything else
+  would be the one thing that fails silently. Asserted in `tests/t23_watchguard.sh`.
 - **`status.sh`** now prints the watchguard's verdict, heartbeat age and counters, and fails when
   the heartbeat is more than four intervals old - a dead watchguard cannot look like a quiet one.
   `install.sh` provisions the fifth agent; the suite is **926 checks**.

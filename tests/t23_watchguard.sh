@@ -298,6 +298,52 @@ t_assert_eq "1" "$(grep -c 'kickstart -k gui/'"$UID"'/com.user.cctv-stream' "$la
   "past the boot window the silent transport watchdog IS a restart"
 kill $PUB 2>/dev/null
 
+# --- E10. stream.sh watches the watchguard's heartbeat ----------------------
+# The watchguard notices everything else; without this, the one case nothing covers is the
+# watchguard itself hanging - launchd restarts a job that EXITS, never one that HANGS.
+SW="$REPO_DIR/bin/stream.sh"
+t_assert_contains "$(cat "$SW")" "check_watchguard" \
+  "stream.sh has a watchdog for the watchguard"
+t_assert_contains "$(cat "$SW")" 'WATCHGUARD_STALE' \
+  "with its own stale threshold, not the monitor's ten seconds"
+
+# Behaviour: a stale heartbeat is kickstarted by label, and a fresh one is left alone.
+WGF="$T_BASE/wg_guard.zsh"
+t_extract_fn "$SW" check_watchguard > "$WGF"
+cat >> "$WGF" <<'WGFEOF'
+BASE="$T_BASE"
+WG_HEARTBEAT="$T_BASE/log/watchguard.heartbeat"
+: ${WATCHGUARD_STALE:=1800}
+log() { print -r -- "LOG: $*" >> "$BASE/log/stream_test.log"; }
+WGFEOF
+run_guard() {
+  : > "$T_BASE/log/stream_test.log"
+  env BASE="$T_BASE" PATH="$FAKE:$STUBS:$PATH" FAKE_LAUNCHCTL_LOG="$T_BASE/log/launchctl.calls" \
+      /bin/zsh -c "source '$WGF'; check_watchguard; cat '$T_BASE/log/stream_test.log' 2>/dev/null"
+}
+print -r -- "$(date +%s) OK actions=0" > "$T_BASE/log/watchguard.heartbeat"
+: > "$T_BASE/log/launchctl.calls"
+out=$(run_guard)
+t_assert_eq "" "$out" "a fresh watchguard heartbeat is left alone (no line, no kickstart)"
+t_assert_eq "0" "$(grep -c kickstart "$T_BASE/log/launchctl.calls" 2>/dev/null || true)" \
+  "and nothing was kickstarted"
+
+python3 - "$T_BASE/log/watchguard.heartbeat" <<'PYEOF'
+import os, sys, time
+os.utime(sys.argv[1], (time.time() - 5000, time.time() - 5000))
+PYEOF
+: > "$T_BASE/log/launchctl.calls"
+out=$(run_guard)
+t_assert_contains "$out" "not running" "a stale watchguard heartbeat is logged as 'not running'"
+t_assert_contains "$(cat "$T_BASE/log/launchctl.calls")" \
+  "kickstart -k gui/$UID/com.user.cctv-watchguard" \
+  "and the watchguard is kickstarted by label (never killed by pattern)"
+
+rm -f "$T_BASE/log/watchguard.heartbeat"
+out=$(run_guard)
+t_assert_contains "$out" "no heartbeat file" \
+  "a missing heartbeat says the agent may not be loaded instead of guessing"
+
 # --- F. the never-do list, as a static assertion ----------------------------
 forbidden=(
   'pkill'

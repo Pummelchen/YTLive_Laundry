@@ -18,6 +18,7 @@ BASEIMG="$BASE/log/basefill.jpg"
 CAMIP_FILE="$BASE/log/cam_ip"   # runtime source of truth for the camera address
 PUB_PID="$BASE/log/publisher.pid"  # the publisher's pid, so the monitor can restart exactly IT
 MON_PID="$BASE/log/monitor.pid"    # the monitor's pid, so this script can restart exactly IT
+WG_HEARTBEAT="$BASE/log/watchguard.heartbeat"  # written once per 10-minute recovery pass
 PUB_WHY="$BASE/log/pub_kill_reason"  # why the publisher was deliberately stopped (see below)
 ROTATE_FLAG="$BASE/log/rotating"    # holds an epoch deadline: the monitor stands down until then
 ROTATE_NOW="$BASE/log/rotate_now"   # touch this file to force a rotation immediately
@@ -47,6 +48,7 @@ log() { print -r -- "$(date '+%Y-%m-%d %H:%M:%S') $*" | tee -a "$LOG"; }
 : ${LOG_MAX_BYTES_STREAM:=2097152}
 : ${HOUSEKEEP_EVERY:=300}         # seconds between housekeeping passes
 : ${MONITOR_STALE:=600}           # heartbeat older than this means the watchdog is hung
+: ${WATCHGUARD_STALE:=1800}       # 3x the watchguard's own 600s cadence, so a slow pass is not a hang
 : ${DISK_LOW_MB:=1000}            # free-space floor that makes housekeep cut logs to a quarter
 # T-08. A restart can make YouTube close the old broadcast (autoStop, ~9s after ingest stops), and
 # a fresh one then takes over. BROADCAST_STARTED was only re-adopted by housekeep, every 300s, so
@@ -184,6 +186,23 @@ check_monitor() {
   else
     log "MONITOR: heartbeat is ${age}s old and com.user.cctv-monitor is NOT loaded - THE STREAM IS UNWATCHED."
   fi
+}
+
+# Watchdog for the WATCHGUARD. Same reason as check_monitor() above: launchd restarts a job
+# that EXITS but not one that HANGS, and a hung watchguard is silent in exactly the way a
+# healthy one is - its heartbeat is the only thing that tells them apart. Without this, the
+# component that exists to notice everything else would itself fail without saying so.
+# The thresholds differ on purpose: the watchguard runs every 10 minutes, so its idea of
+# "stale" is three cadences, not the monitor's ten seconds.
+check_watchguard() {
+  local beat age
+  [[ -f "$WG_HEARTBEAT" ]] || { log "WATCHGUARD: no heartbeat file yet - is com.user.cctv-watchguard loaded?"; return; }
+  beat=$(/usr/bin/stat -f %m "$WG_HEARTBEAT" 2>/dev/null) || return
+  age=$(( $(date +%s) - beat ))
+  (( age < WATCHGUARD_STALE )) && return
+  log "WATCHGUARD: heartbeat is ${age}s old (stale at ${WATCHGUARD_STALE}s) - the 10-minute recovery pass is not running. Kickstarting it; launchd brings it back."
+  launchctl kickstart -k "gui/$(id -u)/com.user.cctv-watchguard" 2>/dev/null \
+    || log "WATCHGUARD: kickstart failed - THE SYSTEM-LEVEL RECOVERY PASS IS DOWN."
 }
 
 # Start the dead-man pusher (bin/yt_heartbeat.py push) beside the network watchdog. It is
@@ -1364,6 +1383,7 @@ while true; do
     housekeep_in=0
     housekeep
     check_monitor
+    check_watchguard
     refresh_broadcast_clock
     enforce_drift
     do_pending_thumbnail

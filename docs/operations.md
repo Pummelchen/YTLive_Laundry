@@ -199,6 +199,12 @@ for that class are a UPS on the Mac **and** the router (T-30) and the off-host w
 human; the watchguard's half is to drive both feeds back to live the moment the power returns,
 without anyone touching it.
 
+**It watches, and it is watched.** `stream.sh` checks `log/watchguard.heartbeat` on its
+housekeeping pass and kickstarts the watchguard when it is older than `WATCHGUARD_STALE`
+(1800 s = three cadences) - the same rule it already applied to the monitor, for the same
+reason: launchd restarts a job that EXITS, never one that HANGS, and a hung watchguard looks
+exactly like a quiet one.
+
 **It is deliberately conservative.** Two passes are required before the camera is rebooted or
 the publisher is restarted (stream.sh's own watchdog gets first refusal), every repair has a
 cooldown and there is a hard cap of `WG_MAX_ACTIONS` per pass. For `WG_BOOT_GRACE` (15 min) after
