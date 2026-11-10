@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-10 — the Wi-Fi rung now proves it re-associated, because `networksetup` lies
+
+- **Measured on the streamer:** `networksetup -setairportnetwork en0 "TERNAK LAUNDRY -5G"` printed
+  `Failed to join network … error -3924` and **exited 0**. The transport watchdog's Wi-Fi rung
+  judged itself on that exit code, so it could log `re-associated` for a join that never took -
+  the same class of lie as "a running service is not an installed one".
+- **The rung now verifies**: after the join it waits `NET_WIFI_ASSOC_WAIT` and reads the
+  associated SSID back with `current_ssid()`. Success is logged only when the SSID matches; a
+  join that did not take is logged as `could NOT re-associate ... (associated: 'X')`; and with
+  `NET_WIFI_SSID` empty the rung says it only cycled the radio and how to make it a real
+  re-association.
+- **`NET_WIFI_SSID` is documented as "set this"** in `conf/stream.env.example`; the live config on
+  the streamer now names `TERNAK LAUNDRY -5G`. Asserted in `tests/t09_net.sh` (56 checks): the
+  exact SSID, the verified-success line, the honest-failure line, and "no join when unset".
+
 ## 2026-11-10 — a key that matches nothing no longer becomes a 15-second restart loop
 
 - **The defect the 2026-11-10 outage exposed, now fixed.** With the configured stream key

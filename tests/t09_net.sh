@@ -60,6 +60,7 @@ for a in "$@"; do print -r -- "$a" >> "${FAKE_NS_LOG:-/dev/null}"; done
 case "$1" in
   -listallnetworkservices) print -r -- "${FAKE_NS_SERVICES}" ;;
   -getdnsservers)          print -r -- "${FAKE_NS_DNS}" ;;
+  -getairportnetwork)      print -r -- "Current Wi-Fi Network: ${FAKE_NS_SSID:-}" ;;
   *)                       print -r -- "${FAKE_NS_OUT}" ;;
 esac
 STUB
@@ -96,6 +97,7 @@ HOLD="$T_BASE/log/net_hold"
 : \${NET_ALLOW_REBOOT:=no}
 : \${NET_REBOOT_AFTER_ACTIONS:=6}
 : \${NET_WIFI_CYCLE_WAIT:=0}
+: \${NET_WIFI_ASSOC_WAIT:=0}
 : \${NET_LOG_MAX_BYTES:=1024}
 EOF
 
@@ -265,11 +267,44 @@ fi
 # The router's 2.4GHz SSID ends in a SPACE. Quoting it under-quoted is a real, silent failure:
 # the association would simply never happen.
 : > "$NSLOG"
-run_nw 'do_action wifi' NET_WIFI_SSID="TERNAK LAUNDRY " >/dev/null
+: > "$T_BASE/log/net_events.log"
+run_nw 'do_action wifi' NET_WIFI_SSID="TERNAK LAUNDRY " FAKE_NS_SSID="TERNAK LAUNDRY " >/dev/null
 if grep -qxF -- "TERNAK LAUNDRY " "$NSLOG"; then
   t_ok "re-associates by the exact SSID, trailing space preserved"
 else
   t_bad "the SSID was not passed through byte-for-byte"
+fi
+
+# networksetup exits 0 even when it prints "Failed to join network ... error -3924" (measured on
+# the streamer 2026-11-10), so the rung must judge itself by the ASSOCIATED SSID, not by $?.
+if grep -q "verified by the associated SSID" "$T_BASE/log/net_events.log"; then
+  t_ok "a successful re-association is confirmed by reading the SSID back"
+else
+  t_bad "the rung did not verify the association it claims"
+fi
+
+: > "$T_BASE/log/net_events.log"
+run_nw 'do_action wifi' NET_WIFI_SSID="TERNAK LAUNDRY " FAKE_NS_SSID="" >/dev/null
+if grep -q "could NOT re-associate" "$T_BASE/log/net_events.log"; then
+  t_ok "a join that did not take is reported as a failure, not as success"
+else
+  t_bad "the rung claimed a re-association that the SSID check contradicts"
+fi
+
+# With no SSID configured the rung can only cycle the radio - and must say so instead of
+# pretending it re-associated.
+: > "$T_BASE/log/net_events.log"
+: > "$NSLOG"
+run_nw 'do_action wifi' NET_WIFI_SSID="" FAKE_NS_SSID="TERNAK LAUNDRY " >/dev/null
+if grep -qx -- "-setairportnetwork" "$NSLOG"; then
+  t_bad "wifi joined a network although NET_WIFI_SSID is empty"
+else
+  t_ok "with no SSID configured the rung does not attempt a join"
+fi
+if grep -q "set NET_WIFI_SSID" "$T_BASE/log/net_events.log"; then
+  t_ok "and it says how to make the rung a real re-association"
+else
+  t_bad "the rung did not explain why it only cycled the radio"
 fi
 
 # --- E. resolvers go on every REAL path, and on nothing else ---------------

@@ -61,6 +61,7 @@ HOLD="$BASE/log/net_hold"        # optional epoch deadline: while now < body, ta
 : ${NET_WIFI_DEVICE:=en0}
 : ${NET_WIFI_SSID:=}                  # optional; re-association uses the keychain, no password here
 : ${NET_WIFI_CYCLE_WAIT:=5}           # seconds the radio stays down during a power-cycle
+: ${NET_WIFI_ASSOC_WAIT:=4}           # seconds to let an association settle before checking it
 : ${NET_DNS_SERVERS:=8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1}
 : ${NET_ALLOW_REBOOT:=no}             # last resort, OFF by default - see do_action
 : ${NET_REBOOT_AFTER_ACTIONS:=6}
@@ -258,12 +259,25 @@ do_action() {
       networksetup -setairportpower "$NET_WIFI_DEVICE" off >/dev/null 2>&1
       sleep "$NET_WIFI_CYCLE_WAIT"
       networksetup -setairportpower "$NET_WIFI_DEVICE" on >/dev/null 2>&1
-      if [[ -n "$NET_WIFI_SSID" ]]; then
+      local want="$NET_WIFI_SSID" got
+      sleep "$NET_WIFI_ASSOC_WAIT"
+      if [[ -n "$want" ]]; then
         # No password on the command line: networksetup takes it from the login keychain.
         # (The 2.4GHz SSID on this router has a TRAILING SPACE in its name - quote it exactly.)
-        networksetup -setairportnetwork "$NET_WIFI_DEVICE" "$NET_WIFI_SSID" >/dev/null 2>&1 \
-          && nlog "NET-ACT wifi: re-associated $NET_WIFI_DEVICE with '$NET_WIFI_SSID'" \
-          || nlog "NET-ACT wifi: could not re-associate '$NET_WIFI_SSID' (keychain entry?)"
+        networksetup -setairportnetwork "$NET_WIFI_DEVICE" "$want" >/dev/null 2>&1
+        # ITS EXIT CODE PROVES NOTHING: measured on the streamer 2026-11-10, a join that printed
+        # "Failed to join network ... error -3924" still exited 0. The only proof is the SSID the
+        # station is actually associated with, read back after the association settles.
+        sleep "$NET_WIFI_ASSOC_WAIT"
+        got=$(current_ssid "$NET_WIFI_DEVICE")
+        if [[ "$got" == "$want" ]]; then
+          nlog "NET-ACT wifi: re-associated $NET_WIFI_DEVICE with '$want' (verified by the associated SSID)"
+        else
+          nlog "NET-ACT wifi: could NOT re-associate '$want' - associated: '${got:-none}'. Check the keychain entry, the password, and that the network is in range."
+        fi
+      else
+        got=$(current_ssid "$NET_WIFI_DEVICE")
+        nlog "NET-ACT wifi: radio cycled; associated '${got:-none}' - set NET_WIFI_SSID in conf/stream.env to make this a verified re-association"
       fi
       ;;
     reboot)

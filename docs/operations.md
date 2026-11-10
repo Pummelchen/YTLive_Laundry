@@ -134,6 +134,13 @@ is **off** by default: a reboot fixes a wedged Mac-side driver but cannot fix a 
 router, and it is only safe here because auto-login is configured.
 
 ### LAN primary, Wi-Fi backup
+
+**Set `NET_WIFI_SSID`.** The Wi-Fi rung power-cycles the radio, and with an SSID it also joins it
+explicitly — then verifies the join by reading the associated SSID back. That verification is not
+decoration: `networksetup -setairportnetwork` prints `Failed to join network … error -3924` and
+**still exits 0** (measured on the streamer 2026-11-10), so the old rung could log "re-associated"
+for a join that never happened. With no SSID configured it says so instead of pretending, and the
+station relies on macOS's own auto-join.
 The intent is wired first (`NET_LAN_SERVICE`, `USB 10/100 LAN`) and Wi-Fi as the fallback
 (`NET_WIFI_SERVICE`). Wired is already first in the service order, so it becomes the primary path
 by itself the moment it holds a real lease. `bin/status.sh` prints which interface is actually
