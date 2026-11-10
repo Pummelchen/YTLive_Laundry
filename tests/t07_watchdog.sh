@@ -645,6 +645,18 @@ touch -t 202001010000 "$HB"
 out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
 t_assert_contains "$out" "unavailable" "status does not believe a stale push's disk figure"
 
+# The recovery pass must be on the STATUS PAGE, not only in the alert body: the placement of
+# that line was wrong once already (it landed in compose()'s dark-alert body instead), and a
+# signal nobody can read on the status page is a signal that does not exist.
+print -r -- '{"ts":1,"disk_free_mb":900000,"watchguard_age_s":42}' > "$HB"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+t_assert_contains "$out" "watchguard" "status prints the recovery pass"
+t_assert_contains "$out" "running - last pass" "and says how old its last pass is"
+print -r -- '{"ts":1,"disk_free_mb":900000}' > "$HB"
+out=$(write_status WATCH_HEARTBEAT="$HB" WATCH_HEARTBEAT_MAX=900 WATCH_DISK_MIN_MB=2000)
+t_assert_contains "$out" "not reported by the streamer" \
+  "an older streamer shows as not reported rather than as a fault"
+
 # --- the host line must not print year 1 ------------------------------------------------
 # Tailscale reports Go's zero time for a peer that is ONLINE (measured on the real tailnet
 # 2026-09-19), and formatting it printed "last seen 1-01-01T00:00:00Z" for a perfectly healthy

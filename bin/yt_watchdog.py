@@ -1239,6 +1239,7 @@ def render_status(cfg, state, channel, host, host_last_seen, vid):
         f"  heartbeat      : {human_heartbeat(state, cfg)}",
         f"  disk           : {human_disk(state, cfg)}",
         f"  recordings     : {human_vod(state)}",
+        f"  watchguard     : {human_watchguard(state)}",
         f"  video id       : {vid or state.get('last_broadcast') or 'none'}",
         f"  dark since     : {human_time(state.get('dark_since'), cfg)}",
         f"  unknown since  : {human_time(state.get('unknown_since'), cfg)}",
@@ -1260,12 +1261,19 @@ def cmd_status(cfg):
     # is a live page rather than a replay of the previous check. The disk level comes from the
     # same file, so it is read live too - otherwise a fresh install (or a loop that has not
     # run yet) prints "unavailable" while the number is sitting right there.
-    disk = disk_state(cfg, heartbeat, heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip()))
+    payload = heartbeat_payload(cfg["WATCH_HEARTBEAT"].strip())
+    disk = disk_state(cfg, heartbeat, payload)
+    wg = watchguard_state(cfg, heartbeat, payload)
     entry = state.get("disk") if isinstance(state.get("disk"), dict) else {}
+    wg_entry = state.get("watchguard") if isinstance(state.get("watchguard"), dict) else {}
     state = dict(state, last_heartbeat_state=heartbeat, last_heartbeat_age=heartbeat_age,
                  disk=(dict(entry, free_mb=disk["free_mb"], min_mb=disk.get("min_mb"),
                             threshold=disk["threshold"]) if disk else
-                       dict(entry, free_mb=None, threshold=cfg.num("WATCH_DISK_MIN_MB"))))
+                       dict(entry, free_mb=None, threshold=cfg.num("WATCH_DISK_MIN_MB"))),
+                 # Same rule as the disk: the page shows the CURRENT push, and keeps the
+                 # episode's start time so an overdue pass still reads as overdue.
+                 watchguard=(dict(wg_entry, age_s=wg["age_s"], threshold=wg["threshold"])
+                             if wg else None))
     print(render_status(cfg, state, channel, host, host_last_seen, vid))
     return 0
 
