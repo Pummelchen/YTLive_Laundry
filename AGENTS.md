@@ -174,7 +174,11 @@ The gates, still worth running by hand before restarting anything:
   new version while the loop still behaves like the old one (measured 2026-09-19: a 2.9 install
   was "verified" this way, and the loop went on emailing the 2.7 alert body). `systemctl restart
   ytlive-watchdog` (or `launchctl kickstart -k`) and then read the loop's OWN start line, which
-  now names its version: `watchdog starting: version=2.9`.
+  now names its version: `watchdog starting: version=2.9`. **And check the files still exist**:
+  measured 2026-11-10, the host was running both units from *deleted* files
+  (`/proc/<pid>/cwd -> /var/ytlive-watchdog (deleted)`, with `bin/` and `conf/` gone), which no
+  `systemctl status` shows and which would have been fatal at the next start. `ls $PREFIX/bin`
+  and `systemctl show -p EnvironmentFiles` answer it; see docs/watchdog.md.
 - **A published release tag is never moved; cut a new version instead.** A moved tag
   silently breaks `git fetch --tags` on clones that already hold the old object (they need
   `--force`, and without it they stay on old code with no error), and it invalidates

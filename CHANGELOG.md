@@ -17,6 +17,28 @@
 - **Suite count corrected to 860** in `AGENTS.md`; the documented 856 was already three checks
   stale, and CI's own per-file tally on the last green run read 859.
 
+## 2026-11-10 — the watchdog host was running from deleted files
+
+- **Found while checking the alert path after the outage.** On the watchdog host
+  `/var/ytlive-watchdog` held only runtime state — `alerts/`, `heartbeat.state`, `state.json`,
+  `watchdog.log`. `bin/yt_watchdog.py`, `bin/yt_heartbeat.py` and `conf/watchdog.env` were
+  **gone**, and both units had been serving from unlinked inodes
+  (`/proc/<pid>/cwd -> /var/ytlive-watchdog (deleted)`). Nothing was visibly wrong: the journal
+  kept writing, alerts kept being produced, pushes kept being accepted. It was a restart away
+  from silence — systemd's `ExecStart` and `EnvironmentFile` both name files that no longer
+  existed, so the next reboot would have retired the only component allowed to alert, which is
+  the failure this host exists to make impossible.
+- **Restored and verified, not just re-uploaded.** Both scripts were installed from `main` and
+  hash-compared (`664d25d…` / `855a09a…`, identical to the checkout), `conf/watchdog.env` was
+  rebuilt from the running process's own environment (`/proc/<pid>/environ` — the only surviving
+  copy of the mail secret and the thresholds), the shared bearer token was re-copied from the
+  streamer (sha256 compared), `VERSION` was written back, and both units were restarted:
+  `listening on 100.99.149.11:8787`, `watchdog starting: version=2.11`, a real streamer push
+  accepted at `14:47:09Z`, and `status` reporting channel live, host live, heartbeat fresh.
+- **The lesson is the mirror of the existing trap.** `AGENTS.md` already says replacing a file is
+  not deploying it; this is the other half — a *running* service is not an *installed* one. The
+  check is `ls $PREFIX/bin` (and `systemctl show -p EnvironmentFiles`), not `systemctl status`.
+
 ## 2026-11-09/10 — the network work: 26 hours dark, and 1,704 prepares that could not succeed
 
 - **The shop's network was being changed on 2026-11-09** (the operator's note records a router

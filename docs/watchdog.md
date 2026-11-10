@@ -327,6 +327,32 @@ Then arm both sides. On the watchdog host, uncomment `WATCH_HEARTBEAT` in
 `journalctl -u ytlive-heartbeat` shows `accept … bytes from 100.x`. Only then is the dead-man
 signal actually covered end to end — the watchdog must not be armed before the pushes arrive.
 
+### A running service is not an installed one
+
+Measured on the real host, 2026-11-10: `ytlive-watchdog` and `ytlive-heartbeat` were both
+`active (running)` and behaving, while `/var/ytlive-watchdog` held only `alerts/`,
+`heartbeat.state`, `state.json` and `watchdog.log` — `bin/yt_watchdog.py`, `bin/yt_heartbeat.py`
+and `conf/watchdog.env` had been deleted, and both processes were serving from unlinked inodes
+(`/proc/<pid>/cwd -> /var/ytlive-watchdog (deleted)`). Nothing in `systemctl status` says so;
+the units only fail at the next start, when `ExecStart` and `EnvironmentFile` name files that are
+not there. That would have retired the one component allowed to alert, silently, at the next
+reboot.
+
+```bash
+ls -l /var/ytlive-watchdog/bin /var/ytlive-watchdog/conf    # the files, not the processes
+systemctl show -p EnvironmentFiles ytlive-watchdog          # the file systemd will read at boot
+stat -c '%N' /proc/$(systemctl show -p MainPID --value ytlive-watchdog)/cwd
+#   -> /var/ytlive-watchdog (deleted)  means exactly what it says
+```
+
+Recovery, in the order that matters: rebuild `conf/watchdog.env` **from the running process**
+(`tr '\0' '\n' < /proc/<pid>/environ | grep -E '^(WATCH_|HEARTBEAT_)'`) before touching
+anything, because that is the only surviving copy of the mail secret and the thresholds; copy
+the token from the streamer (it must be the same secret); install both scripts from `main` and
+compare hashes against the checkout; then restart and confirm `listening on …`, `watchdog
+starting: version=`, one real `accept … bytes` push and a `status` that reads channel, host and
+heartbeat separately.
+
 ## Known limits
 
 - It watches **that the stream is up**, not that the picture is any good — that is
