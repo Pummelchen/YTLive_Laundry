@@ -302,6 +302,15 @@ c0 = cfg(WATCH_WATCHGUARD_MAX="0")
 ck(wd.watchguard_state(c0, "fresh", {"watchguard_age_s": 99999}) is None,
    "WATCH_WATCHGUARD_MAX=0 disables the rule")
 
+# The two new mails must actually compose - a kind with no branch would raise at 3am.
+subj, body = wd.compose({"kind": "watchguard_stale", "age_s": 2000, "threshold": 1800},
+                        wd.new_state(), "live", "live", None, None, C)
+ck("recovery pass" in subj.lower(), "a stale recovery pass has a subject")
+ck("not completed a pass" in body, "and a body that says what the pass does")
+subj_r, _ = wd.compose({"kind": "watchguard_recover", "age_s": 30}, wd.new_state(),
+                       "live", "live", None, None, C)
+ck("running again" in subj_r.lower(), "and recovery has its own subject")
+
 # The freshness rule lives in the reader, not in decide(): decide() is handed plain values.
 ck(wd.watchguard_state(C, "stale", {"watchguard_age_s": 99999}) is None,
    "a stale push is not trusted for the watchguard age")
