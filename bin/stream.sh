@@ -200,9 +200,17 @@ check_watchguard() {
   beat=$(/usr/bin/stat -f %m "$WG_HEARTBEAT" 2>/dev/null) || return
   age=$(( $(date +%s) - beat ))
   (( age < WATCHGUARD_STALE )) && return
-  log "WATCHGUARD: heartbeat is ${age}s old (stale at ${WATCHGUARD_STALE}s) - the 10-minute recovery pass is not running. Kickstarting it; launchd brings it back."
-  launchctl kickstart -k "gui/$(id -u)/com.user.cctv-watchguard" 2>/dev/null \
-    || log "WATCHGUARD: kickstart failed - THE SYSTEM-LEVEL RECOVERY PASS IS DOWN."
+  if launchctl list 2>/dev/null | grep -q com.user.cctv-watchguard; then
+    log "WATCHGUARD: heartbeat is ${age}s old (stale at ${WATCHGUARD_STALE}s) - the 10-minute recovery pass is hung. Kickstarting it; launchd brings it back."
+    launchctl kickstart -k "gui/$(id -u)/com.user.cctv-watchguard" 2>/dev/null \
+      || log "WATCHGUARD: kickstart failed - THE SYSTEM-LEVEL RECOVERY PASS IS DOWN."
+  else
+    # Not loaded at all: kickstart cannot help, the plist has to be loaded. This is the state a
+    # half-finished install or a manual `launchctl unload` leaves behind, and it is silent.
+    log "WATCHGUARD: heartbeat is ${age}s old and com.user.cctv-watchguard is NOT loaded - loading it."
+    launchctl load -w "$HOME/Library/LaunchAgents/com.user.cctv-watchguard.plist" 2>/dev/null \
+      || log "WATCHGUARD: could not load it - THE SYSTEM-LEVEL RECOVERY PASS IS DOWN."
+  fi
 }
 
 # Start the dead-man pusher (bin/yt_heartbeat.py push) beside the network watchdog. It is

@@ -72,6 +72,7 @@ cat > "$FAKE/launchctl" <<'STUB'
 print -r -- "launchctl $*" >> "${FAKE_LAUNCHCTL_LOG:-/dev/null}"
 case "$1" in
   print) exit ${FAKE_LC_PRINT_RC:-0} ;;
+  list)  print -r -- "${FAKE_LC_LIST:-123 0 com.user.cctv-watchguard}" ;;
   *)     exit 0 ;;
 esac
 STUB
@@ -334,7 +335,7 @@ os.utime(sys.argv[1], (time.time() - 5000, time.time() - 5000))
 PYEOF
 : > "$T_BASE/log/launchctl.calls"
 out=$(run_guard)
-t_assert_contains "$out" "not running" "a stale watchguard heartbeat is logged as 'not running'"
+t_assert_contains "$out" "the 10-minute recovery pass is hung" "a stale watchguard heartbeat is named as a hung pass"
 t_assert_contains "$(cat "$T_BASE/log/launchctl.calls")" \
   "kickstart -k gui/$UID/com.user.cctv-watchguard" \
   "and the watchguard is kickstarted by label (never killed by pattern)"
