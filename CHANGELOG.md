@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-10 — a key that matches nothing no longer becomes a 15-second restart loop
+
+- **The defect the 2026-11-10 outage exposed, now fixed.** With the configured stream key
+  matching no `liveStream` on the channel, `start_publisher()` re-ran `prepare` and started
+  ffmpeg every ~15 s for 8 h 08 m: 1,704 prepares, 1,589 `rc=251` deaths and **4,292 API
+  calls** (2,989 `liveStreams.list`), most of the day's 10,000-unit pool - on a condition no
+  retry could ever fix.
+- **`prepare_broadcast()` now classifies the answer.** The `no liveStream ... YT_KEY` ERROR
+  returns a distinct status and arms an exponential hold-down: `PREPARE_BACKOFF_BASE` 300 s,
+  doubling, capped at `PREPARE_BACKOFF_MAX` 1800 s, announced once per block
+  (`PREPARE-BACKOFF: ... fix YT_KEY ...`) instead of every iteration.
+- **The transient case is untouched on purpose.** Any other ERROR - a network blip, a 5xx - still
+  starts the publisher, because ingest arriving is what starts a broadcast that is already bound.
+  Treating that as fatal would have darked a healthy channel during an API hiccup.
+- **`tests/t24_prepare_backoff.sh`** (20 checks) pins the delay curve, the classification by
+  name, the loop's refusal to spin, and that a refused start is never logged as
+  "publisher back up (pid )". Suite **947 checks**.
+
 ## 2026-11-10 — the watchguard: one recovery pass every 10 minutes over the whole system
 
 - **`bin/watchguard.sh`, the fifth LaunchAgent (`com.user.cctv-watchguard`).** Each inner loop

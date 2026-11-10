@@ -146,6 +146,22 @@ resolvers are set on **every** service (`NET_DNS_SERVERS`) so resolution cannot 
 service macOS considers primary, nor on the router: the streamer previously had exactly one
 nameserver, the shop router at `192.168.1.1`.
 
+## When `prepare` fails: the hold-down, not a restart storm
+
+Every publisher start calls `prepare_broadcast()`. If the API answers that the configured
+`YT_KEY` matches no `liveStream` on the channel, no restart can fix it - and until 2026-11-10 the
+streamer restarted ffmpeg every ~15 s regardless (measured: 1,704 attempts, 4,292 API calls in
+8 h). That one error class now arms an exponential hold-down (`PREPARE_BACKOFF_BASE` 300 s,
+doubling, capped at `PREPARE_BACKOFF_MAX` 1800 s) and logs ONE line naming the fix:
+
+    PREPARE-BACKOFF: holding the publisher down for 1180s more - the configured stream key
+    matched no liveStream on this channel (attempt 2). Fix conf/stream.env YT_KEY against
+    Studio -> Go Live -> Stream key, or the credential with bin/yt_api.py auth.
+
+A **transient** ERROR (a network blip, a 5xx) is deliberately *not* treated that way: the
+publisher is started anyway, because ingest arriving is what starts a broadcast that is already
+bound. The rule and the delay curve are asserted in `tests/t24_prepare_backoff.sh`.
+
 ## The watchguard: the 10-minute system recovery pass
 
 `bin/watchguard.sh` is the fifth LaunchAgent (`com.user.cctv-watchguard`) and the only component

@@ -14,18 +14,15 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   archiving its broadcast after 12 h: the stream stays up, the recording past that point is
   lost. Set `VERT_ROTATE=yes` if a continuous archive matters more than an uninterrupted
   Shorts stream.
-- **`prepare` has no backoff on the publisher-start path, so a permanent configuration fault
-  becomes a 15-second loop.** Measured 2026-11-10: every `prepare` answered `no liveStream on
-  this channel uses the configured YT_KEY` from 11:44:50 to 19:52:24, and because
-  `start_publisher()` calls `prepare_broadcast()` unconditionally and starts the publisher
-  anyway, ffmpeg died `rc=251` within 15 s and was restarted: **1,704 prepares, 1,589 deaths,
-  4,292 API calls (2,989 `liveStreams.list`) in 8 h 08 m** — most of a day's 10,000-unit pool
-  spent on a condition no retry could fix. The rotation path already refuses to retry faster
-  than `ROTATE_API_RETRY` (900 s) and the quota breaker stops calls once the pool is gone, but
-  neither covers a publisher start. A fix (treat repeated `ERROR` answers as a backoff, not a
-  restart trigger, and say so on the status page) needs the publisher-restart loop changed and
-  watched on the box; it is not in yet. Timeline: `docs/2026-11-09-streamer-offline.md`.
-- The camera delivers only ~2.3 Mbit/s for the whole 3-up composite, so one panel is low
+- **A key that matches nothing used to become a 15-second restart loop.** Measured 2026-11-10: the
+  configured stream key matched no `liveStream` on the channel for 8 h 08 m, and because
+  `start_publisher()` called `prepare_broadcast()` unconditionally and started ffmpeg anyway, that
+  cost **1,704 prepares, 1,589 `rc=251` deaths and 4,292 API calls** - most of a day's
+  10,000-unit pool. **Fixed 2026-11-10:** that one ERROR class returns a distinct status and arms
+  an exponential hold-down (`PREPARE_BACKOFF_BASE` 300 s, doubling to `PREPARE_BACKOFF_MAX`
+  1800 s) instead of a restart; a *transient* ERROR still starts the publisher, because ingest is
+  what starts an already-bound broadcast. Asserted in `tests/t24_prepare_backoff.sh`. The old
+  behaviour is still visible in `docs/2026-11-09-streamer-offline.md`. The camera delivers only ~2.3 Mbit/s for the whole 3-up composite, so one panel is low
   detail. This is NOT fixable from the camera web UI: the firmware accepts ONVIF encoder
   writes, reports them back and ignores them - the delivered stream stayed at ~2.3 Mbit/s and
   14 fps through bitrate settings of 8192, 12288, 16384 and 20480 (measured 2026-09-07). See

@@ -603,11 +603,57 @@ prepare_broadcast() {
   # proven here on 2026-09-05, when six minutes of clean ingest against a dark channel produced
   # nothing. An earlier comment in this file claimed YouTube created one by itself. It does not.
   yt_api_ready || { log "PREPARE: no API credentials at $YT_OAUTH - nothing can create the next broadcast, so the channel will go dark at the next cut. Run: bin/yt_api.py auth"; return 0; }
-  log "PREPARE: $(yt_api_call prepare)"
+  local out
+  out=$(yt_api_call prepare)
+  log "PREPARE: $out"
+  print -r -- "$out" | grep -q '"status": *"ERROR"' || return 0
+  # The one ERROR class that retrying cannot fix: the key in conf/stream.env is not on the
+  # channel. Everything else (a network blip, a 5xx, a token hiccup) is transient, and ingest
+  # may still reach a broadcast that is already bound - so those start the publisher anyway.
+  print -r -- "$out" | grep -q 'no liveStream on this channel uses the configured YT_KEY' && return 2
+  return 1
+}
+
+# prepare_backoff_delay FAILS  ->  seconds to wait (exponential, capped). Pure, so the rule can
+# be tested without waiting for it.
+prepare_backoff_delay() {
+  local n="$1"
+  [[ "$n" == <-> ]] || n=1
+  (( n < 1 )) && n=1
+  (( n > 8 )) && n=8
+  local w=$(( PREPARE_BACKOFF_BASE << (n - 1) ))
+  (( w > PREPARE_BACKOFF_MAX )) && w=$PREPARE_BACKOFF_MAX
+  print -- "$w"
+}
+
+prepare_holddown_active() { (( PREPARE_BLOCK_UNTIL > $(date +%s) )); }
+
+prepare_holddown_note() {   # log the current hold-down ONCE per block, not every 5 s
+  [[ "$PREPARE_HOLD_LOGGED" == "$PREPARE_BLOCK_UNTIL" ]] && return 0
+  PREPARE_HOLD_LOGGED=$PREPARE_BLOCK_UNTIL
+  log "PREPARE-BACKOFF: holding the publisher down for $(( PREPARE_BLOCK_UNTIL - $(date +%s) ))s more - the configured stream key matched no liveStream on this channel (attempt $PREPARE_FAILS). Fix conf/stream.env YT_KEY against Studio -> Go Live -> Stream key, or the credential with bin/yt_api.py auth."
 }
 
 start_publisher() {
-  prepare_broadcast
+  PUBPID=""
+  if prepare_holddown_active; then
+    prepare_holddown_note
+    return 1
+  fi
+  local prc=0
+  prepare_broadcast || prc=$?
+  case "$prc" in
+    2)
+      PREPARE_FAILS=$(( PREPARE_FAILS + 1 ))
+      PREPARE_BLOCK_UNTIL=$(( $(date +%s) + $(prepare_backoff_delay "$PREPARE_FAILS") ))
+      PREPARE_HOLD_LOGGED=0
+      prepare_holddown_note
+      return 1 ;;
+    1)
+      log "PREPARE: transient failure - starting the publisher anyway (ingest can still reach a broadcast that is already bound)" ;;
+    *)
+      PREPARE_FAILS=0; PREPARE_BLOCK_UNTIL=0 ;;
+  esac
   : > "$PROG"
   # Refresh the filler still with one quick grab from the camera. Done here (not as a
   # second output on the publisher) because a second output stalls the whole filter graph.
@@ -681,6 +727,17 @@ ROTATE_LABEL="${ROTATE_HOURS:-8}h$( (( ${ROTATE_MINUTES:-0} > 0 )) && print -n "
 : ${ROTATE_WITHOUT_API:=no}    # yes = cut even when the API cannot create a successor. That goes
                                # dark the moment the old broadcast closes, so the default is no.
 : ${ROTATE_API_RETRY:=900}     # when a cut is refused for that reason, try again this often
+# A publisher start re-runs prepare_broadcast(). When the API says the configured stream KEY
+# matches nothing on the channel, no amount of restarting can fix it - but the old code did
+# exactly that, every ~15 s, for as long as it lasted: measured 2026-11-10, 1,704 prepares,
+# 1,589 ffmpeg deaths and 4,292 API calls in 8 h 08 m. A configuration fault now backs off
+# exponentially instead, and says which fault it is.
+: ${PREPARE_BACKOFF_BASE:=300}    # first hold-down after a key/config failure
+: ${PREPARE_BACKOFF_MAX:=1800}    # ceiling for the hold-down
+PUBPID=""                         # set by start_publisher(); empty means "nothing is pushing"
+PREPARE_FAILS=0                   # consecutive key/config failures
+PREPARE_BLOCK_UNTIL=0             # epoch: do not even try to start the publisher before this
+PREPARE_HOLD_LOGGED=0             # the block we have already announced (log once, not each 5 s)
 # THE CLIFF. YouTube archives a live stream only up to 12 h; past that the recording is gone
 # entirely. Staying live through a quota outage is the right default (2026-10-28 proved a cut
 # without a successor leaves a dark channel), but it must not be unbounded: on 2026-10-28 the
@@ -1246,7 +1303,11 @@ rotate_broadcast() {
   LAST_ROTATE=$BROADCAST_STARTED
   rm -f "$ROTATE_NOW"
   hold_monitor $(( ROTATE_NATIVE_WAIT + 120 ))
-  log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_LABEL}"
+  if [[ -n "${PUBPID:-}" ]]; then
+    log "ROTATE: publisher back up (pid $PUBPID); giving YouTube up to ${ROTATE_NATIVE_WAIT}s to create the next broadcast on its own; next rotation in ${ROTATE_LABEL}"
+  else
+    log "ROTATE: the publisher was NOT restarted - see the PREPARE-BACKOFF line above; the rotation clock stays on the old broadcast until the key is fixed"
+  fi
   await_broadcast "$old_id" rotation
   # The 9:16 feed cuts when log/broadcast_started names a new broadcast, so write it the moment
   # the successor is live. Leaving it to the next housekeeping pass (up to HOUSEKEEP_EVERY=300 s)
@@ -1287,7 +1348,7 @@ refresh_broadcast_clock     # adopt the running broadcast's real age, not this p
 # Same audit, backgrounded: it can take 20+ minutes and must not hold up the loop that
 # supervises the publisher (that wait used to leave the publisher unsupervised for its duration).
 ( vod_audit_once ) >>"$LOG" 2>&1 &
-log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
+[[ -n "${PUBPID:-}" ]] && log "publisher up (pid $PUBPID); broadcast rotation every ${ROTATE_LABEL}; monitor holds off ${ROTATE_GRACE}s"
 await_broadcast "" start
 # Same reason as at the end of a rotation: after a restart that fragmented the broadcast, the
 # new id is live by now and the 9:16 feed must see it immediately, not within 5 minutes.
@@ -1343,11 +1404,18 @@ while true; do
       CLOCK_RETRY_AT=$(( $(date +%s) + CLOCK_RETRY_EVERY ))
     fi
   fi
-  if ! kill -0 "$PUBPID" 2>/dev/null; then
-    wait "$PUBPID" 2>/dev/null; local rc=$?
-    log "PUBLISHER died rc=$rc - $(pub_death_reason "$rc") - restarting (this does drop the YouTube session briefly)"
-    rm -f "$PUB_WHY" 2>/dev/null
-    start_publisher
+  if [[ -z "${PUBPID:-}" ]] || ! kill -0 "$PUBPID" 2>/dev/null; then
+    if [[ -n "${PUBPID:-}" ]]; then
+      wait "$PUBPID" 2>/dev/null; local rc=$?
+      log "PUBLISHER died rc=$rc - $(pub_death_reason "$rc") - restarting (this does drop the YouTube session briefly)"
+      rm -f "$PUB_WHY" 2>/dev/null
+    fi
+    if ! start_publisher; then
+      # The reason was logged once by prepare_holddown_note(); keep the loop turning (it still
+      # supervises the reader, the camera and the rotation clock) without hammering YouTube.
+      last=""; stuck=0
+      continue
+    fi
     CLOCK_RETRY_AT=$(( $(date +%s) + CLOCK_RETRY_EVERY )); CLOCK_RETRY_END=$(( $(date +%s) + CLOCK_RETRY_WINDOW ))
     log "publisher back up (pid $PUBPID)"; await_broadcast "" start; last=""; stuck=0; continue
   fi
