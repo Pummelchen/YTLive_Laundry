@@ -82,6 +82,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import socketserver
 import threading
 import time
 import urllib.error
@@ -355,6 +356,22 @@ def write_state(path, data):
 class HeartbeatServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    def server_bind(self):
+        """Bind and listen WITHOUT the reverse-DNS lookup HTTPServer does first.
+
+        http.server.HTTPServer.server_bind() calls socket.getfqdn(host) BETWEEN bind() and
+        listen(), so a host whose resolver is slow or absent leaves the socket bound but not
+        listening, refusing connections for as long as the lookup takes. Measured on a GitHub
+        macOS runner on 2026-11-10: over 20 s, while the process stayed alive and silent -
+        indistinguishable from "the listener never started". The resolved name is only used by
+        the stock per-request log line, which this server does not print, so the address is
+        enough and the listener is up in milliseconds.
+        """
+        socketserver.TCPServer.server_bind(self)
+        host, port = self.server_address[:2]
+        self.server_name = str(host)
+        self.server_port = port
 
     def __init__(self, addr, handler, state_file, token):
         super().__init__(addr, handler)

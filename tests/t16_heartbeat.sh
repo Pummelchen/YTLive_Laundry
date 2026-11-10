@@ -110,6 +110,14 @@ grep -q 'hmac.compare_digest' "$SRC" \
   && t_ok "the token is compared with hmac.compare_digest, not ==" \
   || t_bad "the listener does not use a constant-time token comparison"
 
+# --- the listener does not resolve its own address before it starts listening -------------
+# HTTPServer.server_bind() calls socket.getfqdn() between bind() and listen(): a slow resolver
+# there means a bound socket that refuses connections, which is the "listening but silent"
+# failure this server exists to rule out. Measured at over 20 s on a GitHub macOS runner.
+grep -q 'def server_bind' "$SRC" \
+  && t_ok "the listener skips HTTPServer's pre-listen reverse-DNS lookup" \
+  || t_bad "the listener inherits HTTPServer.server_bind, whose getfqdn() delays listening"
+
 # --- a REAL listener on loopback ---------------------------------------------------------
 python3 "$HB" serve --bind 127.0.0.1 --port "$PORT" --state-file "$STATE" \
   --token-file "$TOKENFILE" >"$T_BASE/log/serve.log" 2>&1 &

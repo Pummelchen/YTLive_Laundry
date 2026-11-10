@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-10 — the heartbeat listener refused connections while it resolved its own address
+
+- **A reverse-DNS lookup sat between `bind()` and `listen()`.** `http.server.HTTPServer`'s
+  `server_bind()` calls `socket.getfqdn(host)` before the socket starts listening, so on a host
+  with a slow or absent resolver the listener is *bound but refusing connections* for the whole
+  lookup while its process stays alive and silent — the exact "a listener that is silently not
+  listening" failure this server exists to rule out. Measured on GitHub's macOS runners: more
+  than 20 s, long enough that the suite's connect probe timed out while the HTTP cases behind
+  it passed. `HeartbeatServer.server_bind()` now binds, listens and records the address without
+  the lookup; the name was only ever used by the stock per-request log line, which this server
+  does not print. Regression-guarded in `tests/t16_heartbeat.sh`.
+- **The suite's listener check now says why it failed**: it polls in one Python process instead
+  of spawning one per attempt (on a loaded runner the spawn cost, not the listener, was eating
+  the window) and prints the listener's own log and pid state when it does not answer.
+- **Suite count corrected to 860** in `AGENTS.md`; the documented 856 was already three checks
+  stale, and CI's own per-file tally on the last green run read 859.
+
 ## 2026-11-09/10 — the network work: 26 hours dark, and 1,704 prepares that could not succeed
 
 - **The shop's network was being changed on 2026-11-09** (the operator's note records a router
