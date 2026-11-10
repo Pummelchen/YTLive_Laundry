@@ -114,20 +114,36 @@ grep -q 'hmac.compare_digest' "$SRC" \
 python3 "$HB" serve --bind 127.0.0.1 --port "$PORT" --state-file "$STATE" \
   --token-file "$TOKENFILE" >"$T_BASE/log/serve.log" 2>&1 &
 SRV=$!
-ready=0
-for i in {1..100}; do
-  python3 -c "
-import socket, sys
-s = socket.socket(); s.settimeout(0.2)
-try:
-    s.connect(('127.0.0.1', $PORT))
-except Exception:
-    sys.exit(1)
-finally:
-    s.close()
-" 2>/dev/null && { ready=1; break; }
-  sleep 0.05
-done
+# One python program polls, instead of one process per attempt: on a loaded CI runner the
+# spawn cost dominated the window, so the check could fail while the listener was up (and the
+# HTTP cases below then passed). The window is a real 20 seconds now, and a failure prints the
+# listener's own log instead of only "expected 1, got 0".
+ready=$(python3 - "$PORT" <<'PY'
+import socket, sys, time
+port = int(sys.argv[1])
+deadline = time.time() + 20
+while time.time() < deadline:
+    s = socket.socket()
+    s.settimeout(0.2)
+    try:
+        s.connect(("127.0.0.1", port))
+        print("1")
+        break
+    except Exception:
+        time.sleep(0.05)
+    finally:
+        s.close()
+else:
+    print("0")
+PY
+)
+if [[ "$ready" != 1 ]]; then
+  print -u2 -- "  the listener did not answer on 127.0.0.1:$PORT; its log said:"
+  sed 's/^/    /' "$T_BASE/log/serve.log" 2>/dev/null | tail -5
+  kill -0 "$SRV" 2>/dev/null \
+    && print -u2 -- "  pid $SRV is still running" \
+    || print -u2 -- "  pid $SRV has exited"
+fi
 t_assert_eq "1" "$ready" "the listener binds 127.0.0.1 and accepts a connection"
 
 # One python program drives every HTTP case so the statuses are read from a real socket.
