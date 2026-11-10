@@ -326,6 +326,11 @@ EOF
   say "wrote $out"
 }
 write_plist_interval com.user.cctv-camscan cam_scan.sh 600
+# The system-level watchguard: one recovery pass every 10 minutes over ALL of the above - the
+# agents themselves, the camera (frames, not just TCP), and both broadcasts. It is the only
+# agent allowed to restart the others, which is why it is loaded last: on a fresh boot it should
+# be the thing that finds the rest already broken and fixes it.
+write_plist com.user.cctv-watchguard watchguard.sh   Standard 60
 
 # --- 6. Full Disk Access check --------------------------------------------------
 # A LaunchAgent cannot read ~/Downloads without FDA. Probe it the same way launchd will.
@@ -361,7 +366,7 @@ if [[ "$START" == "yes" ]]; then
   [[ "$FDA" == "OK" ]] || die "refusing to start: grant Full Disk Access to /bin/zsh first, then run ./install.sh --start"
   [[ "$YT_EMPTY" == yes ]] && die "refusing to start: YT_KEY is empty in conf/stream.env - paste your YouTube stream key in first"
   say "starting services (remember: only ONE machine per YouTube stream key)"
-  for l in com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
+  for l in com.user.cctv-watchguard com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
     launchctl unload "$LA/$l.plist" 2>/dev/null; launchctl load -w "$LA/$l.plist" && say "loaded $l"
   done
   sleep 8; launchctl list | grep cctv

@@ -146,6 +146,49 @@ resolvers are set on **every** service (`NET_DNS_SERVERS`) so resolution cannot 
 service macOS considers primary, nor on the router: the streamer previously had exactly one
 nameserver, the shop router at `192.168.1.1`.
 
+## The watchguard: the 10-minute system recovery pass
+
+`bin/watchguard.sh` is the fifth LaunchAgent (`com.user.cctv-watchguard`) and the only component
+allowed to restart the other four. It exists because each inner loop owns one layer and is blind
+to the rest: stream.sh watches the publisher, the monitor grades the *public picture*, net_watch
+walks the transport ladder, launchd replaces a process that EXITS - and nothing owned the system.
+
+One pass every `WATCHGUARD_EVERY` (600 s) checks, and repairs in this order:
+
+| Check | Repair | Never |
+|---|---|---|
+| Each of the four jobs is loaded | `launchctl load -w` then `kickstart -k` by label | never `kill`/`pkill`, never a pattern |
+| Disk free (`WG_DISK_LOW_MB`) | trim the big logs in place, same inode | never delete a log |
+| `log/net_state` freshness | restart stream.sh after 15 min of silence | never touch an interface or the service order |
+| Camera: TCP 554 **and** a real RTSP frame | ONVIF reboot after 2 frame-less passes, once/hour | never reboot a camera that is unreachable (ONVIF needs the network) |
+| 16:9 publisher + broadcast | restart a wedged publisher by pidfile; `prepare` + `ensure-live` when ingest flows and the API says READY/OFFLINE | never cut/rotate/end a live broadcast, never act on `UNKNOWN` |
+| 9:16 Shorts broadcast | kickstart the vertical after 2 non-LIVE passes | (nothing checked this before) |
+| Monitor heartbeat | kickstart the monitor | — |
+| Mains power | record it | **it cannot power the Mac back on** |
+
+Read it with:
+
+```bash
+bin/watchguard.sh --status          # verdict, heartbeat age, counters, last actions
+tail -50 log/watchguard.log         # one PASS line per pass, plus every ACTION and its reason
+log/watchguard.state                # the same in key=value, for scripts
+```
+
+`bin/status.sh` prints the same verdict and fails when the heartbeat is more than four intervals
+old, so a dead watchguard cannot look like a quiet one.
+
+**What no script can do.** A MacBook with no power is unreachable from inside it, and this
+hardware does not support `pmset autorestart` (measured 2026-09-19, AGENTS.md). The mitigations
+for that class are a UPS on the Mac **and** the router (T-30) and the off-host watchdog telling a
+human; the watchguard's half is to drive both feeds back to live the moment the power returns,
+without anyone touching it.
+
+**It is deliberately conservative.** Two passes are required before the camera is rebooted or
+the publisher is restarted (stream.sh's own watchdog gets first refusal), every repair has a
+cooldown and there is a hard cap of `WG_MAX_ACTIONS` per pass. A watchdog that thrashes is worse
+than the outage it is chasing. To pause it during maintenance:
+`launchctl unload -w ~/Library/LaunchAgents/com.user.cctv-watchguard.plist`.
+
 ## Disk and logs  (added 2026-09-05)
 Nothing bounded the logs before, and `log/` was tracked in git - so every commit stored
 another copy of a multi-megabyte `publisher.log`. `.git` is 353 MB, but the logs are not why:

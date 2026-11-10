@@ -12,7 +12,7 @@ Both are always on: when the camera drops, each feed shows an "offline" card ins
 dark, and both come back by themselves when the camera returns.
 
 ```
-bin/status.sh              is it healthy? one page: both feeds, all four agents, camera, quota, disk
+bin/status.sh              is it healthy? one page: both feeds, all five agents, camera, quota, disk
 bin/smoke_test.sh          RUN BEFORE RESTARTING ANYTHING - exit 0 means safe
 bin/yt_api.py status       what YouTube thinks is live on the 16:9 stream
 tail -f log/stream.log     the main feed

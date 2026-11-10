@@ -17,7 +17,7 @@ warn() { print -- "  \033[33mWARN\033[0m  $*"; }
 bad()  { print -- "  \033[31mFAIL\033[0m  $*"; }
 
 print "=== launchd jobs ==="
-for l in com.user.cctv-stream com.user.cctv-monitor; do
+for l in com.user.cctv-watchguard com.user.cctv-stream com.user.cctv-monitor; do
   line=$(launchctl list 2>/dev/null | grep "$l")
   if [[ -z "$line" ]]; then
     bad "$l is NOT loaded  ->  launchctl load -w ~/Library/LaunchAgents/$l.plist"
@@ -58,6 +58,23 @@ if [[ -f "$HB" ]]; then
   [[ -n "${hbrest:-}" ]] && print "        $hbrest"
 else
   bad "no heartbeat file - the watchdog has not run since this was installed"
+fi
+
+print "\n=== watchguard (the 10-minute system recovery pass) ==="
+WGB="$BASE/log/watchguard.heartbeat"
+WGS="$BASE/log/watchguard.state"
+if [[ -f "$WGB" ]]; then
+  age=$(( $(date +%s) - $(/usr/bin/stat -f %m "$WGB") ))
+  verdict=$(awk -F= '$1=="verdict"{print $2}' "$WGS" 2>/dev/null)
+  actions=$(awk -F= '$1=="actions"{print $2}' "$WGS" 2>/dev/null)
+  interval=${WATCHGUARD_EVERY:-600}
+  if   (( age > interval * 4 )); then bad  "last pass ${age}s ago - the watchguard is gone (interval ${interval}s)"
+  elif (( age > interval * 2 )); then warn "last pass ${age}s ago (interval ${interval}s)"
+  else                                ok   "last pass ${age}s ago, verdict ${verdict:-?}, ${actions:-0} action(s)"; fi
+  show=$(awk -F= '$1=="cam_fails"||$1=="pub_fails"||$1=="vert_fails"{printf "%s=%s ", $1, $2}' "$WGS" 2>/dev/null)
+  [[ -n "$show" ]] && print "        counters: $show"
+else
+  warn "no watchguard heartbeat - the 10-minute recovery pass has not run here"
 fi
 
 print "\n=== API quota breaker ==="

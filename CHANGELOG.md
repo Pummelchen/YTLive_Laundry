@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-11-10 — the watchguard: one recovery pass every 10 minutes over the whole system
+
+- **`bin/watchguard.sh`, the fifth LaunchAgent (`com.user.cctv-watchguard`).** Each inner loop
+  owns one layer and is blind to the rest - stream.sh watches the publisher, the monitor grades
+  the *public picture*, `net_watch.sh` walks the transport ladder, launchd replaces a process
+  that EXITS - and nothing owned the system. The watchguard does, one pass every
+  `WATCHGUARD_EVERY` (600 s):
+  - every one of the four jobs is **loaded** (a job whose plist was unloaded is not revived by
+    KeepAlive) - kickstart by label, never a pattern kill;
+  - the camera delivers **frames**, not merely accepts TCP (the 2026-11-09 camera answered 554
+    while every RTSP session timed out) - ONVIF reboot after 2 frame-less passes, once per hour;
+  - **each** feed has a live broadcast - `prepare` + `ensure-live` when ingest flows and the API
+    says READY/OFFLINE, and a restart for a wedged publisher - never a cut, never an action on
+    `UNKNOWN`;
+  - the **9:16 Shorts** is checked for liveness for the first time (only `status.sh` ever looked);
+  - the monitor's heartbeat, the disk floor (trim in place) and whether the box is on **mains**.
+- **Deliberately conservative, and the rules are tests.** Two passes before the camera is
+  rebooted or the publisher restarted (stream.sh's own 5 s watchdog gets first refusal), a
+  cooldown on every repair, a hard `WG_MAX_ACTIONS` cap per pass, and one instance at a time. It
+  never reboots the Mac, never touches a network interface or the service order, never cuts a
+  live broadcast, never signals by pattern. `tests/t23_watchguard.sh` (57 checks) asserts every
+  one of those, including a static scan of the source for the forbidden commands.
+- **What it cannot do is stated, not hidden.** A MacBook with no power is unreachable from
+  inside it and `pmset autorestart` is unsupported on this hardware, so "no power" is answered
+  by a UPS (T-30) plus the off-host watchdog; the watchguard's half is to drive both feeds back
+  to live the moment the power returns, with nobody touching it.
+- **`status.sh`** now prints the watchguard's verdict, heartbeat age and counters, and fails when
+  the heartbeat is more than four intervals old - a dead watchguard cannot look like a quiet one.
+  `install.sh` provisions the fifth agent; the suite is **923 checks**.
+
 ## 2026-11-10 — the heartbeat listener refused connections while it resolved its own address
 
 - **A reverse-DNS lookup sat between `bind()` and `listen()`.** `http.server.HTTPServer`'s

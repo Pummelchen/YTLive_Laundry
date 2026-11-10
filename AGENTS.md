@@ -38,7 +38,9 @@ RTMP session.
   `cam_reboot.py`), `forensics.sh` (read-only evidence collector for a host-level outage,
   including the Network section), `harden-host.sh` (applies and verifies the `pmset` host
   hardening; dry run by default), `net_watch.sh` (the TRANSPORT-layer watchdog: probes
-  gateway/DNS/WAN and repairs a lost network; started by `stream.sh`), and
+  gateway/DNS/WAN and repairs a lost network; started by `stream.sh`), `watchguard.sh` (the
+  SYSTEM-level recovery pass every 10 min: both broadcasts, the camera's frames, the jobs
+  themselves - the fifth agent and the only one allowed to restart the others), and
   `status.sh` / `smoke_test.sh` / `shuffle_playlist.sh` / `preflight.sh` /
   `ssh_mesh.sh`.
 - `conf/` is **tracked**: `stream.env.example`, `vertical.env.example` (the Shorts
@@ -66,11 +68,11 @@ RTMP session.
 No build step, and no Python dependency to install: every `.py` is
 `#!/usr/bin/env python3` importing only the standard library. `install.sh`
 provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe` into
-`~/.local/bin`, `pip install --user yt-dlp`, and writes four LaunchAgents. Nothing
+`~/.local/bin`, `pip install --user yt-dlp`, and writes five LaunchAgents. Nothing
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 860 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 923 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -93,15 +95,17 @@ alone and passed it.
 ## Run
 
 ```bash
-for l in stream vertical monitor camscan; do
+for l in watchguard stream vertical monitor camscan; do
   launchctl load -w ~/Library/LaunchAgents/com.user.cctv-$l.plist
 done
 bin/status.sh          # --no-net skips the API calls
 touch log/rotate_now   # force a rotation
 ```
 
-All four agents are required (the camera scanner is periodic, the other three are
-keep-alive) and `bin/status.sh` is the single place that answers "is it healthy".
+All five agents are required (the camera scanner is periodic, the other four are keep-alive) and
+`bin/status.sh` is the single place that answers "is it healthy". `bin/watchguard.sh` is the
+system-level 10-minute recovery pass and the only agent allowed to restart the other four; it is
+documented in docs/operations.md and its rules are asserted in tests/t23_watchguard.sh.
 Health covers the jobs, the moving frame counter, heartbeat age, the token,
 YouTube's own view, camera port 554, disk, rotation history, config drift and VOD
 tallies.
@@ -142,7 +146,7 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 860 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 923 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -323,6 +327,15 @@ The gates, still worth running by hand before restarting anything:
   cannot cover. `bin/yt_watchdog.py` is the deliberate exception: the only thing allowed to
   notify, and the one thing that must **never** be run on the streamer, nor may its own host
   be assumed alive. See `docs/watchdog.md`.
+- **`bin/watchguard.sh` repairs the system, not the power.** The fifth agent runs one pass every
+  10 minutes and is the only component allowed to restart the other four: it kickstarts missing
+  jobs, trims logs, repairs a broadcast with `prepare`/`ensure-live`, restarts a wedged
+  publisher by pidfile, and reboots the ONVIF camera when it accepts TCP but delivers **no
+  frames** (TCP reachable is not frames flowing - measured 2026-11-09). It never reboots the Mac,
+  never touches a network interface and never cuts a live broadcast, and its rules are asserted
+  in `tests/t23_watchguard.sh`. It cannot bring a powered-off MacBook back: `autorestart` is
+  unsupported on this hardware, so a UPS (T-30) and the off-host watchdog are the whole answer
+  for that class. Do not "fix" a power outage by making this script reboot the host.
 - **The recorded cause of that outage was wrong, and the correction matters.** The 2.2/2.3
   notes, the handover and the wiki all said *a mains interruption while the lid was shut, after
   which the Mac slept on battery*. The host's own records falsify it: `kern.boottime` is still

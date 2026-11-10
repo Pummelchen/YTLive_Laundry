@@ -1,7 +1,7 @@
 # What it is
 
 ## Files
-    install.sh               provision the STREAMER: ffmpeg, yt-dlp, four LaunchAgents,
+    install.sh               provision the STREAMER: ffmpeg, yt-dlp, five LaunchAgents,
                              both env files seeded from their tracked examples
     bin/stream.sh            the 16:9 streamer (reader + publisher, watchdog, rotation, VOD check)
     bin/vertical.sh          the 9:16 Shorts streamer: its own broadcast, slate and LaunchAgent.
@@ -11,6 +11,11 @@
                              conf/vertical_template.json and differs only in the title. Only READS the
                              16:9 state.
     bin/shuffle_playlist.sh  regenerate the random track order
+    bin/watchguard.sh        the SYSTEM-level recovery pass: every 10 min it checks that every
+                             agent is loaded, that the camera delivers FRAMES (not just TCP),
+                             that EACH feed has a live broadcast, and that the disk has room -
+                             and repairs with cooldowns. The fifth agent, and the only one
+                             allowed to restart the other four. Never reboots the Mac.
     bin/status.sh            health check
     bin/preflight.sh         probe camera codecs
     bin/camscan.py           find cameras on the LAN (ONVIF + port sweep)

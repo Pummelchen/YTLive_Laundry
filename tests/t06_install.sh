@@ -78,8 +78,8 @@ t_assert_contains "$OUT" "using python: $PYDIR/new314/python3" "picks the interp
 t_assert_contains "$OUT" "yt-dlp 2026.08.19" "the working yt-dlp survives the install"
 
 # ============================================================================
-t_begin "all four LaunchAgents are written and are valid plists"
-for l in com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
+t_begin "all five LaunchAgents are written and are valid plists"
+for l in com.user.cctv-watchguard com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
   t_assert_file "$LA/$l.plist" "$l.plist written"
   t_assert_eq "" "$(plutil -lint "$LA/$l.plist" 2>&1 | grep -v 'OK$' | head -1)" "$l plist passes plutil -lint"
 done
@@ -88,6 +88,8 @@ t_assert_contains "$(plutil -p "$LA/com.user.cctv-vertical.plist" 2>/dev/null)" 
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-monitor.plist" 2>/dev/null)" "Standard" "monitor plist keeps ProcessType Standard"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-stream.plist" 2>/dev/null)" "$REPO/bin/stream.sh" "stream plist points at THIS tree"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-vertical.plist" 2>/dev/null)" "$REPO/bin/vertical.sh" "vertical plist points at THIS tree"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-watchguard.plist" 2>/dev/null)" "$REPO/bin/watchguard.sh" "the watchguard plist points at THIS tree"
+t_assert_contains "$(plutil -p "$LA/com.user.cctv-watchguard.plist" 2>/dev/null)" "Standard" "watchguard is Standard, not Background (Background is CPU-throttled)"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-camscan.plist" 2>/dev/null)" "StartInterval" "camscan is a periodic job, not a daemon"
 t_assert_contains "$(plutil -p "$LA/com.user.cctv-camscan.plist" 2>/dev/null)" "600" "camscan runs every 10 minutes"
 t_assert_no_file "$LA/com.user.fdaprobe.plist" "the temporary FDA-probe plist is cleaned up"
