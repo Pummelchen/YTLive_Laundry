@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-11-13 — the Shorts is switched off, and "off" survives every start and every recovery pass
+
+- **Operator decision: the Shorts feed stops until further notice.** `conf/vertical.env` now says
+  `VERT_ENABLED="no"` on the streamer and `com.user.cctv-vertical` is unloaded with `-w`, so a
+  reboot does not bring it back. The live broadcast ended within seconds of the ingest stopping and
+  its recording is saved like any other segment; the 16:9 feed is untouched.
+- **Two scripts would have undone that silently, and both are fixed.** `bin/watchguard.sh`
+  `check_agents()` walked a fixed label list containing `com.user.cctv-vertical`, so the 10-minute
+  recovery pass re-loaded the agent it had just been told to leave alone — observed live at
+  09:23:19 WIB on the day of the change (`verdict=DEGRADED(agent,vertical) actions=1`), and it
+  would have repeated forever: the agent starts, reads the config, exits, is re-loaded.
+  `install.sh --start` also unloaded and loaded every agent unconditionally. Both now treat
+  `VERT_ENABLED="no"` as a decision: the watchguard skips the label (`check_vertical()` was
+  already gated) and `install.sh` builds its agent list conditionally and says the Shorts stays off.
+- **Tested both ways.** `tests/t23_watchguard.sh` asserts that a disabled Shorts is never touched
+  (E6b) **and** that an enabled one is still repaired by label (E6c), so the gate cannot quietly
+  become "the Shorts is never recovered". `tests/t06_install.sh` asserts the gated agent list.
+- `docs/operations.md` records the two-step off/on procedure and the rule that a missing
+  `com.user.cctv-vertical` is not a fault to repair; `AGENTS.md` carries the same rule for agents.
+
 ## 2026-11-13 — the Shorts no longer stays dark behind a stale liveness confirmation
 
 - **The defect the morning's power cut exposed.** `vertical.sh` skips its API liveness poll while
@@ -44,7 +64,7 @@
 - Asserted in `tests/t17_camera_recovery.sh`: the old checks demanded `drawtext` and a braced
   `SLATE_FONT`, so they would have blocked this change and protected the defect. The replacement
   fails if either card draws text, or if the operator-facing prose survives anywhere outside a
-  comment. Suite **977 checks**.
+  comment. Suite **981 checks**.
 
 ## 2026-11-11 — the off-host watchdog can see the recovery pass itself
 

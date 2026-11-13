@@ -11,6 +11,25 @@ reboot, and nothing would have said so: the streamer's own KeepAlive kept everyt
 looking healthy. `bin/status.sh` now reports both, and stream.sh watches the watchdog's
 heartbeat (log/monitor.heartbeat) - if it goes stale the streamer restarts it, because
 launchd revives a job that EXITS but not one that HANGS.
+
+### Switching the Shorts feed off, and back on
+
+`com.user.cctv-vertical` is optional and is **off since 2026-11-13** ("until further notice").
+Off means both halves, and in this order:
+
+    # 1. the config: bin/vertical.sh exits immediately while this says no, and every script
+    #    (watchguard, install --start) treats "no" as a decision rather than a missing agent
+    sed -i '' 's/^VERT_ENABLED=.*/VERT_ENABLED="no"/' ~/Downloads/YTLive/conf/vertical.env
+    # 2. the agent: -w records the disable, so a reboot does not bring it back
+    launchctl unload -w ~/Library/LaunchAgents/com.user.cctv-vertical.plist
+
+Stopping the agent ends the ingest and YouTube closes the broadcast within seconds; the
+recording of that segment is saved like any other. Back on is the same two steps with
+`VERT_ENABLED="yes"` and `launchctl load -w`, then the feed prepares its own broadcast on start.
+**A missing `com.user.cctv-vertical` is not a fault to repair** - read `conf/vertical.env` before
+loading it, or a recovery pass will silently reverse this decision (asserted in
+`tests/t23_watchguard.sh`).
+
     ~/Downloads/YTLive/bin/status.sh          # everything that can fail silently, on one page
     ~/Downloads/YTLive/bin/status.sh --no-net  # same, skipping the YouTube API calls
 

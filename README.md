@@ -9,7 +9,10 @@ YouTube live broadcasts run from one camera:
 | **9:16** | 720×1280 (up to 1080×1920), same view | a companion broadcast for the **Shorts** feed |
 
 Both are always on: when the camera drops, each feed shows an "offline" card instead of going
-dark, and both come back by themselves when the camera returns.
+dark, and both come back by themselves when the camera returns. **The Shorts is switched off
+since 2026-11-13** (`VERT_ENABLED="no"` in `conf/vertical.env`, agent unloaded) — the code is
+still there and the feed comes back with those two lines reversed; see
+[docs/operations.md](docs/operations.md).
 
 ```
 bin/status.sh              is it healthy? one page: both feeds, all five agents, camera, quota, disk
@@ -19,13 +22,14 @@ tail -f log/stream.log     the main feed
 tail -f log/vertical.log   the Shorts feed
 ```
 
-LaunchAgents (all four are needed):
+LaunchAgents (three are needed while the Shorts is off):
 
 ```
 com.user.cctv-stream     the 16:9 feed
-com.user.cctv-vertical   the 9:16 Shorts feed
 com.user.cctv-monitor    frame grading against a golden reference
 com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on the LAN?
+com.user.cctv-watchguard the 10-minute recovery pass over the agents, the camera and the feed
+com.user.cctv-vertical   the 9:16 Shorts feed - OFF since 2026-11-13, see above
 ```
 
 ## How it behaves
@@ -80,7 +84,7 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 `bin/smoke_test.sh` needs `conf/yt_oauth.json`, so it stays a by-hand host gate.
 
 ```
-tests/run.sh            977 credential-free checks (--list to see them)
+tests/run.sh            981 credential-free checks (--list to see them)
 bin/smoke_test.sh       syntax/AST plus the real API commands and prepare --dry-run
 ```
 

@@ -72,7 +72,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 977 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 981 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -116,6 +116,16 @@ own broadcast and stream key (`conf/vertical.env`, `com.user.cctv-vertical`) and
 `VERT_ROTATE=no` (this box) it keeps ONE broadcast forever and YouTube stops archiving
 it after 12 h, which is the deliberate trade for a stream that never stops.
 
+**The Shorts feed can be switched OFF, and "off" must survive everything.** Since 2026-11-13 the
+operator runs the box with `VERT_ENABLED="no"` in `conf/vertical.env` — the feed is stopped "until
+further notice". Off is `VERT_ENABLED="no"` **plus** `launchctl unload -w
+~/Library/LaunchAgents/com.user.cctv-vertical.plist`; `bin/vertical.sh` exits at once while the
+config says no, `bin/watchguard.sh` refuses to repair a disabled Shorts (`check_agents()` skips its
+label, `check_vertical()` returns early) and `install.sh --start` leaves its agent out of the list.
+Do not "repair" a missing `com.user.cctv-vertical` by loading it without reading the config first:
+that silently reverses the operator's decision, and the agent then starts, exits and is re-loaded
+every ten minutes forever. Asserted in `tests/t23_watchguard.sh` and `tests/t06_install.sh`.
+
 **The rotation order is mandatory.** Every 8h10m the publisher is killed so YouTube
 closes and saves the VOD, and `prepare_broadcast()` must create and bind the next
 broadcast **before** ffmpeg pushes — `enableAutoStart` fires on ingest *arrival*,
@@ -146,7 +156,7 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 977 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 981 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
