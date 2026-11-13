@@ -38,9 +38,11 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
   needs the API to create the successor broadcast, so a cut is refused while the API is
   unusable — with a **hard stop at 11 h 15 m**, past which the cut happens anyway, because a
   lost recording is worse than a short dark gap.
-- **Camera loss is not channel loss.** The reader feeds a slate card into the same local UDP
+- **Camera loss is not channel loss.** The reader feeds a still card into the same local UDP
   port the publisher reads, so the broadcast stays live; a camera that answers on 554 but cannot
-  stream gets slate bursts and, after 10 minutes, an ONVIF reboot.
+  stream gets slate bursts and, after 10 minutes, an ONVIF reboot. **The card carries no text** —
+  the last good frame, dimmed, and nothing else: nothing on either feed speaks for the shop
+  without the operator's explicit instruction (`AGENTS.md`, Traps).
 - **The camera moves.** It is DHCP and takes a new address after a power cut. A watcher probes
   it every 30 s, `bin/find_rtsp.py` sweeps both interfaces, and `bin/cam_scan.py` reports its
   address every 10 minutes into `log/cam_ip`, which both feeds follow.
@@ -75,7 +77,7 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 `bin/smoke_test.sh` needs `conf/yt_oauth.json`, so it stays a by-hand host gate.
 
 ```
-tests/run.sh            800+ credential-free checks (--list to see them)
+tests/run.sh            998 credential-free checks (--list to see them)
 bin/smoke_test.sh       syntax/AST plus the real API commands and prepare --dry-run
 ```
 

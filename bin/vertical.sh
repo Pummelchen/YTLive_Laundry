@@ -36,7 +36,6 @@ SLATE="$BASE/log/vertical_slate.jpg"
 CAMIP_FILE="$BASE/log/cam_ip"
 PLAYLIST="$BASE/conf/playlist.txt"
 FF="$HOME/.local/bin/ffmpeg"
-FONT="/System/Library/Fonts/Supplemental/Arial.ttf"
 
 source "$BASE/bin/lib.sh"
 source "$CONF"
@@ -138,30 +137,18 @@ broadcast_age() {
 }
 
 # --- the slate --------------------------------------------------------------------------
-# A still that says plainly what is happening, built ONCE from the last good camera frame so
-# it looks like the shop rather than a black box. Regenerated whenever a newer frame exists.
+# The 9:16 fallback card: the last good camera frame on the black canvas that this feed already
+# uses for its letterbox. It carries NO TEXT, for the same reason as the 16:9 card - see the
+# policy note in bin/stream.sh's make_slate(). A card may show the shop; it may not speak for it.
 make_slate() {
   local src="$BASE/log/lastframe.jpg"
   [[ -s "$src" ]] || src="$BASE/log/basefill.jpg"
-  local tf="$BASE/log/vertical_slate.txt"
-  # Short lines, small type: at 1080 wide the long horizontal card text overflows and gets
-  # clipped at both edges (seen 2026-10-28 05:31). Four short lines read better on a phone.
-  print -r -- "LAUNDRY BUKA 24 JAM" > "$tf"
-  print -r -- "TETAP BEROPERASI" >> "$tf"
-  print -r -- "Kamera CCTV kembali" >> "$tf"
-  print -r -- "dalam beberapa jam" >> "$tf"
-  print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$tf"
-  # Text ABOVE the photograph (operator request, 2026-10-28): the message sits above the
-  # frame, so a phone viewer reads the sign first and the shop second. The card is a 9:16
-  # canvas, not a letterboxed 16:9 still. Black background (operator request 2026-10-28:
-  # the offline card must be black like the live feed), the last camera frame fitted to the
-  # width, and the message underneath. The layout is expressed as fractions of VERT_SIZE so
-  # 1080x1920 and 720x1280 produce the same card.
-  local ty=$(( VERT_H * 320 / 1920 )) py=$(( VERT_H * 700 / 1920 ))
-  local fs=$(( VERT_W * 42 / 1080 )) ls=$(( VERT_W * 16 / 1080 )) bw=$(( VERT_W * 26 / 1080 ))
-  if [[ -s "$src" && -r "$FONT" ]]; then
+  # The photograph sits at the same vertical offset the live camera picture does (py), so the
+  # card and the live feed have the same layout and YouTube never sees the geometry move.
+  local py=$(( VERT_H * 700 / 1920 ))
+  if [[ -s "$src" ]]; then
     "$FF" -y -v error -f lavfi -i "color=c=black:s=${VERT_W}x${VERT_H}" -i "$src" \
-      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=${VERT_W}:-2[p];[0:v][p]overlay=0:${py}[v];[v]drawtext=fontfile=${FONT}:textfile=${tf}:fontcolor=white:fontsize=${fs}:line_spacing=${ls}:box=1:boxcolor=black@0.55:boxborderw=${bw}:x=(w-text_w)/2:y=${ty}" \
+      -filter_complex "[1:v]eq=brightness=-0.25:saturation=0.7,scale=${VERT_W}:-2[p];[0:v][p]overlay=0:${py}[v]" \
       -frames:v 1 -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0

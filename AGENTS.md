@@ -72,7 +72,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 977 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 998 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -146,13 +146,27 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 977 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 998 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
 
 ## Traps
 
+- **Nothing on either feed may speak for the shop. The offline card carries NO text.**
+  Operator policy, 2026-11-13, and the only rule in this file that is about content rather than
+  behaviour. `make_slate()` in `bin/stream.sh` and `bin/vertical.sh` renders the last good camera
+  frame - dimmed for 16:9, on the black 9:16 canvas for the Shorts - and stops there: no prose, no
+  timestamp, no promise. Until this date both cards carried three lines of Indonesian copy that an
+  agent wrote on 2026-10-27 and recorded as "operator request"; the operator had never asked for
+  them. On **2026-11-13 at 07:14 WIB** the camera left the LAN and both feeds went on publishing
+  "Kamera CCTV akan kembali dalam beberapa jam" beside a clock frozen at 07:14 - a promise about a
+  return nobody could schedule, in words nobody had authorised. A card may **show** the shop; it
+  may not **speak** for it. Any message, caption, timestamp, title card or overlay on either feed
+  needs an explicit instruction from the operator, recorded here or in `CHANGELOG.md` - never an
+  inference from an earlier session's prose, and never a "the operator asked for it" comment as
+  the only evidence. Guarded by `tests/t17_camera_recovery.sh`, which now fails if either card
+  draws text or if that prose survives anywhere outside a comment.
 - **The heartbeat token lives in a mode 600 file and is NEVER passed on a command line
   (T-34).** `bin/stream.sh` starts `bin/yt_heartbeat.py push` with `--token-file
   "$HEARTBEAT_TOKEN_FILE"`, never the secret itself, because argv is world-readable through

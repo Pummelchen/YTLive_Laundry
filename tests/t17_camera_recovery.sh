@@ -8,8 +8,7 @@
 #   * a publisher that blocks on a dead UDP input and produces nothing (0 frames measured);
 #   * the reader not feeding a slate when the camera is gone;
 #   * a slate reader that keeps polling the OLD address after a DHCP move;
-#   * drawtext's text='...' form, which fell back to a plain colour card on this shell/ffmpeg;
-#   * `$FONT:text=...` parsed by zsh as the :t modifier (the same bug, one layer up);
+#   * an agent-written message on the offline card, which the operator never authorised;
 #   * a scanner that runs ifconfig from launchd's PATH and finds no interfaces at all;
 #   * a scanner that reports this Mac itself as the camera because it only skips one address;
 #   * two live broadcasts confusing the single-broadcast API lookups.
@@ -39,15 +38,31 @@ loops = re.findall(r"while kill -0.*?done", body, re.S)
 sys.exit(0 if loops and 'ip=$(<"$CAMIP_FILE"' in loops[0] else 1)
 PY
 
-# The card is built from a text FILE, and variables are braced before a colon. Both matter:
-# the first form silently produced a plain colour card, the second was eaten by zsh as the
-# :t (tail) modifier and produced `fontfile=Arial.ttfext=OFFLINE`.
-contains bin/stream.sh "drawtext=fontfile=\${SLATE_FONT}:textfile=" "the card uses textfile= and a BRACED font path"
-if grep -q "drawtext=fontfile=\$SLATE_FONT:text=" bin/stream.sh; then
-  t_bad "drawtext uses text= / unbraced \$SLATE_FONT (zsh eats :t)"
-else
-  t_ok "drawtext never uses the unbraced/text= form"
-fi
+# The offline card carries NO TEXT (operator policy, 2026-11-13). The first version of this
+# check asserted the OPPOSITE - that make_slate() used `drawtext=...:textfile=` with a braced
+# font path - because an agent had written three lines of Indonesian prose onto the card and
+# called it an operator request. The operator had never authorised a word of it, and on
+# 2026-11-13 the card put an unauthorised promise ("back in a few hours") and a stale clock on
+# both feeds. A fallback card may show the shop; it may not speak for the shop.
+python3 - "$PWD/bin/stream.sh" "$PWD/bin/vertical.sh" <<'PY' && t_ok "both offline cards draw NO text" || t_bad "an offline card draws text or operator-facing prose"
+import re, sys
+bad = []
+for path in sys.argv[1:]:
+    src = open(path).read()
+    m = re.search(r"make_slate\(\)\s*\{(.*?)\n\}", src, re.S)
+    body = m.group(1) if m else ""
+    if not body:
+        bad.append(path + ": no make_slate() body found")
+    if "drawtext" in body or "textfile=" in body:
+        bad.append(path + ": make_slate() draws text")
+    # Comments may quote the words it used to show (that is the record); executable lines may not.
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    if re.search(r"Kamera CCTV|BUKA 24 JAM|TETAP BEROPERASI|kembali dalam", code):
+        bad.append(path + ": operator-facing prose is still in the script")
+if bad:
+    print("\n".join(bad))
+sys.exit(1 if bad else 0)
+PY
 
 # A camera that ACCEPTS on 554 but never streams. The slate has to come back immediately,
 # and the variable this path logs must be DEFINED - it was first used undefined and `set -u`

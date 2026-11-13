@@ -10,6 +10,15 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   before the publisher was moved to `-loglevel error`.
 
 ## Todo / notes
+- **A camera that leaves the LAN cannot be recovered remotely.** Measured 2026-11-13, 07:14 WIB:
+  the camera stopped answering on 554 and then vanished from L2 entirely - `arp -an` holds
+  `(incomplete)` for its address, ICMP fails, and a sweep of `192.168.1.0/24` finds no listener on
+  554 or on the ONVIF port 8899 from either interface. Nothing on the streamer can reach it:
+  `cam_ip.py`/`cam_scan.py` cannot discover a device that does not answer, `cam_reboot.py` needs
+  ONVIF, and the watchguard's camera reboot needs TCP. The feeds stay live on the fallback card
+  and return to the camera by themselves when it reappears; the physical fix (power cycle, PoE,
+  cabling) needs a human at the shop. The class is therefore a **stated limit, not a bug** - do not
+  spend a session trying to raise a dead camera over the network.
 - **The Shorts feed runs without rotation on purpose** (`VERT_ROTATE=no`), so YouTube stops
   archiving its broadcast after 12 h: the stream stays up, the recording past that point is
   lost. Set `VERT_ROTATE=yes` if a continuous archive matters more than an uninterrupted

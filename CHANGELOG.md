@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-11-13 — the offline card carries no text, because no program speaks for the shop
+
+- **Both fallback cards lost their text.** `make_slate()` in `bin/stream.sh` (16:9) and
+  `bin/vertical.sh` (9:16) now render the last good camera frame — dimmed for the wide feed, on the
+  black Shorts canvas for the vertical — and stop there: no prose, no timestamp, no promise. The
+  `SLATE_FONT`/`SLATE_TEXT` knobs (wide) and `FONT` (vertical) are gone with the text, so there is
+  no leftover setting that only draws words.
+- **Why.** The cards had carried three lines of Indonesian copy that an agent wrote on 2026-10-27
+  and recorded as an "operator request". On **2026-11-13 at 07:14 WIB** the camera left the LAN and
+  both feeds went on publishing "Kamera CCTV akan kembali dalam beberapa jam" beside a clock frozen
+  at 07:14 — a promise about a return nobody could schedule, in words the operator had never
+  authorised, on a channel whose every other word is deliberate. The operator's rule is now
+  permanent: **a card may show the shop, it may not speak for the shop.** Any message, caption,
+  timestamp or overlay on either feed needs an explicit instruction recorded in `AGENTS.md` or in
+  this file — never an inference from an earlier session's prose, and never a "the operator asked
+  for it" comment as the only evidence.
+- **The card is still not a fix for a dead camera, and this incident was one.** At 07:14 WIB the
+  camera stopped answering on 554 and then vanished from L2: `arp -an` holds `(incomplete)` for its
+  address, ICMP fails, and a sweep of `192.168.1.0/24` finds no listener on 554 or on the ONVIF
+  port 8899 from either interface. No remote lever reaches a device that does not answer, so the
+  feeds fail over to the card, stay live, and return to the camera by themselves when it comes
+  back. `docs/known-issues.md` records that class as a stated limit; the physical fix needs a
+  human at the shop.
+- Asserted in `tests/t17_camera_recovery.sh`: the old checks demanded `drawtext` and a braced
+  `SLATE_FONT`, so they would have blocked this change and protected the defect. The replacement
+  fails if either card draws text, or if the operator-facing prose survives anywhere outside a
+  comment. Suite **998 checks**.
+
 ## 2026-11-11 — the off-host watchdog can see the recovery pass itself
 
 - **The last blind spot of the supervision chain.** launchd restarts what exits, stream.sh

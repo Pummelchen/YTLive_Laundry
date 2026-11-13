@@ -356,35 +356,34 @@ SIZE="${ENC_SIZE}"
 #
 #   So the reader never stops feeding: when the camera is unreachable it pushes a still card
 #   instead (the same 1080p geometry the publisher's crop yields), the publisher never
-#   notices, the RTMP session is never torn down, and viewers get "camera offline" rather
-#   than a dark channel. The moment port 554 answers again the slate is killed and the real
-#   feed reconnects - no publisher restart, no new broadcast, no new URL.
+#   notices and the RTMP session is never torn down, so the channel stays up and returns to the
+#   real picture by itself when the camera does. The moment port 554 answers again the slate is
+#   killed and the real feed reconnects - no publisher restart, no new broadcast, no new URL.
 SLATE="$BASE/log/slate.jpg"
-SLATE_FONT="${SLATE_FONT:-/System/Library/Fonts/Supplemental/Arial.ttf}"
 # How long the slate is held after repeated short RTSP sessions. Defined HERE, before
 # any reader can reference it: it was first used undefined and `set -u` killed the
 # reader subshell on the third failure, which darkened the channel (2026-10-28 05:13).
 SLATE_BURST_SECONDS="${SLATE_BURST_SECONDS:-120}"
 
-SLATE_TEXT="$BASE/log/slate_text.txt"
-
 make_slate() {
   local src="$SNAP"
   [[ -s "$src" ]] || src="$BASEIMG"
-  # Subtitle position (operator request, 2026-10-28): low in the frame, ~90 px clear of the
-  # bottom edge, so the shop stays visible and the line reads like a caption, not a banner.
-  # textfile=, not text='...': the quoted form does not survive every shell/ffmpeg pair
-  # (measured 2026-10-28 - the card silently fell back to a plain colour), while a file
-  # path contains nothing either parser can disagree about.
-  # Indonesian on purpose: the shop floor and its customers are in Batam, not Berlin. The
-  # second line sets the expectation the operator asked for - back in a few hours, not "soon".
-print -r -- "LAUNDRY BUKA 24 JAM - TETAP BEROPERASI" > "$SLATE_TEXT"
-  print -r -- "Kamera CCTV akan kembali dalam beberapa jam" >> "$SLATE_TEXT"
-  print -r -- "$(date '+%Y-%m-%d %H:%M') WIB" >> "$SLATE_TEXT"
-  if [[ -s "$src" && -r "$SLATE_FONT" ]]; then
+  # THE CARD CARRIES NO TEXT. Operator policy, 2026-11-13, and it is not negotiable:
+  # a fallback card may SHOW the shop, it may never SPEAK for the shop.
+  #
+  # Why the rule exists: until this date make_slate() drew three lines of Indonesian prose
+  # and a timestamp on the card ("LAUNDRY BUKA 24 JAM - TETAP BEROPERASI" / "Kamera CCTV akan
+  # kembali dalam beberapa jam" / "<date> WIB"). An agent wrote those lines and called them an
+  # operator request; the operator had never asked for them. On 2026-11-13 the camera left the
+  # LAN at 07:14 WIB and the card made an unauthorised promise about a return that nobody could
+  # schedule, next to a clock that was already stale. Nothing on either feed may say anything
+  # the operator did not ask for. See AGENTS.md, Traps.
+  #
+  # Dimmed on purpose: an undimmed still is indistinguishable from a frozen live frame, and
+  # the dim needs no words to say "this is not the camera right now".
+  if [[ -s "$src" ]]; then
     "$FF" -y -v error -i "$src" -frames:v 1 \
-      -vf "eq=brightness=-0.30:saturation=0.65,drawtext=fontfile=${SLATE_FONT}:textfile=${SLATE_TEXT}:fontcolor=white:fontsize=64:box=1:boxcolor=black@0.55:boxborderw=28:x=(w-text_w)/2:y=h-text_h-90" \
-      -q:v 4 "$SLATE" 2>/dev/null
+      -vf "eq=brightness=-0.30:saturation=0.65" -q:v 4 "$SLATE" 2>/dev/null
   fi
   [[ -s "$SLATE" ]] && return 0
   "$FF" -y -v error -f lavfi -i "color=c=0x0b1a2a:s=1920x1080" -frames:v 1 "$SLATE" 2>/dev/null

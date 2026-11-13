@@ -658,6 +658,11 @@ The vertical card now places the message at `y=240` and the camera frame at `y=7
 viewer reads "LAUNDRY BUKA 24 JAM - TETAP BEROPERASI / Kamera CCTV kembali dalam beberapa jam"
 first and the shop photo second. Re-captured from the live stream after the change.
 
+> **Superseded 2026-11-13.** Both cards lost their text: the operator stated that no message on
+> either feed had been authorised, so `make_slate()` now renders the dimmed last frame and nothing
+> else. This section is kept as the record of what was built here, not as a description of the
+> current card - see `AGENTS.md` (Traps) and the 2026-11-13 entry in `CHANGELOG.md`.
+
 ## 18. API quota exhausted (05:46 WIB) - and what it does and does not stop
 
 `log/quota_exhausted` is armed: the day's 10 000 units are spent (this session's test broadcasts,
