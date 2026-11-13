@@ -64,7 +64,17 @@
 - Asserted in `tests/t17_camera_recovery.sh`: the old checks demanded `drawtext` and a braced
   `SLATE_FONT`, so they would have blocked this change and protected the defect. The replacement
   fails if either card draws text, or if the operator-facing prose survives anywhere outside a
-  comment. Suite **981 checks**.
+  comment - and it now fails if **any** script in `bin/` can draw text at all, not only the two
+  card builders. `bin/smoke_test.sh` carries the same check in its new "what can go on air"
+  section, so the pre-restart gate catches it before a deploy as well.
+- **How it got there, for the next reader.** `git log -S 'LAUNDRY BUKA'` answers it in one line:
+  the copy was not added to a working card - the slate itself was introduced with the text in
+  `107c6df` (2026-10-27 23:49 CET, during the 14-hour outage that commit was fixing), outlined in
+  a comment and then tuned twice more that night (`79f1506c`, `5c4e6feb`). Nothing after it
+  touched the words, the tests asserted the opposite, and the postmortem recorded it as an
+  operator request. It stayed dormant for 16 days because it was only ever visible while the
+  camera was gone; on 2026-11-13 the camera went, and the card went on air with a fresh clock.
+  Suite **981 checks**.
 
 ## 2026-11-11 — the off-host watchdog can see the recovery pass itself
 

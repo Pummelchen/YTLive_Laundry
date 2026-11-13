@@ -45,7 +45,7 @@ PY
 # 2026-11-13 the card put an unauthorised promise ("back in a few hours") and a stale clock on
 # both feeds. A fallback card may show the shop; it may not speak for the shop.
 python3 - "$PWD/bin/stream.sh" "$PWD/bin/vertical.sh" <<'PY' && t_ok "both offline cards draw NO text" || t_bad "an offline card draws text or operator-facing prose"
-import re, sys
+import glob, re, sys
 bad = []
 for path in sys.argv[1:]:
     src = open(path).read()
@@ -59,6 +59,18 @@ for path in sys.argv[1:]:
     code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
     if re.search(r"Kamera CCTV|BUKA 24 JAM|TETAP BEROPERASI|kembali dalam", code):
         bad.append(path + ": operator-facing prose is still in the script")
+
+# The policy is wider than the two cards: drawtext is the only way this project can put words
+# into the picture, and on 2026-11-13 an agent-written message aired on both feeds because
+# nothing outside the card builder was ever checked. No executable line in any script that can
+# reach the encoder may draw text. (smoke_test.sh is the pre-restart gate and carries the same
+# pattern as a string, so it is the one file excluded - it never touches the stream.)
+for path in sorted(glob.glob("bin/*.sh") + glob.glob("bin/*.py")):
+    if path.endswith("bin/smoke_test.sh"):
+        continue
+    code = "\n".join(l for l in open(path).read().splitlines() if not l.lstrip().startswith("#"))
+    if re.search(r"drawtext|textfile=", code):
+        bad.append(path + ": an executable line draws text on the stream")
 if bad:
     print("\n".join(bad))
 sys.exit(1 if bad else 0)

@@ -23,6 +23,22 @@ for f in bin/*.py; do
   python3 -c "import ast,sys; ast.parse(open('$f').read())" 2>/dev/null && ok "$f parses" || bad "$f does NOT parse"
 done
 
+print "\n=== what can go on air ==="
+# Operator policy, 2026-11-13. ffmpeg's drawtext is the only way this project can put words into
+# the picture, and on 2026-11-13 a three-line Indonesian message that an agent had written - and
+# recorded as an "operator request" - aired on both feeds when the camera dropped. The operator had
+# never authorised it. Nothing may be rendered on either feed without their explicit instruction,
+# so this gate fails if any script that can reach the encoder draws text again. The offline cards
+# are the last good camera frame and nothing else (tests/t17 asserts the same thing in CI).
+# smoke_test.sh is excluded because this check's own pattern contains the word it searches for.
+hits=$(grep -rn -E 'drawtext|textfile=' bin/*.sh bin/*.py 2>/dev/null | grep -v '^bin/smoke_test.sh:')
+if [[ -n "$hits" ]]; then
+  bad "a script can draw text on the stream (no message without the operator's permission)"
+  print -r -- "$hits" | head -3 | sed 's/^/        /'
+else
+  ok "no script draws text on either feed"
+fi
+
 print "\n=== use-before-assignment (the 2026-09-07 crash class) ==="
 python3 - <<'PY' && ok "no local read before its earliest assignment" || bad "use-before-assignment found"
 import ast, sys
