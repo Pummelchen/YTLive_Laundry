@@ -107,6 +107,19 @@ contains conf/vertical.env.example 'VERT_ROTATE="no"' "which records the run-for
 contains bin/vertical.sh "ROTATE" "the vertical feed rotates before YouTube's 12h archive limit"
 contains bin/vertical.sh "vertical.seen_camera" "it will not go public with only a slate before the first sighting"
 
+# The liveness confirmation names a broadcast ID, not a session, so an external stop (a power
+# cut, YouTube's 12 h limit) leaves it matching a DEAD broadcast and the poll below never runs
+# again - the Shorts then stays OFFLINE after power, network and camera have all recovered.
+# Measured 2026-11-13: 18 minutes dark with every other signal back. A publisher start must
+# invalidate the confirmation, so the next poll re-asks the API and repairs it.
+python3 - "$PWD/bin/vertical.sh" <<'PY3' && t_ok "a publisher start clears the stale liveness confirmation" || t_bad "live_ok survives a publisher restart and mutes the liveness poll"
+import re, sys
+src = open(sys.argv[1]).read()
+start = re.search(r"start_publisher\(\)\s*\{(.*?)\n\}", src, re.S)
+body = start.group(1) if start else ""
+sys.exit(0 if body and 'rm -f "$LIVEOK"' in body else 1)
+PY3
+
 # --- one broadcast lookup cannot adopt the other ----------------------------------------
 contains bin/yt_api.py "def active_broadcast(token, stream_id=None)" "active_broadcast is stream-scoped"
 contains bin/yt_api.py "active_broadcast(token, stream[\"id\"])" "ensure-live/prepare scope by stream"

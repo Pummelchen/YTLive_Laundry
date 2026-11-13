@@ -10,6 +10,21 @@ tracker: what is known and unfixed is described here, and what changed is in `CH
   before the publisher was moved to `-loglevel error`.
 
 ## Todo / notes
+- **A negative DNS entry on this host outlives the outage that caused it, and cannot be flushed
+  without root.** Measured 2026-11-13 after the mains cut: `getaddrinfo()` failed for
+  `a.rtmp.youtube.com` and `oauth2.googleapis.com` (`[Errno 8] nodename nor servname provided`)
+  while `dig`/`host` resolved both and `www.youtube.com` worked — a poisoned cache in
+  `mDNSResponder`, whose resolver #1 is Tailscale's `100.100.100.100`. `sudo dscacheutil -flushcache`
+  (the one DNS rule in `/etc/sudoers.d/ytlive-net`) does not clear it, `killall -HUP mDNSResponder`
+  needs root the account does not have, and the cache cleared itself after about **11 minutes**. The
+  publisher died `rc=251` every ~10 s throughout. If it ever does not clear, the levers are a reboot
+  (account password) or a `/etc/hosts` entry (root) — there is no unprivileged one.
+- **The camera returns on a new DHCP address after a power cut, and the feeds follow it.** Measured
+  2026-11-13: `192.168.1.2` -> `192.168.1.22` after a six-minute cut; `cam_ip_watcher` found it with
+  the TCP sweep and both readers followed `log/cam_ip` without a restart. The trap is that the
+  streamer's own `en2` may hold the vacated address in the meantime (it took `.2`, so a probe of
+  "the camera" was probing this Mac) — `bin/status.sh` and `bin/cam_scan.py` skip local addresses,
+  which is why the sweep still reported honestly.
 - **A camera that leaves the LAN cannot be recovered remotely.** Measured 2026-11-13, 07:14 WIB:
   the camera stopped answering on 554 and then vanished from L2 entirely - `arp -an` holds
   `(incomplete)` for its address, ICMP fails, and a sweep of `192.168.1.0/24` finds no listener on

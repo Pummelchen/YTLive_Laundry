@@ -69,6 +69,9 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 - [docs/2026-11-09-streamer-offline.md](docs/2026-11-09-streamer-offline.md)
   — the November 2026 outage: 26 hours dark, the watchdog's record, and the `prepare`
   retry loop it exposed
+- [docs/2026-11-13-outage.md](docs/2026-11-13-outage.md)
+  — the camera that left the LAN, the six-minute power cut, and the Shorts feed that stayed
+  dark behind a stale liveness confirmation
 - [wiki](https://github.com/Pummelchen/YTLive_Laundry/wiki) — the operator's guide
 
 ## Testing
@@ -77,7 +80,7 @@ com.user.cctv-camscan    every 10 minutes: where is the camera, on Wi-Fi or on t
 `bin/smoke_test.sh` needs `conf/yt_oauth.json`, so it stays a by-hand host gate.
 
 ```
-tests/run.sh            998 credential-free checks (--list to see them)
+tests/run.sh            977 credential-free checks (--list to see them)
 bin/smoke_test.sh       syntax/AST plus the real API commands and prepare --dry-run
 ```
 

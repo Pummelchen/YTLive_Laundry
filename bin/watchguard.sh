@@ -362,6 +362,11 @@ check_disk() {
 check_agents() {
   local label st=0 plan
   for label in com.user.cctv-stream com.user.cctv-monitor com.user.cctv-vertical com.user.cctv-camscan; do
+    # A switched-off Shorts is not a missing agent. `VERT_ENABLED="no"` is how the operator turns
+    # that feed off (2026-11-13: "stop the shorts live stream until further notice"), and loading
+    # it back every ten minutes would silently undo the decision - the agent would start, see the
+    # config, exit, and be re-loaded forever. check_vertical() below is gated the same way.
+    [[ "$label" == "com.user.cctv-vertical" && "$VERT_ENABLED" != "yes" ]] && continue
     launchctl_loaded "$label" && continue
     mark_trouble agent
     plan=$(agent_action no "$(cooldown_ok "kick.$label" "$WG_AGENT_COOLDOWN" && print yes || print no)")

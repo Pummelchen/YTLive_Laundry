@@ -221,6 +221,15 @@ start_publisher() {
     "${VERT_URL%/}/${VERT_KEY}" >>"$BASE/log/vertical.publisher.log" 2>&1 &
   PUBPID=$!
   print -r -- "$PUBPID" > "$PUB_PID"
+  # This publisher session has not been confirmed live yet, whatever the last one managed.
+  # The confirmation names a BROADCAST ID only, so when YouTube stops the broadcast from the
+  # outside - a power cut, the 12 h archive limit - the stale confirmation keeps matching the
+  # id and the liveness poll below never runs again. Measured 2026-11-13: the shop lost mains
+  # power for six minutes, YouTube auto-stopped the Shorts, and the feed stayed OFFLINE for 18
+  # minutes after power and camera had both returned, because log/vertical.live_ok still named
+  # the dead broadcast. Clearing it costs one `status` call per publisher start (the poll is
+  # already throttled to one a minute) and makes the poll self-healing.
+  rm -f "$LIVEOK"
   vlog "PUBLISHER start mode=$mode pid=$PUBPID key=...${VERT_KEY[-4,-1]}"
 }
 

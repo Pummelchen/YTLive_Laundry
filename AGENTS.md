@@ -72,7 +72,7 @@ provisions a host instead — it downloads evermeet.cx static `ffmpeg`/`ffprobe`
 needs sudo.
 
 ```bash
-tests/run.sh          # the credential-free suite: 998 checks, no camera, no credentials
+tests/run.sh          # the credential-free suite: 977 checks, no camera, no credentials
 tests/run.sh --list   # what it covers
 bin/smoke_test.sh     # the pre-restart gate; needs conf/yt_oauth.json to pass fully
 ```
@@ -146,7 +146,7 @@ setup stays active alongside it.
 
 The gates, still worth running by hand before restarting anything:
 
-    tests/run.sh          # 998 checks, credential-free; fails if the monitor's classification,
+    tests/run.sh          # 977 checks, credential-free; fails if the monitor's classification,
                           # the golden-reference bootstrap or the network ladder regress
     bin/smoke_test.sh     # syntax/AST plus the real API commands and prepare --dry-run;
                           # needs conf/yt_oauth.json, so it cannot pass on a bare clone
@@ -167,6 +167,15 @@ The gates, still worth running by hand before restarting anything:
   inference from an earlier session's prose, and never a "the operator asked for it" comment as
   the only evidence. Guarded by `tests/t17_camera_recovery.sh`, which now fails if either card
   draws text or if that prose survives anywhere outside a comment.
+- **Email alerting is OFF by operator decision - do not "restore" it.** The off-host watchdog on
+  `vpn-germany` runs with `WATCH_ALERT_MODE="file"`: it evaluates every signal, writes the message it
+  *would* send into `/var/ytlive-watchdog/alerts/*.eml`, and sends nothing. `conf/watchdog.env.example`
+  ships `smtp`, because that is what a fresh install should do - the live host is deliberately
+  different, and that is the operator's choice. Measured 2026-11-13: a session read the mode as a
+  forgotten test setting, switched it to `smtp`, restarted the unit and sent a test mail; the operator
+  asked for it off again within the minute. Two consequences: silence from that host is **not**
+  evidence that nothing is wrong (`bin/yt_watchdog.py status` is the only way to read what it
+  decides), and never change `WATCH_ALERT_MODE` there without being asked.
 - **The heartbeat token lives in a mode 600 file and is NEVER passed on a command line
   (T-34).** `bin/stream.sh` starts `bin/yt_heartbeat.py push` with `--token-file
   "$HEARTBEAT_TOKEN_FILE"`, never the secret itself, because argv is world-readable through

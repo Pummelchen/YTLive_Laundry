@@ -125,6 +125,12 @@ t_assert_file "$REPO/conf/vertical.env" "vertical.env created from the example"
 t_assert_contains "$OUT" "created conf/vertical.env from the example" "and says so"
 t_assert_contains "$(cat "$REPO/conf/vertical.env")" 'VERT_ENABLED="no"' "the Shorts stays disabled until its key is set"
 t_assert_contains "$(cat "$REPO/conf/vertical.env")" 'VERT_ROTATE="no"' "and the template records the run-forever choice"
+# --start must not undo a deliberate "off": the Shorts agent is only loaded when its own config
+# says enabled (2026-11-13, "stop the shorts live stream until further notice").
+t_assert_contains "$(cat "$REPO/install.sh")" 'agents+=(com.user.cctv-vertical)' \
+  "install --start loads the Shorts agent only when VERT_ENABLED says so"
+t_assert_contains "$(cat "$REPO/install.sh")" 'for l in "${agents[@]}"' \
+  "and the start loop walks that gated list"
 
 rm -rf "$SB"
 t_summary

@@ -366,7 +366,19 @@ if [[ "$START" == "yes" ]]; then
   [[ "$FDA" == "OK" ]] || die "refusing to start: grant Full Disk Access to /bin/zsh first, then run ./install.sh --start"
   [[ "$YT_EMPTY" == yes ]] && die "refusing to start: YT_KEY is empty in conf/stream.env - paste your YouTube stream key in first"
   say "starting services (remember: only ONE machine per YouTube stream key)"
-  for l in com.user.cctv-watchguard com.user.cctv-stream com.user.cctv-vertical com.user.cctv-monitor com.user.cctv-camscan; do
+  # The Shorts feed is started only when its own config says it is enabled. VERT_ENABLED="no" is
+  # an operator DECISION (2026-11-13: the feed was switched off until further notice), not an
+  # unfinished install, so --start must not undo it by loading the agent anyway.
+  local -a agents
+  agents=(com.user.cctv-watchguard com.user.cctv-stream com.user.cctv-monitor com.user.cctv-camscan)
+  local vert_enabled=""
+  [[ -r conf/vertical.env ]] && vert_enabled=$(sed -n 's/^VERT_ENABLED="\{0,1\}\([a-zA-Z]*\)"\{0,1\}.*/\1/p' conf/vertical.env | tail -1)
+  if [[ "$vert_enabled" == "yes" ]]; then
+    agents+=(com.user.cctv-vertical)
+  else
+    say "the Shorts feed stays OFF: VERT_ENABLED is not \"yes\" in conf/vertical.env"
+  fi
+  for l in "${agents[@]}"; do
     launchctl unload "$LA/$l.plist" 2>/dev/null; launchctl load -w "$LA/$l.plist" && say "loaded $l"
   done
   sleep 8; launchctl list | grep cctv

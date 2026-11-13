@@ -261,6 +261,32 @@ t_assert_contains "$calls" "load -w" "its plist is loaded first, so kickstart ca
 t_assert_contains "$calls" "com.user.cctv-monitor" "the other agents are checked too"
 kill $PUB 2>/dev/null
 
+# E6b: a SWITCHED-OFF Shorts is not a missing agent. `VERT_ENABLED="no"` is the operator's
+# decision (2026-11-13: "stop the shorts live stream until further notice"); re-loading the agent
+# every ten minutes would silently undo it, and the loop would reload it forever.
+reset_case
+run_case FAKE_LC_PRINT_RC=1 >/dev/null
+if grep -q "com.user.cctv-vertical" "$T_BASE/log/launchctl.calls" 2>/dev/null; then
+  t_bad "the watchguard touches the Shorts agent while conf/vertical.env disables it"
+else
+  t_ok "a disabled Shorts is not re-loaded by a recovery pass"
+fi
+kill $PUB 2>/dev/null
+
+# E6c: the positive control - with the Shorts ENABLED, the same missing agent must still be repaired,
+# or the gate above would silently turn into "the Shorts is never recovered".
+cp "$T_BASE/conf/vertical.env" "$T_BASE/conf/vertical.env.saved"
+cat > "$T_BASE/conf/vertical.env" <<ENV
+VERT_ENABLED="yes"
+VERT_KEY="test-vertical-key-not-real"
+ENV
+reset_case
+run_case FAKE_LC_PRINT_RC=1 FAKE_VERT_STATUS='{"status": "LIVE"}' >/dev/null
+t_assert_contains "$(cat "$T_BASE/log/launchctl.calls" 2>/dev/null)" \
+  "com.user.cctv-vertical" "an ENABLED Shorts is still repaired by label"
+mv "$T_BASE/conf/vertical.env.saved" "$T_BASE/conf/vertical.env"
+kill $PUB 2>/dev/null
+
 # E7: the disk is low -> logs are trimmed in place
 reset_case
 python3 -c 'print("x" * 400000)' > "$T_BASE/log/stream.log"

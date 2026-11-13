@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-13 — the Shorts no longer stays dark behind a stale liveness confirmation
+
+- **The defect the morning's power cut exposed.** `vertical.sh` skips its API liveness poll while
+  `log/vertical.live_ok` names the current broadcast — a deliberate quota guard, added because
+  polling every 60 s burned the day's pool. But that confirmation names a **broadcast id**, not a
+  session. When YouTube auto-stopped the Shorts during the 08:49 power cut, the file still matched
+  the recorded id, so the poll never ran again and the feed stayed `OFFLINE` for **18 minutes after
+  power, network and camera had all come back**. `ensure-live` had to be run by hand to recover it.
+- **`start_publisher()` now clears `LIVEOK`.** A publisher start always re-asks the API once, so a
+  confirmation cannot survive an outage. The cost is bounded — the poll is already throttled to one
+  call a minute and stops as soon as the API confirms the broadcast live — and it makes the poll
+  self-healing rather than trusting state that outlived the thing it described.
+- Asserted in `tests/t17_camera_recovery.sh` (37 checks): a `start_publisher()` body that does not
+  clear `LIVEOK` fails the suite.
+- The whole sequence — camera off the LAN at 07:14, a six-minute mains cut at 08:49, the resolver's
+  poisoned negative cache, and the Shorts' 18 dark minutes — is written up with the evidence in
+  [`docs/2026-11-13-outage.md`](docs/2026-11-13-outage.md).
+
 ## 2026-11-13 — the offline card carries no text, because no program speaks for the shop
 
 - **Both fallback cards lost their text.** `make_slate()` in `bin/stream.sh` (16:9) and
@@ -26,7 +44,7 @@
 - Asserted in `tests/t17_camera_recovery.sh`: the old checks demanded `drawtext` and a braced
   `SLATE_FONT`, so they would have blocked this change and protected the defect. The replacement
   fails if either card draws text, or if the operator-facing prose survives anywhere outside a
-  comment. Suite **998 checks**.
+  comment. Suite **977 checks**.
 
 ## 2026-11-11 — the off-host watchdog can see the recovery pass itself
 
